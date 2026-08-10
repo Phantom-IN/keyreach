@@ -1,0 +1,180 @@
+# keyreach CI — HYGIENE ONLY (for now)
+#
+# ⚠️ This is a deliberately minimal placeholder pipeline.
+#
+# keyreach is being built in public, and as of the first commit the repository
+# contains governance, documentation, and the roadmap only — there is no
+# `pyproject.toml`, no `keyreach/` package, and no test suite yet. This workflow
+# therefore checks only what actually exists: that the governance files are
+# present, and that the Markdown is well-formed.
+#
+# ┌────────────────────────────────────────────────────────────────────────────┐
+# │ THE REAL PIPELINE IS ROADMAP ITEM R0.9 — `feat/r0.9-ci-guardrails`.        │
+# │                                                                            │
+# │ It replaces/extends this file with the guardrails specified in             │
+# │ implementation_plan.md §11, which are what actually enforce keyreach's     │
+# │ hard rules:                                                                │
+# │                                                                            │
+# │   • ai_ban            — fail if any dependency, import, or source string   │
+# │                         matches the denylist of AI/LLM SDKs and model API  │
+# │                         hostnames (plan.md §1: no AI/LLM, anywhere, ever)  │
+# │   • network_isolation — fail if anything under keyreach/providers/ imports │
+# │                         httpx / socket / requests directly (probes must go │
+# │                         through ProbeContext)                              │
+# │   • read_only         — static scan flagging non-idempotent HTTP methods   │
+# │                         that aren't explicitly annotated and reviewed      │
+# │   • schema drift      — regenerate report.schema.json and fail on diff     │
+# │   • ruff / black / mypy, and pytest with a coverage threshold              │
+# │                                                                            │
+# │ Acceptance criterion for R0.9: a PR that adds an AI SDK, a direct socket   │
+# │ in providers/, or a non-idempotent probe FAILS CI.                         │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# Until then: do NOT add steps here that reference source files or tests which
+# do not exist yet — a red X on every commit teaches people to ignore CI.
+
+name: CI (hygiene)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  governance:
+    name: Governance files present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required governance and planning files exist
+        run: |
+          set -euo pipefail
+
+          required=(
+            LICENSE
+            NOTICE
+            CREDITS.md
+            THIRD_PARTY_LICENSES.md
+            README.md
+            ROADMAP.md
+            CONTRIBUTING.md
+            SECURITY.md
+            CODE_OF_CONDUCT.md
+            CHANGELOG.md
+            CLAUDE.md
+            plan.md
+            implementation_plan.md
+            .gitignore
+            .github/PULL_REQUEST_TEMPLATE.md
+            .github/ISSUE_TEMPLATE/bug_report.md
+            .github/ISSUE_TEMPLATE/feature_request.md
+            .github/ISSUE_TEMPLATE/new_provider.md
+          )
+
+          missing=0
+          for f in "${required[@]}"; do
+            if [ -s "$f" ]; then
+              echo "  ok       $f"
+            else
+              echo "  MISSING  $f"
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            echo
+            echo "::error::One or more required governance files are missing or empty."
+            echo "See CONTRIBUTING.md — these files are part of the definition of done."
+            exit 1
+          fi
+
+      - name: Check the license is Apache-2.0
+        run: |
+          set -euo pipefail
+          # keyreach is permissively licensed and must stay that way: reused code
+          # is MIT/Apache/BSD/CC-BY only, never AGPL/GPL. See plan.md §10.
+          if ! grep -q "Apache License" LICENSE; then
+            echo "::error::LICENSE does not look like the Apache License 2.0 (plan.md §10)."
+            exit 1
+          fi
+          if ! grep -q "Version 2.0, January 2004" LICENSE; then
+            echo "::error::LICENSE is not Apache License version 2.0."
+            exit 1
+          fi
+          echo "LICENSE is Apache-2.0."
+
+      - name: Check NOTICE and THIRD_PARTY_LICENSES are non-trivial
+        run: |
+          set -euo pipefail
+          # Attribution is maintained from commit #1 — see plan.md §5.6.
+          for f in NOTICE THIRD_PARTY_LICENSES.md CREDITS.md; do
+            lines=$(wc -l < "$f")
+            if [ "$lines" -lt 5 ]; then
+              echo "::error::$f looks like a stub ($lines lines). Attribution is not optional."
+              exit 1
+            fi
+          done
+          echo "Attribution files present."
+
+  markdown:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Write markdownlint config
+        # Kept inline while the repo is docs-only. When R0.2 adds project
+        # tooling, this moves to a checked-in .markdownlint-cli2.jsonc so the
+        # same rules can be run locally via pre-commit.
+        #
+        # plan.md, implementation_plan.md and CLAUDE.md are excluded for now:
+        # they are hand-authored planning documents that predate this workflow
+        # and are kept verbatim in R0.1. Reformatting them is a separate `docs:`
+        # PR — not something to smuggle into the scaffolding commit, and not
+        # friction we want on a one-line edit to plan.md.
+        run: |
+          cat > .markdownlint-cli2.jsonc <<'JSON'
+          {
+            "config": {
+              "MD013": false,  // line length — prose is hard-wrapped, tables are not
+              "MD014": false,  // "$ cmd" without output — issue templates prompt for it
+              "MD024": { "siblings_only": true },  // CHANGELOG repeats headings per release
+              "MD033": false,  // inline HTML — issue/PR templates use HTML comments
+              "MD040": false,  // fenced blocks without a language (illustrative snippets)
+              "MD041": false,  // first line heading — templates start with front matter
+              "MD060": false   // table pipe spacing — cosmetic
+            },
+            "globs": ["**/*.md"],
+            "ignores": [
+              "node_modules/**",
+              "plan.md",
+              "implementation_plan.md",
+              "CLAUDE.md"
+            ]
+          }
+          JSON
+
+      - name: Lint Markdown
+        # Pinned deliberately: an unpinned linter turns an upstream release into
+        # a surprise red build on an unrelated PR.
+        run: npx --yes markdownlint-cli2@0.23.2
+
+  # ── Not yet wired ───────────────────────────────────────────────────────────
+  # Roadmap R0.9 (`feat/r0.9-ci-guardrails`) adds, in this file:
+  #   jobs: ai-ban, network-isolation, read-only, schema-drift, lint, types, test
+  # Roadmap R2.10 (`feat/r2.10-drift-canary`) adds .github/workflows/drift-canary.yml
+  #   — a scheduled provider-API drift check that opens issues automatically.
+  # Roadmap R1.6 (`chore/r1.6-release-0.1`) adds the PyPI publish workflow.

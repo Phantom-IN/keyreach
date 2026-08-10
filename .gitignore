@@ -1,0 +1,185 @@
+# ==============================================================================
+# SECRETS — read this before committing anything under tests/fixtures/
+# ==============================================================================
+#
+# keyreach's test suite runs off RECORDED HTTP CASSETTES in tests/fixtures/.
+# Those cassettes are recorded by hitting real provider APIs with a real key,
+# which means a freshly recorded cassette CONTAINS THAT KEY — in request URLs,
+# in Authorization headers, in query strings, and sometimes echoed back in the
+# response body or in error messages.
+#
+# Cassettes ARE committed (CI must run without live keys), so the burden is on
+# you: SCRUB EVERY SECRET BEFORE YOU COMMIT.
+#
+# Before committing a cassette:
+#   1. Record with a THROWAWAY key you own — never a production key, never
+#      someone else's key.
+#   2. Run the scrub step and then read the file yourself. Check request URLs,
+#      query parameters, headers (Authorization, X-Api-Key, api-key, Cookie),
+#      request bodies, response bodies, and error strings.
+#   3. Replace real account identifiers, org names, emails, project IDs, and
+#      billing details with obvious synthetic values.
+#   4. Rotate the throwaway key after recording anyway. Belt and braces.
+#   5. git diff the cassette before committing. Read it. Every time.
+#
+# A key committed to git history is compromised permanently — rewriting history
+# does not un-leak it. Rotate immediately if it happens.
+#
+# Never commit: real API keys, .env files, credential files, unscrubbed
+# recordings, or personal account data. The patterns below block the usual
+# accidents, but they are a safety net, NOT a substitute for reading the diff.
+
+# Un-scrubbed / work-in-progress recordings — keep raw captures out of git.
+# Scrub them, then move them into tests/fixtures/ under a normal name.
+tests/fixtures/**/*.raw.*
+tests/fixtures/**/*.unscrubbed.*
+tests/fixtures/**/_wip/
+*.cassette.raw
+*.har
+
+# Local key scratch files (never commit these under any name)
+keys.txt
+*.keys
+*.key
+*.pem
+*.p12
+*.pfx
+secrets.*
+credentials.*
+credentials
+service-account*.json
+.envrc
+
+# Local keyreach output (reports contain findings and evidence)
+out.md
+out.html
+out.json
+/reports/
+*.keyreach.json
+
+# ==============================================================================
+# Python
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Type checkers / linters
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Environments
+.env
+.env.*
+!.env.example
+.venv
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Jupyter / IPython
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# Tooling
+.pdm-python
+__pypackages__/
+pip-wheel-metadata/
+
+# Sphinx / docs builds
+docs/_build/
+site/
+
+# ==============================================================================
+# Editors & IDEs
+# ==============================================================================
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.\#*
+\#*\#
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ==============================================================================
+# OS noise
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon?
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==============================================================================
+# Agent / local tooling scratch
+# ==============================================================================
+.claude/settings.local.json
+scratch/
+tmp/
+*.log

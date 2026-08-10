@@ -1,0 +1,71 @@
+keyreach
+Copyright <YEAR> <YOUR NAME OR HANDLE>
+
+This product includes software developed by <YOUR NAME OR HANDLE> and the
+keyreach contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+
+--------------------------------------------------------------------------------
+Third-party attributions
+--------------------------------------------------------------------------------
+
+This section lists third-party works whose code or data is incorporated into
+keyreach, together with the attribution their licenses require. Entries below
+are PRE-SEEDED for sources keyreach intends to reuse; each one is marked
+"NOT YET INCORPORATED" until the code or data actually lands in the repository.
+When a source is incorporated, the marker is removed in the same pull request
+that introduces it, and a matching full-license entry is added to
+THIRD_PARTY_LICENSES.md.
+
+keyreach is permissively licensed. Copyleft works (AGPL/GPL) are STUDIED ONLY
+and never copied; they are acknowledged in CREDITS.md and do not appear here,
+because no code or data from them is redistributed.
+
+1. secrets-patterns-db
+   Status:    NOT YET INCORPORATED (planned: roadmap item R0.5)
+   Author:    Mazin Ahmed (mazen160)
+   Source:    https://github.com/mazen160/secrets-patterns-db
+   License:   Creative Commons Attribution 4.0 International (CC-BY-4.0)
+   Used for:  Seeding keyreach/patterns/detection_rules.yml with an attributed
+              subset of secret-detection regular expressions.
+   Attribution required by CC-BY-4.0: "Detection patterns derived from
+   secrets-patterns-db by Mazin Ahmed, licensed under CC-BY-4.0."
+   Modifications: patterns are subset, reformatted into keyreach's rule schema,
+   and re-verified; modifications are noted in the pattern file header.
+
+2. gitleaks rules
+   Status:    NOT YET INCORPORATED (planned: roadmap item R0.5, cross-check)
+   Author:    Zachary Rice and the gitleaks contributors
+   Source:    https://github.com/gitleaks/gitleaks
+   License:   MIT
+   Used for:  Cross-checking and supplementing detection patterns.
+   Attribution required by MIT: the full MIT license text and copyright notice
+   are reproduced in THIRD_PARTY_LICENSES.md if and when rules are reused.
+
+--------------------------------------------------------------------------------
+Policy for adding an entry here
+--------------------------------------------------------------------------------
+
+Before reusing any third-party code or data:
+
+  1. Verify the license from the upstream repository itself (not from a
+     summary, blog post, or package index).
+  2. Confirm it is MIT, Apache-2.0, BSD, CC-BY, or another permissive license
+     compatible with Apache-2.0 redistribution. If it is AGPL/GPL, STOP — it may
+     be studied for behavior and re-implemented from public API documentation
+     only, and it is credited in CREDITS.md rather than here.
+  3. Add the attribution entry above and the full license text to
+     THIRD_PARTY_LICENSES.md in the same pull request.
+  4. Add an inline credit header to any source file derived from a specific
+     upstream project.
