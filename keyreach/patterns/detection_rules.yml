@@ -73,6 +73,19 @@ rules:
     confidence: 0.99
     source: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html
 
+  - id: aws-credential-pair
+    provider: aws
+    description: AWS access key ID and secret access key
+    # AWS is the one provider whose credential is not a single string: nothing
+    # can be signed without the secret access key, and temporary ASIA
+    # credentials need a session token too. keyreach accepts them colon-joined
+    # (keyreach/providers/aws.py). A colon appears in neither part — both are
+    # base64 alphabets — so the split is unambiguous, and the anchored bare-ID
+    # rule above cannot also match this.
+    pattern: '^(AKIA|ASIA|ABIA|ACCA)[0-9A-Z]{16}:[A-Za-z0-9/+=]{40}(:[A-Za-z0-9/+=]{20,})?$'
+    confidence: 0.99
+    source: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html
+
   - id: digitalocean-pat
     provider: digitalocean
     description: DigitalOcean personal access token

@@ -103,7 +103,7 @@ keyreach/
 │   │   ├── google.py               # archetype 1  (credit: gmapsapiscanner, MIT)
 │   │   ├── openai.py               # archetype 2  (no prior art; two key families)
 │   │   ├── anthropic.py            # archetype 2b (no prior art; two key families)
-│   │   ├── aws.py                  # archetype 3
+│   │   ├── aws.py                  # archetype 3  (SigV4; blueprint: enumerate-iam, GPL — not copied)
 │   │   └── ...                     # breadth per plan.md §8
 │   ├── patterns/
 │   │   └── detection_rules.yml     # written from vendor docs; nothing copied (§5)
@@ -296,6 +296,11 @@ Patterns are loaded from `patterns/detection_rules.yml`. In "unknown" mode, all 
 - **A provider that raises degrades only its own outcome.** Errors are collected onto `ProviderOutcome.errors` so a report can distinguish "no capability" from "could not determine".
 - **Probe breadth is capped** (`MAX_PROVIDERS_PROBED`). Detection can return several candidates for an ambiguous prefix; probing all of them is authentication traffic against services the key almost certainly does not belong to.
 - **`ProbeResponse.json_body()`**, not `json()` — `BaseModel.json` is pydantic's own deprecated serializer, and overriding it would make the same call mean two different things.
+- **Three hooks were added in R1.3**, all because AWS is the first credential that does not fit the single-bearer-token shape. Each is on `ProbeContext`, so nondeterminism control stays in the engine and a plugin only consumes it:
+  - **`ctx.now()`** — a UTC clock, injectable on `Engine(clock=...)`. AWS SigV4 refuses a request whose timestamp is minutes stale, so there is no way to authenticate without one. This is not a determinism violation for the same reason pacing is not: `plan.md` §1 forbids time-dependent *verdicts*, and a signature timestamp reaches a request header and stops there. Because AWS signs in the `Authorization` header rather than the query string, the timestamp never enters a cassette key either — a fixture recorded once replays forever. `tests/test_provider_aws.py` proves the point by running the same cassette under clocks five years apart and asserting byte-identical output.
+  - **`ctx.protect(secret)`** — registers a further secret with the redactor. A composite credential (`AKIA…:secret:token`) is seeded whole, which would not mask a response echoing back only the access key ID, and `iam:ListAccessKeys` does exactly that.
+  - **`ctx.aggressive`** — set from `Engine(aggressive=False)`, surfaced as `--aggressive` in R1.5. Off by default, always (`plan.md` §11).
+- **A plugin still must not read the clock itself.** `ctx.now()` is the one sanctioned route and exists for request signing; anything it returns reaching a capability, a severity or a report is a bug.
 
 ---
 
@@ -435,12 +440,15 @@ keyreach -f keys.txt              # batch from file
 cat keys.txt | keyreach -         # batch from stdin
 keyreach KEY --provider google    # force provider, skip detection
 keyreach KEY --no-enumerate       # validity + identity only
+keyreach KEY --aggressive         # opt-in noisy enumeration; off by default, warned
 keyreach KEY --delay 500ms        # rate-limit probes
 keyreach KEY --unmask             # show full key (off by default)
 keyreach KEY --fail-on high       # exit nonzero if band >= high (CI gating)
 ```
 
 Exit codes: `0` success/info, `2` finding at/above `--fail-on` threshold, `1` operational error. Codes are fixed and documented.
+
+**AWS takes a composite credential** (R1.3). Every other provider authenticates with one string; AWS signs each request with an access key ID *and* a secret access key, plus a session token for temporary credentials, so the CLI accepts them colon-joined: `keyreach 'AKIA…:<secret>'`, or `'ASIA…:<secret>:<session token>'`. A bare access key ID is still detected and reported — recognising one in a leak is useful — but it cannot be probed, and validation says which half is missing rather than reporting the credential as dead.
 
 ---
 

@@ -202,8 +202,17 @@ redistributed. They are acknowledged in [`CREDITS.md`](CREDITS.md):
 - **TruffleHog** (AGPL-3.0) — behavior studied, re-implemented from public docs
 - **ScoutSuite** (GPL) — studied only
 - **Pacu** — enumeration approach studied only; exploitation is out of scope
-- **KeyHacks**, **enumerate-iam**, **Prowler**, **nuclei** — methodology and
-  design references
+- **KeyHacks**, **Prowler**, **nuclei** — methodology and design references
+- **enumerate-iam** (**GPL-3.0**, verified 2026-08-12) — the blueprint for
+  `keyreach/providers/aws.py` (roadmap R1.3). Its license is copyleft and
+  therefore **may not be copied** into this Apache-2.0 project at all, which
+  makes "nothing was copied" a requirement here rather than the preference it
+  was for gmapsapiscanner below. What keyreach took is the idea that an AWS
+  credential's permissions can be mapped by attempting read-only calls; every
+  endpoint, API version and error code was written from AWS's own documentation,
+  each probe citing its source page. Credited inline in the provider and in
+  [`CREDITS.md`](CREDITS.md). Nothing from it is redistributed, so no license
+  text is reproduced here.
 - **gmapsapiscanner** (MIT, verified 2026-08-11) — the blueprint for
   `keyreach/providers/google.py` (roadmap R1.1). Its license *would* permit
   reuse with attribution, and it is listed here rather than above because

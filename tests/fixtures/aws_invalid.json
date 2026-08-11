@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "<ErrorResponse><Error><Type>Sender</Type><Code>InvalidClientTokenId</Code><Message>The security token included in the request is invalid.</Message></Error><RequestId>7a62c49f-347e-4fc4-9331-6e8eEXAMPLE</RequestId></ErrorResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://sts.amazonaws.com/?Action=GetCallerIdentity&Version=2011-06-15"
+    }
+  ],
+  "version": 1
+}

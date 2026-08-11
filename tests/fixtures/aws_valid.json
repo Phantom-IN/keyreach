@@ -1,0 +1,113 @@
+{
+  "interactions": [
+    {
+      "body": "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\"><reservationSet><item><instancesSet><item><instanceId>i-0a1b2c3d4e5f6a7b8</instanceId><instanceType>m5.large</instanceType></item><item><instanceId>i-09f8e7d6c5b4a3210</instanceId><instanceType>t3.micro</instanceType></item></instancesSet></item></reservationSet></DescribeInstancesResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://ec2.us-east-1.amazonaws.com/?Action=DescribeInstances&Version=2016-11-15&MaxResults=5"
+    },
+    {
+      "body": "<ErrorResponse><Error><Type>Sender</Type><Code>AccessDenied</Code><Message>User is not authorized to perform: iam:GetAccountSummary</Message></Error><RequestId>7a62c49f-347e-4fc4-9331-6e8eEXAMPLE</RequestId></ErrorResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://iam.amazonaws.com/?Action=GetAccountSummary&Version=2010-05-08"
+    },
+    {
+      "body": "<GetUserResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><GetUserResult><User><Path>/</Path><UserName>deploy-bot</UserName><UserId>AIDACKCEVSQ6C2EXAMPLE</UserId><Arn>arn:aws:iam::123456789012:user/deploy-bot</Arn><CreateDate>2024-03-04T09:12:11Z</CreateDate></User></GetUserResult><ResponseMetadata><RequestId>2f5e0b1a</RequestId></ResponseMetadata></GetUserResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://iam.amazonaws.com/?Action=GetUser&Version=2010-05-08"
+    },
+    {
+      "body": "<ListAccessKeysResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><ListAccessKeysResult><UserName>deploy-bot</UserName><AccessKeyMetadata><member><UserName>deploy-bot</UserName><AccessKeyId>&lt;key&gt;</AccessKeyId><Status>Active</Status><CreateDate>2024-03-04T09:12:11Z</CreateDate></member></AccessKeyMetadata><IsTruncated>false</IsTruncated></ListAccessKeysResult><ResponseMetadata><RequestId>3c8a1d55</RequestId></ResponseMetadata></ListAccessKeysResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://iam.amazonaws.com/?Action=ListAccessKeys&Version=2010-05-08"
+    },
+    {
+      "body": "<ListAccountAliasesResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><ListAccountAliasesResult><IsTruncated>false</IsTruncated><AccountAliases><member>northwind-prod</member></AccountAliases></ListAccountAliasesResult><ResponseMetadata><RequestId>91b4f2ae</RequestId></ResponseMetadata></ListAccountAliasesResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://iam.amazonaws.com/?Action=ListAccountAliases&Version=2010-05-08"
+    },
+    {
+      "body": "<ListRolesResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><ListRolesResult><Roles><member><RoleName>ci-deployer</RoleName><Arn>arn:aws:iam::123456789012:role/ci-deployer</Arn></member></Roles><IsTruncated>false</IsTruncated></ListRolesResult><ResponseMetadata><RequestId>6b1c88dd</RequestId></ResponseMetadata></ListRolesResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://iam.amazonaws.com/?Action=ListRoles&Version=2010-05-08"
+    },
+    {
+      "body": "<ListUsersResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><ListUsersResult><Users><member><UserName>deploy-bot</UserName><Arn>arn:aws:iam::123456789012:user/deploy-bot</Arn></member><member><UserName>priya.raman</UserName><Arn>arn:aws:iam::123456789012:user/priya.raman</Arn></member></Users><IsTruncated>false</IsTruncated></ListUsersResult><ResponseMetadata><RequestId>5e0a77cc</RequestId></ResponseMetadata></ListUsersResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://iam.amazonaws.com/?Action=ListUsers&Version=2010-05-08"
+    },
+    {
+      "body": "<DescribeDBInstancesResponse xmlns=\"http://rds.amazonaws.com/doc/2014-10-31/\"><DescribeDBInstancesResult><DBInstances><DBInstance><DBInstanceIdentifier>northwind-prod</DBInstanceIdentifier><Engine>postgres</Engine></DBInstance></DBInstances></DescribeDBInstancesResult><ResponseMetadata><RequestId>7c2d99ee</RequestId></ResponseMetadata></DescribeDBInstancesResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://rds.us-east-1.amazonaws.com/?Action=DescribeDBInstances&Version=2014-10-31&MaxRecords=20"
+    },
+    {
+      "body": "<ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Owner><ID>af1b2c3d</ID><DisplayName>northwind</DisplayName></Owner><Buckets><Bucket><Name>northwind-prod-assets</Name><CreationDate>2023-01-05T10:00:00.000Z</CreationDate></Bucket><Bucket><Name>northwind-db-backups</Name><CreationDate>2023-04-19T08:30:00.000Z</CreationDate></Bucket><Bucket><Name>northwind-terraform-state</Name><CreationDate>2022-11-02T16:45:00.000Z</CreationDate></Bucket></Buckets></ListAllMyBucketsResult>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://s3.amazonaws.com/"
+    },
+    {
+      "body": "<ListTopicsResponse xmlns=\"http://sns.amazonaws.com/doc/2010-03-31/\"><ListTopicsResult><Topics><member><TopicArn>arn:aws:sns:us-east-1:123456789012:alerts</TopicArn></member><member><TopicArn>arn:aws:sns:us-east-1:123456789012:billing</TopicArn></member></Topics></ListTopicsResult><ResponseMetadata><RequestId>8d3eaa00</RequestId></ResponseMetadata></ListTopicsResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sns.us-east-1.amazonaws.com/?Action=ListTopics&Version=2010-03-31"
+    },
+    {
+      "body": "<ListQueuesResponse xmlns=\"http://queue.amazonaws.com/doc/2012-11-05/\"><ListQueuesResult><QueueUrl>https://sqs.us-east-1.amazonaws.com/123456789012/jobs</QueueUrl><QueueUrl>https://sqs.us-east-1.amazonaws.com/123456789012/jobs-dlq</QueueUrl></ListQueuesResult><ResponseMetadata><RequestId>9e4fbb11</RequestId></ResponseMetadata></ListQueuesResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sqs.us-east-1.amazonaws.com/?Action=ListQueues&Version=2012-11-05"
+    },
+    {
+      "body": "<GetCallerIdentityResponse xmlns=\"https://sts.amazonaws.com/doc/2011-06-15/\"><GetCallerIdentityResult><Arn>arn:aws:iam::123456789012:user/deploy-bot</Arn><UserId>AIDACKCEVSQ6C2EXAMPLE</UserId><Account>123456789012</Account></GetCallerIdentityResult><ResponseMetadata><RequestId>7a62c49f-347e-4fc4-9331-6e8eEXAMPLE</RequestId></ResponseMetadata></GetCallerIdentityResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sts.amazonaws.com/?Action=GetCallerIdentity&Version=2011-06-15"
+    }
+  ],
+  "version": 1
+}

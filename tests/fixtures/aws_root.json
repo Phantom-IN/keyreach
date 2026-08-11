@@ -1,0 +1,59 @@
+{
+  "interactions": [
+    {
+      "body": "<GetAccountSummaryResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><GetAccountSummaryResult><SummaryMap><entry><key>Users</key><value>18</value></entry><entry><key>Roles</key><value>64</value></entry><entry><key>AccountMFAEnabled</key><value>0</value></entry></SummaryMap></GetAccountSummaryResult><ResponseMetadata><RequestId>0d7c33b1</RequestId></ResponseMetadata></GetAccountSummaryResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://iam.amazonaws.com/?Action=GetAccountSummary&Version=2010-05-08"
+    },
+    {
+      "body": "<ErrorResponse><Error><Type>Sender</Type><Code>ValidationError</Code><Message>Must specify userName when calling with non-User credentials</Message></Error><RequestId>7a62c49f-347e-4fc4-9331-6e8eEXAMPLE</RequestId></ErrorResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 400,
+      "url": "https://iam.amazonaws.com/?Action=GetUser&Version=2010-05-08"
+    },
+    {
+      "body": "<ErrorResponse><Error><Type>Sender</Type><Code>ValidationError</Code><Message>Must specify userName when calling with non-User credentials</Message></Error><RequestId>7a62c49f-347e-4fc4-9331-6e8eEXAMPLE</RequestId></ErrorResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 400,
+      "url": "https://iam.amazonaws.com/?Action=ListAccessKeys&Version=2010-05-08"
+    },
+    {
+      "body": "<ListAccountAliasesResponse xmlns=\"https://iam.amazonaws.com/doc/2010-05-08/\"><ListAccountAliasesResult><IsTruncated>false</IsTruncated><AccountAliases><member>northwind-prod</member></AccountAliases></ListAccountAliasesResult><ResponseMetadata><RequestId>91b4f2ae</RequestId></ResponseMetadata></ListAccountAliasesResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://iam.amazonaws.com/?Action=ListAccountAliases&Version=2010-05-08"
+    },
+    {
+      "body": "<ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Owner><ID>af1b2c3d</ID><DisplayName>northwind</DisplayName></Owner><Buckets><Bucket><Name>northwind-prod-assets</Name><CreationDate>2023-01-05T10:00:00.000Z</CreationDate></Bucket><Bucket><Name>northwind-db-backups</Name><CreationDate>2023-04-19T08:30:00.000Z</CreationDate></Bucket><Bucket><Name>northwind-terraform-state</Name><CreationDate>2022-11-02T16:45:00.000Z</CreationDate></Bucket></Buckets></ListAllMyBucketsResult>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://s3.amazonaws.com/"
+    },
+    {
+      "body": "<GetCallerIdentityResponse xmlns=\"https://sts.amazonaws.com/doc/2011-06-15/\"><GetCallerIdentityResult><Arn>arn:aws:iam::123456789012:root</Arn><UserId>123456789012</UserId><Account>123456789012</Account></GetCallerIdentityResult><ResponseMetadata><RequestId>7a62c49f-347e-4fc4-9331-6e8eEXAMPLE</RequestId></ResponseMetadata></GetCallerIdentityResponse>",
+      "headers": {
+        "content-type": "text/xml"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sts.amazonaws.com/?Action=GetCallerIdentity&Version=2011-06-15"
+    }
+  ],
+  "version": 1
+}

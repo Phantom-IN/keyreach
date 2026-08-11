@@ -15,7 +15,9 @@ even when the value is worthless.
 
 from __future__ import annotations
 
+import asyncio
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -689,3 +691,62 @@ def test_redactor_is_callable() -> None:
     redactor = Redactor([SECRET])
 
     assert redactor(f"saw {SECRET}") == redactor.redact(f"saw {SECRET}")
+
+
+# --------------------------------------------------------------------------
+# The hooks AWS needed (R1.3)
+# --------------------------------------------------------------------------
+
+
+def test_the_default_clock_is_real_and_timezone_aware() -> None:
+    """A naive timestamp would sign a request AWS rejects, and silently.
+
+    The clock is injectable so no other test depends on the real one; this is
+    the single test that checks the default is wired up at all.
+    """
+    before = datetime.now(tz=UTC)
+    stamped = ProbeClient().now()
+
+    assert stamped.tzinfo is not None
+    assert before <= stamped <= datetime.now(tz=UTC)
+
+
+def test_an_injected_clock_replaces_it_entirely() -> None:
+    """Which is what lets a signature be pinned in a test."""
+    pinned = datetime(2026, 3, 4, 5, 6, 7, tzinfo=UTC)
+
+    async def _check() -> None:
+        async with client(clock=lambda: pinned) as c:
+            assert ProbeContext(c, SECRET).now() == pinned
+
+    asyncio.run(_check())
+
+
+async def test_protect_registers_a_further_secret() -> None:
+    """A composite credential's parts must be masked, not only the whole string.
+
+    An AWS credential is pasted as ``id:secret``; a response echoing back only
+    the id would sail straight through a redactor seeded with the concatenation.
+    """
+    part = "AKIA" + "EXAMPLEPARTVALUE"
+
+    async with client() as c:
+        context = ProbeContext(c, f"{part}:whole-credential-string")
+
+        assert part in context.mask(f"saw {part}")
+
+        context.protect(part)
+
+        assert part not in context.mask(f"saw {part}")
+
+
+async def test_aggressive_is_off_unless_asked_for() -> None:
+    """`plan.md` §11: anything noisy is opt-in, never a default."""
+    async with client() as c:
+        assert ProbeContext(c, SECRET).aggressive is False
+        assert ProbeContext(c, SECRET, aggressive=True).aggressive is True
+
+
+async def test_repr_shows_whether_aggressive_probing_is_on() -> None:
+    async with client() as c:
+        assert "aggressive=False" in repr(ProbeContext(c, SECRET))

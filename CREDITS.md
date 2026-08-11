@@ -132,11 +132,24 @@ Both are recorded in the provider module.
 
 ### enumerate-iam — Andrés Riancho 💡 Reference
 
-<https://github.com/andresriancho/enumerate-iam>
+<https://github.com/andresriancho/enumerate-iam> · **GPL-3.0** (verified from the
+upstream repository, 2026-08-12) — **must not be copied**
 
-The model for **AWS read-only permission inference**. It is noisy by design —
-which is exactly why keyreach makes this style of enumeration **opt-in, flagged,
-and loudly warned** rather than default (see [`plan.md`](plan.md) §11).
+The model for **AWS read-only permission inference**, and the blueprint credited
+in `keyreach/providers/aws.py` (roadmap R1.3). It is noisy by design — thousands
+of attempted calls — which is exactly why keyreach makes this style of
+enumeration **opt-in, flagged, and loudly warned** rather than default (see
+[`plan.md`](plan.md) §11).
+
+Its license is the mirror image of gmapsapiscanner's, and the difference
+matters. gmapsapiscanner is MIT: reuse *would* have been permitted, and "nothing
+was copied" was a choice. enumerate-iam is **GPL-3.0**, which
+[`CLAUDE.md`](CLAUDE.md) rule 5 forbids copying into this Apache-2.0 project — so
+here "nothing was copied" is load-bearing rather than incidental. What keyreach
+took is the *idea* that an AWS credential's permissions can be mapped by
+attempting read-only calls. Every endpoint, API version, error code and success
+rule in the provider was written from AWS's own documentation, and each probe
+cites the page it came from.
 
 ### Pacu — Rhino Security Labs 📖 Studied only
 

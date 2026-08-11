@@ -49,6 +49,9 @@ from keyreach.core.models import Capability, ValidationResult
 from keyreach.core.registry import ProviderRegistry, default_registry
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from datetime import datetime
+
     from keyreach.core.provider import Provider
 
 
@@ -157,6 +160,8 @@ class Engine:
         cassette: Cassette | None = None,
         mode: RecordMode = RecordMode.OFF,
         enumerate_capabilities: bool = True,
+        aggressive: bool = False,
+        clock: Callable[[], datetime] | None = None,
         max_providers: int = MAX_PROVIDERS_PROBED,
     ) -> None:
         self.registry = registry if registry is not None else default_registry
@@ -169,6 +174,15 @@ class Engine:
         self.mode = mode
         #: Mirrors `--no-enumerate` (R1.5): validity and identity only.
         self.enumerate_capabilities = enumerate_capabilities
+        #: Mirrors `--aggressive` (R1.5). **Off by default, always** — probes
+        #: behind this flag are still read-only, but noisy enough to trip a
+        #: defender's alerting, which `plan.md` §11 requires be opt-in, flagged
+        #: and warned. The engine only carries the flag; refusing to act on it
+        #: without a user saying so is the CLI's job.
+        self.aggressive = aggressive
+        #: Injectable clock, used only for request signing (AWS SigV4, R1.3).
+        #: Nothing it returns reaches a verdict; see `ProbeClient.now`.
+        self.clock = clock
         self.max_providers = max_providers
 
     async def run(self, key: str) -> EngineResult:
@@ -192,11 +206,12 @@ class Engine:
             concurrency=self.concurrency,
             cassette=self.cassette,
             mode=self.mode,
+            clock=self.clock,
         )
 
         outcomes: list[ProviderOutcome] = []
         async with client:
-            context = ProbeContext(client, key)
+            context = ProbeContext(client, key, aggressive=self.aggressive)
             for provider, confidence in candidates:
                 outcomes.append(await self._probe(provider, confidence, key, context))
 
