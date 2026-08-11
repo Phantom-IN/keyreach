@@ -133,12 +133,22 @@ def test_imported_provider_classes_are_not_double_registered(
     assert registry.names().count("alpha") == 1
 
 
-def test_empty_provider_package_loads_cleanly() -> None:
-    """keyreach.providers has no plugins until R1.1; that must not be an error."""
-    empty = ProviderRegistry(PROVIDERS_PACKAGE)
+def test_the_real_provider_package_loads_cleanly() -> None:
+    """The shipped plugins load, validate, and come back in a stable order.
 
-    assert empty.providers() == ()
-    assert empty.names() == ()
+    Until R1.1 this asserted the package was *empty* — correct then, and its own
+    docstring said "until R1.1". Landing the Google plugin retired the premise
+    rather than the test: what it was really guarding is that scanning the real
+    package raises nothing and returns a deterministic order, which now has
+    something to be deterministic about.
+    """
+    registry = ProviderRegistry(PROVIDERS_PACKAGE)
+    names = registry.names()
+
+    assert "google" in names
+    assert list(names) == sorted(names)
+    assert len(names) == len(set(names))
+    assert [provider.name for provider in registry.providers()] == list(names)
 
 
 def test_default_registry_targets_the_real_provider_package() -> None:

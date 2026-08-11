@@ -1,0 +1,15 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":{\"code\":400,\"message\":\"API key not valid. Please pass a valid API key.\",\"status\":\"INVALID_ARGUMENT\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_INVALID\",\"domain\":\"googleapis.com\"}]}}",
+      "headers": {
+        "content-length": "228",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 400,
+      "url": "https://generativelanguage.googleapis.com/v1beta/models?key=<key>"
+    }
+  ],
+  "version": 1
+}

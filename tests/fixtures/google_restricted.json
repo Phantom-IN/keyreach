@@ -1,0 +1,65 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"Requests from referer <empty> are blocked.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_HTTP_REFERRER_BLOCKED\",\"domain\":\"googleapis.com\"}]}}",
+      "headers": {
+        "content-length": "238",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://generativelanguage.googleapis.com/v1beta/cachedContents?key=<key>"
+    },
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"Requests from referer <empty> are blocked.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_HTTP_REFERRER_BLOCKED\",\"domain\":\"googleapis.com\"}]}}",
+      "headers": {
+        "content-length": "238",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://generativelanguage.googleapis.com/v1beta/files?key=<key>"
+    },
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"Requests from referer <empty> are blocked.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_HTTP_REFERRER_BLOCKED\",\"domain\":\"googleapis.com\"}]}}",
+      "headers": {
+        "content-length": "238",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://generativelanguage.googleapis.com/v1beta/models?key=<key>"
+    },
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"Requests from referer <empty> are blocked.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_HTTP_REFERRER_BLOCKED\",\"domain\":\"googleapis.com\"}]}}",
+      "headers": {
+        "content-length": "238",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway&key=<key>"
+    },
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"Requests from referer <empty> are blocked.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_HTTP_REFERRER_BLOCKED\",\"domain\":\"googleapis.com\"}]}}",
+      "headers": {
+        "content-length": "238",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=museum&inputtype=textquery&key=<key>"
+    },
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"Requests from referer <empty> are blocked.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"API_KEY_HTTP_REFERRER_BLOCKED\",\"domain\":\"googleapis.com\"}]}}",
+      "headers": {
+        "content-length": "238",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://roads.googleapis.com/v1/nearestRoads?points=60.170880%2C24.942795&key=<key>"
+    }
+  ],
+  "version": 1
+}

@@ -1,0 +1,65 @@
+{
+  "interactions": [
+    {
+      "body": "{\"cachedContents\":[{\"name\":\"cachedContents/xyz789\",\"model\":\"models/gemini-2.0-pro\",\"displayName\":\"support-transcripts\"}]}",
+      "headers": {
+        "content-length": "121",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://generativelanguage.googleapis.com/v1beta/cachedContents?key=<key>"
+    },
+    {
+      "body": "{\"files\":[{\"name\":\"files/ab12cd34\",\"displayName\":\"quarterly-report.pdf\",\"mimeType\":\"application/pdf\",\"sizeBytes\":\"184320\"},{\"name\":\"files/ef56gh78\",\"displayName\":\"customer-list.csv\",\"mimeType\":\"text/csv\",\"sizeBytes\":\"20480\"}]}",
+      "headers": {
+        "content-length": "226",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://generativelanguage.googleapis.com/v1beta/files?key=<key>"
+    },
+    {
+      "body": "{\"models\":[{\"name\":\"models/gemini-2.0-flash\",\"displayName\":\"Gemini 2.0 Flash\"},{\"name\":\"models/gemini-2.0-pro\",\"displayName\":\"Gemini 2.0 Pro\"}]}",
+      "headers": {
+        "content-length": "144",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://generativelanguage.googleapis.com/v1beta/models?key=<key>"
+    },
+    {
+      "body": "{\"results\":[{\"formatted_address\":\"1600 Amphitheatre Pkwy, Mountain View, CA 94043, USA\"}],\"status\":\"OK\"}",
+      "headers": {
+        "content-length": "104",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway&key=<key>"
+    },
+    {
+      "body": "{\"candidates\":[],\"status\":\"REQUEST_DENIED\",\"error_message\":\"This API project is not authorized to use this API.\"}",
+      "headers": {
+        "content-length": "113",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=museum&inputtype=textquery&key=<key>"
+    },
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"roads.googleapis.com has not been used in project 402168891234 before or it is disabled.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"SERVICE_DISABLED\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"roads.googleapis.com\",\"consumer\":\"projects/402168891234\"}}]}}",
+      "headers": {
+        "content-length": "352",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://roads.googleapis.com/v1/nearestRoads?points=60.170880%2C24.942795&key=<key>"
+    }
+  ],
+  "version": 1
+}

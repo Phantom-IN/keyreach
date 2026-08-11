@@ -205,6 +205,26 @@ under `Unreleased` in the same pull request as any user-visible change.
   `python -m keyreach.report.schema --check`. Both checked-in artifacts are
   generated from code, so both are verified the same way.
 
+- **The Google `AIza` provider** (roadmap item **R1.1**) in
+  `keyreach/providers/google.py` — the first real plugin, and the point at which
+  keyreach can analyse a key. Six read-only probes: Gemini Files, Gemini Cached
+  Content, Gemini Models, Places, Geocoding and Roads. Blueprint credit
+  **gmapsapiscanner** (Ozgur Alp), license verified **MIT** from the upstream
+  repository; no code copied, every endpoint written from Google's own
+  documentation with each probe citing its source page.
+- Recovery of the **GCP project number** from a `SERVICE_DISABLED` error, read
+  from the structured `metadata.consumer` field rather than scraped from
+  localised prose. An exposed key that names its own project tells the recipient
+  which project to audit.
+- Validation that distinguishes *rejected* from *restricted* from *not enabled*.
+  Only `API_KEY_INVALID` means the key is not a key; a referrer or IP
+  restriction, or a disabled API, means a **live** key whose capability map is a
+  lower bound. Collapsing those into "invalid" would under-report an exposure.
+- Four committed cassettes — live key, invalid key, restriction-blocked key, and
+  the classic Maps-only key — constructed from Google's published response
+  shapes rather than recorded from a live key, which keyreach's own rules
+  forbid holding.
+
 ### Changed
 
 - **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
@@ -282,6 +302,21 @@ under `Unreleased` in the same pull request as any user-visible change.
   pull-request diff. Unused dependencies in a security tool are licenses to
   re-verify and installs to trust for no benefit, and they invite a second way
   to do a job that already has one.
+
+- **`plan.md` §11 now covers billable read probes.** "No spend" was written for
+  writes, sends and purchases. The Maps Platform meters *reads* and has no free
+  metadata endpoint, so establishing that an exposed key can call the Geocoding
+  API costs its owner a fraction of a cent. The rule now states the four
+  conditions under which that is acceptable — trivial and bounded, no free
+  equivalent, otherwise unestablishable, and billed to the person the report is
+  for — and requires `incurs_cost` on every metered probe.
+- **`CREDITS.md` and `THIRD_PARTY_LICENSES.md`: gmapsapiscanner is MIT.** It had
+  been recorded as "verify license before reuse". Verified from the upstream
+  repository: MIT, which would permit reuse with attribution. Nothing was copied
+  even so, and both files now say which of those two facts is which.
+- `implementation_plan.md` §3 names the provider `google.py` rather than
+  `google_aiza.py` — the registry key is `google`, and the file should match what
+  `--provider` accepts.
 
 ### Fixed
 

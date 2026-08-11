@@ -100,7 +100,7 @@ keyreach/
 │   │   ├── scoring.py              # pure severity model (§7)
 │   │   └── probes.py               # declarative YAML probe runner (§8)
 │   ├── providers/
-│   │   ├── google_aiza.py          # archetype 1  (credit: gmapsapiscanner)
+│   │   ├── google.py               # archetype 1  (credit: gmapsapiscanner, MIT)
 │   │   ├── openai.py               # archetype 2
 │   │   ├── aws.py                  # archetype 3
 │   │   └── ...                     # breadth per plan.md §8
@@ -118,7 +118,7 @@ keyreach/
 │   ├── golden/                     # snapshot reports for determinism tests
 │   ├── test_detect.py
 │   ├── test_scoring.py
-│   ├── test_providers_*.py
+│   ├── test_provider_*.py
 │   └── test_determinism.py
 ├── tools/                          # dev tooling; NOT shipped in the wheel
 │   └── guardrails/                 # workflows, ai_ban, network_isolation,
