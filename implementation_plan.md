@@ -255,6 +255,38 @@ Also enforced:
 
 ---
 
+### 4.2 Interface acceptance checkpoint (roadmap R1.4)
+
+Phase 0's promise was that **adding a provider touches only its own file and its fixtures**. R1.4 checked it against what actually happened, rather than against how it felt:
+
+| Item | Provider files | Core files | Other |
+| --- | --- | --- | --- |
+| R1.1 Google | `google.py`, 4 fixtures, its test | none | `test_registry.py` (a test whose premise — "no plugins yet" — had expired) |
+| R1.2 OpenAI + Anthropic | 2 plugins, 6 fixtures, 2 tests | none | a detection rule; an `ai_ban` **bug fix** the item exposed |
+| R1.3 AWS | `aws.py`, 3 fixtures, its test | **`http.py`, `engine.py`** | a detection rule |
+
+**The promise held twice and failed once.** The verdict is that the interface was *incomplete*, not *wrong*: all three members AWS added are generic, and AWS was merely the first provider to need them.
+
+- **`ctx.now()`** — needed by any provider that signs requests, not only AWS. Azure SAS, GCP service-account JWTs and every HMAC-signed vendor API carry a timestamp.
+- **`ctx.protect()`** — needed by any *composite* credential. Twilio's is literally `AccountSid:AuthToken` and is due in **R2.2**; MongoDB Atlas, Mailgun and Docker Hub are the same shape.
+- **`ctx.aggressive`** — `plan.md` §11 required this from the beginning ("any aggressive mode is off by default, explicitly flagged"). It had simply never had anything to gate.
+
+The test for "generic" is whether a *named, already-planned* provider needs it — not whether one can be imagined. All three pass that test.
+
+**The probe tables are deliberately not abstracted.** Four `enumerate` methods share a shape — gather, zip, build `Capability`, sort — and differ in exactly the places that carry the reasoning: how a request is authenticated (query parameter, bearer header, `x-api-key`, SigV4), how success is decided (an HTTP status, or a Maps body saying `REQUEST_DENIED` inside a 200), which access level is justified, and whether a capability may come from a documented vendor rule rather than a probe at all. An abstraction over that needs one callback per difference, which is the same code with indirection added, and it would displace the comments that justify each decision. The real shared abstraction is the **declarative probe runner** already specified in §8 and scheduled as **R2.8**; building half of it now means building it twice.
+
+What R1.4 built instead is `tests/test_provider_contract.py`: the contract asserted against every registered plugin, parametrised over the live registry so a plugin added later is held to it without anyone remembering. It pins metadata, `detect` purity and strictness, probe-table hygiene, that every provider has a detection rule, that a credited provider appears in `CREDITS.md` **and** in its own source, and the exact public surface of `ProbeContext` — so widening that surface again is an edit to a list somebody reviews, not a member that appears in a provider pull request and is never discussed.
+
+**Two defects the checkpoint found by measuring instead of reading.**
+
+1. **Every provider fetched its validation endpoint twice.** Each plugin makes its cheapest capability probe double as the liveness check, and each said in a comment that this cost "one request, not two". Counting them showed all four issuing it once in `validate` and again in `enumerate` — a whole wasted request per run against somebody's production service, which is precisely what `plan.md` §11 exists to limit. Fixed in `ProbeClient` with a per-run cache over idempotent requests rather than by threading the validation response into `enumerate`: the `Provider` signature stays untouched and every future provider gets the fix for free. `ProbeClient.requests_made` now counts what actually left, so the §11 claim is measurable rather than asserted.
+
+2. **`httpx.URL(url, params=None)` clears the query string** rather than leaving it alone, so a probe URL carrying its own `?a=b` would have been sent without it. No shipped provider passes a pre-built query, so nothing was mis-sent — but the next one to try would have been, silently. Found because three deliberately distinct URLs collapsed into one during the request-count measurement.
+
+Both are the argument for having a checkpoint at all: neither was visible in review, and both fell out of counting.
+
+---
+
 ## 5. Detection layer
 
 Two deterministic stages, in fixed order:
@@ -301,6 +333,7 @@ Patterns are loaded from `patterns/detection_rules.yml`. In "unknown" mode, all 
   - **`ctx.protect(secret)`** — registers a further secret with the redactor. A composite credential (`AKIA…:secret:token`) is seeded whole, which would not mask a response echoing back only the access key ID, and `iam:ListAccessKeys` does exactly that.
   - **`ctx.aggressive`** — set from `Engine(aggressive=False)`, surfaced as `--aggressive` in R1.5. Off by default, always (`plan.md` §11).
 - **A plugin still must not read the clock itself.** `ctx.now()` is the one sanctioned route and exists for request signing; anything it returns reaching a capability, a severity or a report is a bug.
+- **Idempotent requests are answered once per run** (R1.4). `ProbeClient` caches `GET`/`HEAD`/`OPTIONS` responses keyed exactly as a cassette is, `(method, redacted URL)`. This is sound for the reason the cassette layer already assumes — keyreach's probes are idempotent reads, so two identical requests in one run must give the same answer, and `Cassette.load` rejects a recording that says otherwise. `read_only_post` probes are **not** cached: POST is a read there by argument and review, not by HTTP semantics. `ProbeClient.requests_made` counts what actually left, so `plan.md` §11's "minimal probe counts" is a measurable claim rather than an asserted one; R1.5 can show it to the user.
 
 ---
 

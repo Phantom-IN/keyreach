@@ -62,7 +62,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/provider.py` — `Provider` base class.
 - `keyreach/core/detect.py` — deterministic pattern + entropy detection.
 - `keyreach/core/engine.py` — orchestration, concurrency, stable ordering.
-- `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard.
+- `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
 - `keyreach/providers/*` — one file (or YAML) per provider: `google.py`, `openai.py`, `anthropic.py`, `aws.py`. The two AI plugins share a probe-table shape and deliberately share no code; **R1.4** is the checkpoint that decides whether that abstraction is real, and extracting it early would answer that question by assuming it.
@@ -87,7 +87,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
      - `name` must be **lowercase and unique** — it is both the registry key and the literal value `--provider` matches.
      - `category` must be one of the **closed set** enforced by `core/registry.py`: `cloud`, `ai`, `payment`, `comms`, `email`, `devtools`, `database`, `monitoring`, `auth`, `generic`. It drives the v0.1 "≥10 providers across ≥4 categories" measure, so a typo would quietly inflate coverage. Call `validate_provider()` in your plugin's test to catch this before the registry does.
 3. Record fixtures for a **valid** and an **invalid/expired** key response; scrub secrets.
-4. Add tests: detection, provider behavior, and update golden snapshots.
+4. Add tests: detection, provider behavior, and update golden snapshots. `tests/test_provider_contract.py` already holds every registered plugin to the shared contract — metadata, `detect` purity, probe-table hygiene, attribution, and the `ProbeContext` surface — so your own test module only has to cover what is *specific* to your provider. If a contract test fails, fix the provider; do not weaken the contract.
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.

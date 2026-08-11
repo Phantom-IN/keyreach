@@ -455,6 +455,33 @@ class ProbeClient:
         self._transport = transport
         self._client: httpx.AsyncClient | None = None
 
+        #: Responses already fetched this run, keyed exactly as a cassette is —
+        #: ``(method, redacted URL)``. Added in R1.4, which measured what every
+        #: provider was actually doing and found all four fetching their
+        #: validation endpoint **twice**: once in ``validate`` and again in
+        #: ``enumerate``, where the same endpoint doubles as a capability probe.
+        #: Each plugin's docstring claimed "one request, not two"; none of them
+        #: was true.
+        #:
+        #: Caching here rather than threading the validation response into
+        #: ``enumerate`` keeps the ``Provider`` signature untouched and fixes it
+        #: for every provider at once, including ones not written yet. It is
+        #: sound for exactly the reason the cassette layer already assumes:
+        #: keyreach's probes are idempotent reads, so two identical requests in
+        #: one run must produce the same answer — ``Cassette.load`` rejects a
+        #: recording that says otherwise.
+        #:
+        #: **Only idempotent methods.** A ``read_only_post`` probe is a read by
+        #: argument and review, not by HTTP semantics, and this cache will not
+        #: assume otherwise.
+        self._responses: dict[tuple[str, str], ProbeResponse] = {}
+
+        #: Requests that actually reached the network or the cassette, as
+        #: opposed to being served from the cache above. `plan.md` §11 asks for
+        #: minimal probe counts; this is the number that claim is about, and
+        #: R1.5 can show it to the user.
+        self.requests_made = 0
+
         if mode is not RecordMode.OFF and cassette is None:
             msg = f"record mode {mode.value!r} requires a cassette"
             raise CassetteError(msg)
@@ -555,25 +582,44 @@ class ProbeClient:
 
         # Build the real target once, then redact it for every purpose other
         # than actually sending it.
-        target = str(httpx.URL(url, params=dict(params) if params else None))
+        #
+        # The two-branch form matters. `httpx.URL(url, params=None)` does not
+        # mean "leave the query alone" — it means "set the query to nothing",
+        # so a probe URL that already carried `?a=b` would be sent without it.
+        # No shipped provider does that today (they all pass a bare URL plus a
+        # params mapping), which is why this went unnoticed until R1.4 measured
+        # request counts and found three distinct URLs collapsing into one.
+        target = str(httpx.URL(url, params=dict(params)) if params else httpx.URL(url))
         redacted_url = self.redactor.redact(target)
 
+        # Idempotent requests are answered once per run. See `_responses`.
+        cacheable = upper in IDEMPOTENT_METHODS
+        if cacheable and (cached := self._responses.get((upper, redacted_url))):
+            return cached
+
         if self.mode is RecordMode.REPLAY:
-            return self._replay(upper, redacted_url)
+            probe_response = self._replay(upper, redacted_url)
+        else:
+            async with self._semaphore:
+                response = await self._send(upper, target, headers, content)
 
-        async with self._semaphore:
-            response = await self._send(upper, target, headers, content)
+            probe_response = ProbeResponse(
+                method=upper,
+                url=redacted_url,
+                status_code=response.status_code,
+                headers=self.redactor.redact_headers(dict(response.headers)),
+                text=self.redactor.redact(response.text),
+            )
 
-        probe_response = ProbeResponse(
-            method=upper,
-            url=redacted_url,
-            status_code=response.status_code,
-            headers=self.redactor.redact_headers(dict(response.headers)),
-            text=self.redactor.redact(response.text),
-        )
+            if self.mode is RecordMode.RECORD and self.cassette is not None:
+                self.cassette.record(probe_response)
 
-        if self.mode is RecordMode.RECORD and self.cassette is not None:
-            self.cassette.record(probe_response)
+        # Counted whether the answer came from a socket or a cassette, so a
+        # replayed test measures the same probe count a real run would make.
+        self.requests_made += 1
+
+        if cacheable:
+            self._responses[(upper, redacted_url)] = probe_response
 
         return probe_response
 

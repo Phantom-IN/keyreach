@@ -591,10 +591,17 @@ PROBES: Final[tuple[_Probe, ...]] = (
     ),
 )
 
-#: The probe whose endpoint doubles as the liveness check. Reused rather than
-#: duplicated, so a live credential costs one request here and not two. AWS
-#: documents that ``GetCallerIdentity`` needs no permissions at all, which makes
-#: it the one call that separates "not a credential" from "no access".
+#: The probe whose endpoint doubles as the liveness check.
+#:
+#: R1.4 measured this and found the claim that used to sit here — "one request,
+#: and not two" — was false: naming the same endpoint twice made the request
+#: twice, once in ``validate`` and again in ``enumerate``. It is one request now
+#: because ``ProbeClient`` answers a repeated idempotent GET from a per-run
+#: cache, not because of anything this line does.
+#:
+#: AWS documents that ``GetCallerIdentity`` needs no permissions at all,
+#: which makes it the one call that separates "not a credential" from
+#: "no access".
 VALIDATE_SERVICE: Final = "AWS STS Caller Identity"
 
 

@@ -437,7 +437,12 @@ async def test_delay_paces_requests(monkeypatch: pytest.MonkeyPatch) -> None:
 
     async with client(delay=0.25) as c:
         context = ProbeContext(c, SECRET)
-        await context.gather([context.get(API) for _ in range(3)])
+        # Three *distinct* URLs. Repeating one would be paced zero times since
+        # R1.4, because a repeated idempotent GET is answered from the per-run
+        # cache and never sent — which is the right behaviour for a flag whose
+        # whole purpose is to reduce traffic, but makes it a poor way to measure
+        # pacing.
+        await context.gather([context.get(f"{API}?n={n}") for n in range(3)])
 
     assert slept == [0.25, 0.25, 0.25]
 
@@ -750,3 +755,108 @@ async def test_aggressive_is_off_unless_asked_for() -> None:
 async def test_repr_shows_whether_aggressive_probing_is_on() -> None:
     async with client() as c:
         assert "aggressive=False" in repr(ProbeContext(c, SECRET))
+
+
+# --------------------------------------------------------------------------
+# The per-run response cache (R1.4)
+# --------------------------------------------------------------------------
+
+
+def counting_transport(seen: list[str]) -> httpx.MockTransport:
+    def handle(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        return httpx.Response(200, text='{"ok": true}')
+
+    return httpx.MockTransport(handle)
+
+
+async def test_a_repeated_idempotent_get_is_answered_once() -> None:
+    """The finding R1.4 was created by, fixed at the one place that owns I/O.
+
+    Every provider names its validation endpoint twice — once in `validate`,
+    once in `enumerate` where it doubles as a capability probe — and every one
+    of them was therefore fetching it twice while its docstring claimed
+    otherwise. `plan.md` §11 asks for minimal probe counts, and this is a whole
+    request per provider against somebody's production service.
+    """
+    seen: list[str] = []
+
+    async with client(transport=counting_transport(seen)) as c:
+        context = ProbeContext(c, SECRET)
+        first = await context.get(API)
+        second = await context.get(API)
+
+    assert seen == [API]
+    assert first == second
+    assert c.requests_made == 1
+
+
+async def test_distinct_urls_are_not_conflated() -> None:
+    seen: list[str] = []
+
+    async with client(transport=counting_transport(seen)) as c:
+        context = ProbeContext(c, SECRET)
+        await context.get(API, params={"a": "1"})
+        await context.get(API, params={"a": "2"})
+
+    assert len(seen) == 2
+    assert c.requests_made == 2
+
+
+async def test_a_read_only_post_is_never_cached() -> None:
+    """POST is a read here by argument and review, not by HTTP semantics.
+
+    The cache is sound because keyreach's GETs are idempotent — the same
+    assumption `Cassette` already makes when it rejects a duplicate recording.
+    Extending that to POST would be assuming something nobody has established.
+    """
+    seen: list[str] = []
+
+    async with client(transport=counting_transport(seen)) as c:
+        context = ProbeContext(c, SECRET)
+        await context.post(API, read_only_post=True)
+        await context.post(API, read_only_post=True)
+
+    assert len(seen) == 2
+    assert c.requests_made == 2
+
+
+async def test_the_cache_does_not_leak_between_runs() -> None:
+    """It is per-client, and the engine builds one client per key."""
+    seen: list[str] = []
+
+    for _ in range(2):
+        async with client(transport=counting_transport(seen)) as c:
+            await ProbeContext(c, SECRET).get(API)
+
+    assert len(seen) == 2
+
+
+async def test_a_cached_response_is_still_redacted() -> None:
+    """The cache stores the `ProbeResponse`, which is redacted on the way in."""
+    async with client(transport=responder(body=f'{{"echo": "{SECRET}"}}')) as c:
+        context = ProbeContext(c, SECRET)
+        await context.get(API)
+        cached = await context.get(API)
+
+    assert SECRET not in cached.text
+    assert REDACTED_PLACEHOLDER in cached.text
+
+
+async def test_a_url_that_already_has_a_query_keeps_it() -> None:
+    """`httpx.URL(url, params=None)` clears the query rather than leaving it.
+
+    Found in R1.4 while measuring probe counts: three URLs differing only in
+    their query string were sent as one, because passing `params=None` through
+    to httpx stripped the query and the per-run cache then treated them as the
+    same request. No shipped provider passes a pre-built query — they all give a
+    bare URL plus a params mapping — so nothing was mis-sent, but the next one
+    to try would have been, silently.
+    """
+    seen: list[str] = []
+
+    async with client(transport=counting_transport(seen)) as c:
+        context = ProbeContext(c, SECRET)
+        await context.gather([context.get(f"{API}?n={n}") for n in range(3)])
+
+    assert seen == [f"{API}?n=0", f"{API}?n=1", f"{API}?n=2"]
