@@ -12,17 +12,20 @@ keyreach itself is licensed under the Apache License 2.0 — see
 
 ## Status
 
-> **No third-party code or data has been incorporated yet.**
+> **No third-party code or data is incorporated into keyreach.**
 >
-> This file is a scaffold created in the repository's first commit (roadmap item
-> R0.1). The sections below are placeholders for sources keyreach *intends* to
-> reuse, per [`plan.md`](plan.md) §5. Each is marked **NOT YET INCORPORATED**
-> and carries no license text until the dependency or data actually lands.
+> The two sources this file was scaffolded for — secrets-patterns-db and
+> gitleaks — were evaluated in roadmap item **R0.5** and **neither is reused**.
+> Their sections below record the verification and its outcome, which is the
+> point of keeping them: a licensing decision is only auditable if the reasoning
+> survives.
 >
-> When a source is incorporated, the pull request that introduces it must, in
+> keyreach's detection patterns are instead written from each provider's own
+> public API documentation, with every rule citing its source URL.
+>
+> When a source *is* incorporated, the pull request that introduces it must, in
 > the same change: paste the verbatim upstream license text into its section
-> here, remove the **NOT YET INCORPORATED** marker, and update
-> [`NOTICE`](NOTICE) and [`CREDITS.md`](CREDITS.md).
+> here, and update [`NOTICE`](NOTICE) and [`CREDITS.md`](CREDITS.md).
 
 ---
 
@@ -69,41 +72,68 @@ Use this template:
 
 ## secrets-patterns-db
 
-- **Status:** **NOT YET INCORPORATED** — planned in roadmap item **R0.5**
-  (detection layer)
+- **Status:** **NOT REUSED** — resolved in roadmap item **R0.5**
 - **Upstream:** <https://github.com/mazen160/secrets-patterns-db>
 - **Author:** Mazin Ahmed (mazen160)
-- **License:** CC-BY-4.0 (Creative Commons Attribution 4.0 International)
-- **Verified:** *pending — verify from the upstream repository before reuse*
-- **What will be reused:** an attributed subset of detection regular
-  expressions, seeding `keyreach/patterns/detection_rules.yml`
-- **Modifications:** patterns will be subset, reformatted into keyreach's rule
-  schema, and re-verified. CC-BY-4.0 requires that these modifications be
-  indicated — they will be noted in the pattern file header.
+- **License:** **CC-BY-SA-4.0**, read from `LICENSE.md` at commit
+  `24984df1a3f78475132ed183cebce4452b601161`
+- **Verified:** 2026-08-11
+- **What is reused:** nothing
+- **Modifications:** not applicable
+
+This entry previously planned an attributed reuse under CC-BY-4.0, seeding
+`keyreach/patterns/detection_rules.yml`. Verifying the license from the upstream
+repository — rule 1 above — showed the assumption was wrong on two independent
+grounds:
+
+1. **The license is CC-BY-SA-4.0, not CC-BY-4.0.** `LICENSE.md` opens with
+   "Attribution-ShareAlike 4.0 International". ShareAlike requires adaptations to
+   be licensed under the same terms, and rule 2 above permits reuse only from
+   MIT / Apache-2.0 / BSD / ISC / CC-BY sources. The repository's `README.md`
+   separately states "This work is licensed under a Creative Commons Attribution
+   4.0 International License", contradicting its own license file. Where a grant
+   is ambiguous, the conservative reading governs — a permissive claim in a
+   README does not override the license file, and only the author can resolve
+   the discrepancy.
+2. **It self-declares AGPL content.** The same `README.md` states "Trufflehog
+   data is licensed under the AGPL". The rule set carries no per-rule
+   provenance, so TruffleHog-derived entries cannot be identified and excluded.
+   Copying TruffleHog is forbidden outright.
+
+**Outcome:** nothing is copied. keyreach's detection patterns are written from
+each provider's own public API documentation, and every rule records the vendor
+documentation URL it came from. This is the same treatment
+[`CREDITS.md`](CREDITS.md) already prescribes for AGPL prior art: study the
+behaviour, re-implement from primary sources. secrets-patterns-db remains
+credited there as prior art that was studied, which requires no attribution
+here.
 
 ### License text
 
-*To be added verbatim (CC-BY-4.0 legal code) when the patterns are
-incorporated.*
+Not applicable — no material is redistributed.
 
 ---
 
 ## gitleaks
 
-- **Status:** **NOT YET INCORPORATED** — planned in roadmap item **R0.5**
-  (detection cross-check)
+- **Status:** **NOT REUSED** — resolved in roadmap item **R0.5**
 - **Upstream:** <https://github.com/gitleaks/gitleaks>
 - **Author:** Zachary Rice and the gitleaks contributors
-- **License:** MIT
-- **Verified:** *pending — verify from the upstream repository before reuse*
-- **What will be reused:** detection rules used to cross-check and supplement
-  the seeded pattern set
-- **Modifications:** subset and translated into keyreach's rule schema
+- **License:** MIT, verified 2026-08-11
+- **What is reused:** nothing
+
+MIT would permit reuse with attribution, and the license was verified. But
+nothing has been copied: gitleaks serves as a behavioural cross-check, and
+comparing behaviour is not reuse. It is credited in
+[`CREDITS.md`](CREDITS.md).
+
+If rules are ever reused, this section gains the verbatim MIT license text and
+upstream copyright line, and [`NOTICE`](NOTICE) gains an attribution entry, in
+the same pull request.
 
 ### License text
 
-*To be added verbatim (MIT license text and upstream copyright line) when rules
-are incorporated.*
+Not applicable — no material is redistributed.
 
 ---
 
@@ -153,6 +183,7 @@ is an AI/LLM SDK.
 | ruff | dev | MIT | 2026-08-11 |
 | black | dev | MIT | 2026-08-11 |
 | mypy | dev | MIT | 2026-08-11 |
+| types-PyYAML | dev | Apache-2.0 | 2026-08-11 |
 | pre-commit | dev | MIT | 2026-08-11 |
 | build | dev | MIT | 2026-08-11 |
 | twine | dev | Apache-2.0 | 2026-08-11 |

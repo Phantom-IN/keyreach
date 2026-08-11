@@ -21,37 +21,55 @@ Third-party attributions
 --------------------------------------------------------------------------------
 
 This section lists third-party works whose code or data is incorporated into
-keyreach, together with the attribution their licenses require. Entries below
-are PRE-SEEDED for sources keyreach intends to reuse; each one is marked
-"NOT YET INCORPORATED" until the code or data actually lands in the repository.
-When a source is incorporated, the marker is removed in the same pull request
-that introduces it, and a matching full-license entry is added to
-THIRD_PARTY_LICENSES.md.
+keyreach, together with the attribution their licenses require. When a source is
+incorporated, its entry is added here in the same pull request, along with a
+matching full-license entry in THIRD_PARTY_LICENSES.md.
 
 keyreach is permissively licensed. Copyleft works (AGPL/GPL) are STUDIED ONLY
 and never copied; they are acknowledged in CREDITS.md and do not appear here,
 because no code or data from them is redistributed.
 
-1. secrets-patterns-db
-   Status:    NOT YET INCORPORATED (planned: roadmap item R0.5)
+No third-party code or data is currently incorporated into keyreach, so this
+section lists no attributions. The two entries previously pre-seeded here were
+resolved in roadmap item R0.5 and are recorded below for transparency.
+
+1. secrets-patterns-db  --  NOT REUSED (resolved R0.5)
    Author:    Mazin Ahmed (mazen160)
    Source:    https://github.com/mazen160/secrets-patterns-db
-   License:   Creative Commons Attribution 4.0 International (CC-BY-4.0)
-   Used for:  Seeding keyreach/patterns/detection_rules.yml with an attributed
-              subset of secret-detection regular expressions.
-   Attribution required by CC-BY-4.0: "Detection patterns derived from
-   secrets-patterns-db by Mazin Ahmed, licensed under CC-BY-4.0."
-   Modifications: patterns are subset, reformatted into keyreach's rule schema,
-   and re-verified; modifications are noted in the pattern file header.
+   Verified:  2026-08-11, read from LICENSE.md at commit
+              24984df1a3f78475132ed183cebce4452b601161
 
-2. gitleaks rules
-   Status:    NOT YET INCORPORATED (planned: roadmap item R0.5, cross-check)
+   This entry previously recorded a planned reuse under CC-BY-4.0. Verifying the
+   license from the upstream repository -- which is required before any reuse --
+   showed that assumption was wrong, on two independent grounds:
+
+     a. LICENSE.md is "Attribution-ShareAlike 4.0 International"
+        (CC-BY-SA-4.0), not CC-BY-4.0. ShareAlike obliges adaptations to carry
+        the same license, which is not among the licenses keyreach may reuse.
+        The repository's README.md separately claims CC-BY-4.0, contradicting
+        its own LICENSE file. An ambiguous grant is read conservatively.
+
+     b. That README.md also states "Trufflehog data is licensed under the
+        AGPL". The rule set carries no per-rule provenance, so AGPL-derived
+        entries cannot be identified and excluded. keyreach must never copy
+        TruffleHog.
+
+   Outcome: nothing is copied. keyreach's detection patterns are written from
+   each provider's own public API documentation, and every rule in
+   keyreach/patterns/detection_rules.yml records the vendor documentation URL it
+   came from. secrets-patterns-db is credited in CREDITS.md as prior art that
+   was studied, which requires no attribution here.
+
+2. gitleaks rules  --  NOT REUSED (resolved R0.5)
    Author:    Zachary Rice and the gitleaks contributors
    Source:    https://github.com/gitleaks/gitleaks
-   License:   MIT
-   Used for:  Cross-checking and supplementing detection patterns.
-   Attribution required by MIT: the full MIT license text and copyright notice
-   are reproduced in THIRD_PARTY_LICENSES.md if and when rules are reused.
+   License:   MIT (verified 2026-08-11)
+
+   MIT would permit reuse with attribution, but nothing has been copied.
+   gitleaks is used as a behavioural cross-check only, and is credited in
+   CREDITS.md. If rules are ever reused, an attribution entry is added here and
+   the full MIT license text to THIRD_PARTY_LICENSES.md, in the same pull
+   request.
 
 --------------------------------------------------------------------------------
 Policy for adding an entry here

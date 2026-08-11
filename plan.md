@@ -70,10 +70,14 @@ keyreach stands on existing work. This section records what exists, what we reus
 ### 5.1 Closest comparable — study, don't copy
 - **TruffleHog** (Truffle Security) — the state of the art: finds, verifies, and (via its `analyze` command) enumerates permissions/resources for credentials across many providers, though deep permission analysis covers only a minority of its detectors. **AGPL-3.0** — behavioral study only; re-implement from public docs. keyreach differentiates by single-key ergonomics, AI-provider depth, transparent severity, and disclosure reports, and by being fully deterministic and scan-free.
 
-### 5.2 Detection patterns — reusable with attribution
-- **secrets-patterns-db** (Mazin Ahmed / mazen160) — the largest open pattern database (1600+ regexes), format-agnostic, confidence-tagged. **CC-BY-4.0** — reusable *with attribution*; ideal to seed detection.
-- **gitleaks** — MIT-licensed scanner with a well-curated ruleset. **MIT** — reusable with notice.
-- **detect-secrets** (Yelp) — entropy-based detection plugins. Permissive (verify) — learn entropy fallback for generic tokens.
+### 5.2 Detection patterns
+- **secrets-patterns-db** (Mazin Ahmed / mazen160) — the largest open pattern database (1600+ regexes), format-agnostic, confidence-tagged. **Studied only; not reused.** This entry originally read "CC-BY-4.0 — reusable with attribution, ideal to seed detection". Verifying that from the upstream repository before reuse (as §10 requires) showed the assumption was wrong, on two independent grounds:
+  - Its `LICENSE.md` is **CC-BY-SA-4.0** ("Attribution-ShareAlike 4.0 International"), not CC-BY-4.0. ShareAlike obliges adaptations to carry the same license, which does not fit a permissively-licensed project. Its `README.md` separately claims CC-BY-4.0, contradicting its own license file; an ambiguous grant is read conservatively.
+  - That `README.md` also states *"Trufflehog data is licensed under the AGPL"*, and the rule set carries no per-rule provenance, so AGPL-derived entries cannot be identified and excluded. Copying TruffleHog is forbidden outright (§5.1).
+
+  keyreach therefore writes its detection patterns from **each provider's own public API documentation**, the same treatment §5.1 already mandates for AGPL prior art. A key's prefix and length are published facts about a format, not expressive work. Every rule records the vendor documentation URL it came from.
+- **gitleaks** — MIT-licensed scanner with a well-curated ruleset. **MIT** — reusable with notice; currently used as a behavioural cross-check only, with nothing copied.
+- **detect-secrets** (Yelp) — entropy-based detection plugins. Permissive (verify) — the entropy fallback for generic tokens is learned from its *approach* and re-implemented; no code reused.
 
 ### 5.3 Validation & capability-enumeration methodology
 - **KeyHacks** (streaak) — the community cookbook of per-provider validation recipes across ~80+ providers. Primary methodology source; expect drift, re-verify each recipe against live docs. Methods (which endpoint to hit) are facts and freely re-implementable.
