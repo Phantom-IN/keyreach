@@ -202,27 +202,50 @@ plugin:
 `keyreach/core/provider.py`:
 
 ```python
-class Provider:
+class Provider(ABC):
     name: str                    # "google", "openai", "aws", "stripe", ...
     category: str                # "cloud" | "ai" | "payment" | "comms" | ...
     docs_url: str
     rotation_guide_url: str | None = None
     credit: str | None = None    # upstream project this plugin derives from
 
+    @abstractmethod
     def detect(self, key: str) -> float:
         """Pure. Confidence 0.0-1.0 that `key` belongs to this provider."""
-        raise NotImplementedError
 
-    async def validate(self, key: str, ctx: "ProbeContext") -> ValidationResult:
+    @abstractmethod
+    async def validate(self, key: str, ctx: ProbeContext) -> ValidationResult:
         """Cheapest read-only liveness + identity check."""
-        raise NotImplementedError
 
-    async def enumerate(self, key: str, ctx: "ProbeContext") -> list[Capability]:
+    @abstractmethod
+    async def enumerate(self, key: str, ctx: ProbeContext) -> list[Capability]:
         """Read-only probes mapping full scope. Must return a stably-sorted list."""
-        raise NotImplementedError
 ```
 
 `ProbeContext` exposes only the sanctioned, recordable HTTP surface (`ctx.get(...)`, `ctx.post(...)`) plus config (delay, timeouts). Plugins must not import `httpx` or open sockets directly — CI forbids it (§11).
+
+**Notes on the implementation (landed in R0.4).**
+
+- **`Provider` is an ABC**, not a base class raising `NotImplementedError`. A plugin missing `enumerate` fails when the registry loads it, rather than halfway through probing a live key.
+- **`ProbeContext` is currently an empty `Protocol`** declared in `core/provider.py`. R0.6 owns its real surface, and defines the concrete rate-limited/recording/redacting client in `core/http.py`. Declaring it now — rather than leaving the parameter untyped — means R0.6 can fill in `get`/`post` without touching a single provider signature. Being structurally empty it currently accepts any object; that is a known, temporary gap.
+- **`detect()` returning `0.0` means "not mine".** The registry treats any positive confidence as a candidate worth probing, and probing the wrong provider is wasted authentication traffic against somebody's production service.
+
+### 4.1 Registry (`keyreach/core/registry.py`)
+
+`ProviderRegistry` scans a package for concrete `Provider` subclasses. It is parameterised by package name, so tests build registries over fixture packages instead of mutating global state; `default_registry` is the shared instance over `keyreach.providers`.
+
+Two ordering rules keep discovery deterministic:
+
+- **Module names are sorted before import.** `pkgutil` walks a package in filesystem order, which varies by platform and checkout.
+- **Results are ordered by an explicit key.** Providers sort by `name`; detection candidates sort by descending confidence then `name`, per §5.
+
+Also enforced:
+
+- **Category is a closed set** — `cloud`, `ai`, `payment`, `comms`, `email`, `devtools`, `database`, `monitoring`, `auth`, `generic`. Category drives the v0.1 "≥10 providers across ≥4 categories" measure (`plan.md` §13), so a typo'd category would quietly inflate coverage. `validate_provider()` is public so plugin authors can assert their own metadata in their own tests.
+- **Names must be lowercase and unique.** The name is both the registry key and the literal `--provider` value.
+- **Ownership is by definition site.** Only classes whose `__module__` matches the scanned module are registered, so a provider importing another's class for reuse does not register it twice.
+- **Underscore-prefixed modules are skipped**, and are the place for shared helpers.
+- **`detect()`'s return value is validated at the boundary** — rejected if non-numeric, boolean (a `bool` is an `int` in Python and would rank as `1.0`), or outside `0.0`–`1.0`.
 
 ---
 
