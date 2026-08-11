@@ -80,8 +80,31 @@ under `Unreleased` in the same pull request as any user-visible change.
 - `keyreach/providers/` — the plugin package, empty until **R1.1** adds the
   Google `AIza` archetype.
 
+- Detection layer (roadmap item **R0.5**) in `keyreach/core/detect.py`: anchored
+  structural matching against `keyreach/patterns/detection_rules.yml`, followed
+  by a deterministic Shannon-entropy fallback for tokens no rule claims. Both
+  stages are pure functions of the key, and results rank by confidence then
+  provider then rule id, so repeated runs are identical.
+- 20 detection rules covering 15 providers across cloud, AI, payment, comms,
+  email and dev-platform categories. Every rule is anchored and cites the vendor
+  documentation URL its format came from.
+- `shannon_entropy()` and `looks_like_secret()`. The entropy stage runs only
+  behind shape gates — minimum length, credential charset, path/URL rejection,
+  and a required digit and letter — because raw entropy rates English prose
+  above a hex digest and would otherwise report every sentence in a codebase.
+  It never names a provider, since that signal cannot.
+
 ### Changed
 
+- **Detection patterns are written from vendor documentation, not seeded from
+  secrets-patterns-db.** The plan assumed that database was CC-BY-4.0 and could
+  be subset with attribution. Verifying the license from the upstream repository
+  before reuse showed it is **CC-BY-SA-4.0** — ShareAlike, which keyreach may not
+  reuse — and that its README self-declares AGPL TruffleHog content with no
+  per-rule provenance, making the affected entries impossible to exclude. Nothing
+  was copied. `plan.md` §5.2, `implementation_plan.md` §5, `NOTICE`,
+  `THIRD_PARTY_LICENSES.md` and `CREDITS.md` were all corrected to record the
+  finding and its reasoning.
 - The CI workflow no longer generates its markdownlint config inline; it reads
   the checked-in `.markdownlint-cli2.jsonc`. CI remains hygiene-only —
   ruff/black/mypy/pytest are wired into it in **R0.9**, which owns the pipeline.

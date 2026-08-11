@@ -256,7 +256,17 @@ Two deterministic stages, in fixed order:
 1. **High-confidence structural match** — unique prefixes/formats: `sk-ant-` (Anthropic), `sk-` (OpenAI), `AKIA`/`ASIA` (AWS), `AIza` (Google), `xox[bap]-` (Slack), `ghp_`/`gho_`/`github_pat_` (GitHub), `sk_live_`/`sk_test_`/`rk_` (Stripe), `SG.` (SendGrid), `AC…`+token (Twilio), etc. Returns high confidence.
 2. **Entropy + context fallback** — for generic tokens, a deterministic Shannon-entropy threshold plus surrounding-context hints (learned from detect-secrets' approach, re-implemented). Never a model.
 
-Patterns are loaded from `patterns/detection_rules.yml`, seeded from **secrets-patterns-db** (CC-BY-4.0, attributed in `NOTICE`) and cross-checked against **gitleaks** rules (MIT). In "unknown" mode, all `detect()` run and results are ranked by (confidence, then provider name) for stable ordering. Ambiguity (e.g. a bare `AIza`) is resolved at the **enumerate** stage, not here.
+Patterns are loaded from `patterns/detection_rules.yml`. In "unknown" mode, all `detect()` run and results are ranked by (confidence, then provider name) for stable ordering. Ambiguity (e.g. a bare `AIza`) is resolved at the **enumerate** stage, not here.
+
+**Pattern provenance (settled in R0.5).** This section originally read "seeded from secrets-patterns-db (CC-BY-4.0, attributed in `NOTICE`)". Verifying that license from the upstream repository showed it is **CC-BY-SA-4.0**, and that the database self-declares the inclusion of AGPL TruffleHog data without per-rule provenance — see `plan.md` §5.2 for the full finding. Patterns are therefore written from **vendor documentation**, and every rule carries a `source` URL so it can be re-verified. `gitleaks` (MIT) remains a behavioural cross-check with nothing copied.
+
+**Notes on the implementation (landed in R0.5).**
+
+- Rules are **anchored** (`^...$`). keyreach receives one key, not a corpus, so an unanchored pattern matching a key embedded in a longer string is a false positive rather than a feature.
+- Rules load **sorted by `id`**, so reordering the YAML cannot change behaviour, and ids must be unique because they break ranking ties.
+- Overlapping prefixes are disambiguated **in the pattern**, not by rule order: the OpenAI rule uses a negative lookahead to exclude `sk-ant-` (Anthropic) and OpenAI's own more specific prefixes. Relying on iteration order would make correctness depend on file layout.
+- A malformed regex or duplicate id fails at **load time**, not mid-scan.
+- **Entropy stage.** Shannon entropy alone is a poor detector — English prose scores *higher* than a hex digest — so it runs behind gates that first establish token shape: minimum length 20, a credential charset, rejection of path/URL shapes, and a required digit and letter. It runs only when no structural rule matched, always yields `provider=None` (it cannot attribute), and carries a flat low confidence because the signal says "looks like a secret", never whose.
 
 ---
 

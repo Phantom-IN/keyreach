@@ -43,32 +43,53 @@ from public provider documentation. No TruffleHog code or detector data is
 copied into keyreach. keyreach differentiates on single-key ergonomics,
 AI-provider depth, transparent computed severity, and disclosure-ready reports.
 
-### secrets-patterns-db — Mazin Ahmed (mazen160) ♻️ Reusable
+### secrets-patterns-db — Mazin Ahmed (mazen160) 📖 Studied only
 
-<https://github.com/mazen160/secrets-patterns-db> · CC-BY-4.0
+<https://github.com/mazen160/secrets-patterns-db> · CC-BY-SA-4.0
 
-The largest open, format-agnostic, confidence-tagged database of secret
-patterns (1600+ regexes). keyreach **seeds its detection ruleset from an
-attributed subset** of this database. Reuse requires attribution under CC-BY-4.0
-— recorded in [`NOTICE`](NOTICE) and in the pattern file header.
+The largest open, format-agnostic, confidence-tagged database of secret patterns
+(1600+ regexes), and a genuinely valuable piece of community work — it is the
+reason a project like keyreach can reason about key formats at all without
+starting from scratch.
 
-### gitleaks — Zachary Rice and contributors ♻️ Reusable
+keyreach originally planned to seed its detection ruleset from an attributed
+subset. Verifying the license before reuse — which this project requires — moved
+it to **studied only**, for two independent reasons:
 
-<https://github.com/gitleaks/gitleaks> · MIT
+- Its `LICENSE.md` is **CC-BY-SA-4.0**, not the CC-BY-4.0 its README claims.
+  ShareAlike obliges adaptations to carry the same license, which does not fit a
+  permissively-licensed project, and an ambiguous grant is read conservatively.
+- That README also notes *"Trufflehog data is licensed under the AGPL"*, and the
+  rule set carries no per-rule provenance, so AGPL-derived entries cannot be
+  separated out.
 
-A well-curated, battle-tested ruleset. keyreach **cross-checks and supplements**
-its detection patterns against gitleaks rules. MIT reuse requires the license
-text and copyright notice, reproduced in
-[`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md) when rules are reused.
+So keyreach writes its patterns from vendor documentation instead, and each rule
+cites its source. The full reasoning is in
+[`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md). None of this is a
+criticism of the project — it is a licensing mismatch, not a quality one, and
+the database remains a useful cross-check.
 
-### detect-secrets — Yelp ♻️ Reusable (verify before reuse)
+### gitleaks — Zachary Rice and contributors ♻️ Reusable (not currently reused)
+
+<https://github.com/gitleaks/gitleaks> · MIT (verified)
+
+A well-curated, battle-tested ruleset. keyreach uses it as a **behavioural
+cross-check** on its own detection patterns — comparing behaviour is not reuse,
+so no attribution is owed today. MIT would permit actual reuse with the license
+text and copyright notice reproduced in
+[`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
+
+### detect-secrets — Yelp 💡 Reference
 
 <https://github.com/Yelp/detect-secrets> · Apache-2.0 (verify at reuse time)
 
-Entropy-based detection plugins. keyreach learns its **entropy fallback** for
-generic, prefix-less tokens from this approach and re-implements it as a
-deterministic Shannon-entropy threshold. Any direct reuse gets an attribution
-entry.
+Entropy-based detection plugins. keyreach's **entropy fallback** for generic,
+prefix-less tokens is re-implemented from this *approach*: measure Shannon
+entropy, but only behind gates that first establish the string is token-shaped.
+That framing is what makes the technique usable — raw entropy rates English
+prose above a hex digest — and it is the idea, not the code, that keyreach
+borrows. No code is reused, so no attribution entry is owed; any direct reuse
+would get one.
 
 ---
 
