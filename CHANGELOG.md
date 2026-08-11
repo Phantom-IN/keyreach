@@ -164,6 +164,38 @@ under `Unreleased` in the same pull request as any user-visible change.
   `git ls-files`, which lists tracked files only and therefore skipped every
   newly added file in a pull request. A planted-secret test pins that.
 
+- CI guardrails (roadmap item **R0.9**) in `tools/guardrails/`, completing
+  **Phase 0**. Four checks — `ai_ban`, `network_isolation`, `read_only` and
+  `no_secrets` — each a Python module exposing `check()`, so one implementation
+  runs as a CI job, as a pre-commit hook, and under `pytest`. Run them with
+  `python -m tools.guardrails`. Not shipped in the wheel: installing keyreach
+  gets you a key analyser, not a linter.
+- **Every guardrail is tested by planting the violation it exists to catch.**
+  `tests/test_guardrails.py` adds an AI SDK, a direct socket under `providers/`,
+  and a non-idempotent probe, and asserts each is caught — R0.9's acceptance
+  criterion, stated as a failure and verified as one. Negative controls too: a
+  check that rejects valid code gets switched off.
+- `ai_ban` walks the AST, so an import inside a function body is caught, and it
+  resolves `importlib.import_module("openai")`, which no import-based linter
+  sees. It reads every declared dependency group, not just runtime.
+- `network_isolation` is an **independent implementation**, not a wrapper around
+  ruff's `banned-api` rule. A test proves it by planting a dynamic import,
+  running ruff over it — which passes cleanly — and asserting this check still
+  rejects it. The provider fixture packages under `tests/` are held to the same
+  rule as real plugins.
+- `read_only` rejects `put`/`patch`/`delete` outright, `post` without
+  `read_only_post=True`, and any `request()` call in plugin code; it also scans
+  declarative YAML probes, which AST scanning cannot see.
+- A **100% coverage floor** over `keyreach` and `tools`, a **3.11/3.12/3.13**
+  test matrix (every version the classifiers claim), a golden-report drift check
+  alongside the schema one, a `package` job that installs the built wheel into a
+  clean environment and exercises it from outside the source tree, and a single
+  `ci` anchor job so branch protection needs one required check rather than
+  eight.
+- `python -m tests.regenerate_goldens --check` — the verify half, mirroring
+  `python -m keyreach.report.schema --check`. Both checked-in artifacts are
+  generated from code, so both are verified the same way.
+
 ### Changed
 
 - **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
@@ -214,6 +246,19 @@ under `Unreleased` in the same pull request as any user-visible change.
   read exactly once, at the outermost boundary.
 - `plan.md` §7 gains a tenth required report content ("what could not be
   determined") and a note on what a report must not claim.
+- **`ai_ban` bans model-inference endpoints, not provider hostnames.**
+  `implementation_plan.md` §11 said to "grep source for known model API
+  hostnames too". That rule would have made roadmap items **R1.1 and R1.2
+  impossible**: enumerating what an exposed Gemini or OpenAI key can reach *is*
+  keyreach's product, and doing it means writing `https://api.openai.com/v1/models`
+  into a provider plugin. The distinction that matters is not which host is
+  named but what is asked of it — listing models is a read-only capability
+  probe, `POST /v1/chat/completions` is inference. `plan.md` §1 now states this
+  in product terms and §11 gained a §11.1.
+- The CI workflow no longer runs hygiene checks only. It now gates every pull
+  request on the four guardrails, ruff/black/mypy, tests with a coverage floor,
+  both drift checks, and a wheel-install check — the gates that had been running
+  on author and reviewer discipline since R0.2.
 
 ### Deprecated
 

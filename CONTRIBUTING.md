@@ -25,8 +25,13 @@ By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 ## The hard rules
 
 These are non-negotiable. A pull request that breaks one of them will not be
-merged, no matter how good the rest of it is. Most are enforced by CI once the
-guardrails land in roadmap item **R0.9**.
+merged, no matter how good the rest of it is. Most are **enforced by CI** — the
+`ai_ban`, `network_isolation`, `read_only` and `no_secrets` guardrails, which
+live in `tools/guardrails/` and also run as a pre-commit hook. Run them yourself
+with `python -m tools.guardrails`.
+
+Each guardrail has a test that plants the violation it exists to catch, so none
+of them is taken on trust. If you add one, add that test too.
 
 1. **No AI/LLM. Anywhere. Ever.** Zero AI/LLM calls, zero AI/LLM SDK
    dependencies. Everything is rule-based. keyreach handles live secrets
@@ -99,10 +104,16 @@ keyreach <KEY> --report md -o out.md
 keyreach <KEY> --json
 ```
 
-Note that CI runs **hygiene checks only** until roadmap item **R0.9** wires the
-full pipeline (`ai_ban`, `network_isolation`, `read_only`, schema drift, plus
-ruff/black/mypy/pytest). Until then `pre-commit` is what actually holds the
-line, so please install it rather than relying on a green check mark.
+CI runs exactly these gates, so a green `pre-commit` run locally means a green
+build: the four guardrails, ruff/black/mypy, `pytest` at 100% coverage across
+`keyreach` and `tools`, the two drift checks (`report.schema.json` and
+`tests/golden/`), a build of the wheel that is installed and exercised from
+outside the source tree, and the governance and Markdown checks. Tests run on
+Python 3.11, 3.12 and 3.13.
+
+Please still install `pre-commit` — finding a violation at commit time is much
+cheaper than finding it after a red build, and the secret scan in particular
+saves you from a push GitHub will reject.
 
 **Never run keyreach against keys you don't own or aren't authorized to test.**
 See [`SECURITY.md`](SECURITY.md).
