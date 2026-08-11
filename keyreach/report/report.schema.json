@@ -1,0 +1,331 @@
+{
+  "$defs": {
+    "AccessLevel": {
+      "description": "How much a key can do against one service. UNKNOWN means undetermined.",
+      "enum": [
+        "read",
+        "write",
+        "admin",
+        "unknown"
+      ],
+      "title": "AccessLevel",
+      "type": "string"
+    },
+    "Capability": {
+      "additionalProperties": false,
+      "description": "A single confirmed capability: one service the key can reach, at a known access level, with evidence proving it.",
+      "properties": {
+        "service": {
+          "description": "Reachable service, e.g. 'Gemini Files API', 'S3', 'Stripe Charges'.",
+          "minLength": 1,
+          "title": "Service",
+          "type": "string"
+        },
+        "access": {
+          "$ref": "#/$defs/AccessLevel",
+          "description": "Confirmed access level. UNKNOWN when no rule could decide."
+        },
+        "detail": {
+          "description": "What the key can do here, e.g. 'Can list uploaded files'.",
+          "minLength": 1,
+          "title": "Detail",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Masked request plus a benign response summary proving the access. Never contains an unmasked key unless --unmask was passed.",
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "risk_weight": {
+          "description": "Plugin-declared base risk for this capability, 0-100.",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Risk Weight",
+          "type": "integer"
+        },
+        "data_sensitive": {
+          "default": false,
+          "description": "Reaches private or user data (records, files, messages, PII)?",
+          "title": "Data Sensitive",
+          "type": "boolean"
+        },
+        "incurs_cost": {
+          "default": false,
+          "description": "Can spend money or send communications (inference, cloud, SMS)?",
+          "title": "Incurs Cost",
+          "type": "boolean"
+        },
+        "resource_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Specific resource this capability reaches, if identified.",
+          "title": "Resource Ref"
+        },
+        "poc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Safe, read-only proof-of-concept command for the report.",
+          "title": "Poc"
+        }
+      },
+      "required": [
+        "service",
+        "access",
+        "detail",
+        "evidence",
+        "risk_weight"
+      ],
+      "title": "Capability",
+      "type": "object"
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "description": "Account identity behind the key, as far as the provider discloses it. Every field is optional.",
+      "properties": {
+        "account": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Account, organisation, or project identifier.",
+          "title": "Account"
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owning user or team, where exposed.",
+          "title": "Owner"
+        },
+        "plan_or_tier": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Billing plan or tier, which often bounds the blast radius.",
+          "title": "Plan Or Tier"
+        },
+        "extra": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Provider-specific identity details. Values are strings so the report renders and serializes deterministically; convert at the provider boundary rather than storing mixed types here.",
+          "title": "Extra",
+          "type": "object"
+        }
+      },
+      "title": "Identity",
+      "type": "object"
+    },
+    "Severity": {
+      "description": "Computed severity band, from the confirmed capabilities alone.",
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "ValidationResult": {
+      "additionalProperties": false,
+      "description": "Outcome of the liveness check: whether the provider accepted the key, and any identity it disclosed.",
+      "properties": {
+        "valid": {
+          "description": "Did the provider accept this key?",
+          "title": "Valid",
+          "type": "boolean"
+        },
+        "identity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Identity, when the validation call exposed one."
+        },
+        "note": {
+          "default": "",
+          "description": "Human-readable qualifier — why a key was rejected, or which restriction (referrer/IP/app) appears to be in force.",
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "valid"
+      ],
+      "title": "ValidationResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A keyreach finding: what an exposed API key can reach, its computed severity, the evidence behind each capability, and how to remediate.",
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "description": "Report schema version. Bumped on any breaking shape change.",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tool": {
+      "const": "keyreach",
+      "default": "keyreach",
+      "description": "Producing tool, for reproducibility.",
+      "title": "Tool",
+      "type": "string"
+    },
+    "tool_version": {
+      "description": "keyreach version that produced this.",
+      "minLength": 1,
+      "title": "Tool Version",
+      "type": "string"
+    },
+    "provider": {
+      "description": "Detected provider, e.g. 'google'.",
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "provider_category": {
+      "description": "Provider category, e.g. 'cloud', 'ai', 'payment', 'comms'.",
+      "minLength": 1,
+      "title": "Provider Category",
+      "type": "string"
+    },
+    "generated_at": {
+      "description": "When this report was produced. Timezone-aware and engine-injected; the only field that legitimately varies between identical runs.",
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "key_fingerprint": {
+      "description": "Masked key, e.g. 'AIza****************************3xY'. The full secret appears only when --unmask is passed.",
+      "minLength": 1,
+      "title": "Key Fingerprint",
+      "type": "string"
+    },
+    "title": {
+      "description": "One-line finding title.",
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "severity": {
+      "$ref": "#/$defs/Severity",
+      "description": "Computed band, never provider-assigned."
+    },
+    "impact": {
+      "description": "One-line statement of real-world impact.",
+      "minLength": 1,
+      "title": "Impact",
+      "type": "string"
+    },
+    "severity_rationale": {
+      "description": "The specific confirmed capabilities that produced the band. This is the bounty argument, and what lets a triager verify the claim.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Severity Rationale",
+      "type": "array"
+    },
+    "validation": {
+      "$ref": "#/$defs/ValidationResult",
+      "description": "Liveness and identity outcome."
+    },
+    "capabilities": {
+      "description": "Confirmed capabilities, stably sorted by service then access.",
+      "items": {
+        "$ref": "#/$defs/Capability"
+      },
+      "title": "Capabilities",
+      "type": "array"
+    },
+    "remediation": {
+      "description": "Provider-specific rotation and restriction guidance.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Remediation",
+      "type": "array"
+    },
+    "rotation_guide_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Provider's key rotation documentation.",
+      "title": "Rotation Guide Url"
+    },
+    "docs_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Provider's API documentation.",
+      "title": "Docs Url"
+    }
+  },
+  "required": [
+    "tool_version",
+    "provider",
+    "provider_category",
+    "generated_at",
+    "key_fingerprint",
+    "title",
+    "severity",
+    "impact",
+    "validation"
+  ],
+  "title": "Report",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Phantom-IN/keyreach/main/keyreach/report/report.schema.json"
+}

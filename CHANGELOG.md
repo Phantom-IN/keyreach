@@ -43,11 +43,32 @@ under `Unreleased` in the same pull request as any user-visible change.
   R1.6. It refuses to publish if the git tag does not match `__version__`, or if
   the test suite fails.
 
+- Core data models (roadmap item **R0.3**) in `keyreach/core/models.py`:
+  `Capability`, `Identity`, `ValidationResult` and `Report`, plus the
+  `AccessLevel` and `Severity` enums. Every model is frozen and rejects unknown
+  fields, `Report.capabilities` is sorted on construction so a concurrent probe
+  order can never reach the output, and `Report.generated_at` must be
+  timezone-aware.
+- `Severity.rank` and explicit comparison operators, giving the bands a fixed
+  order for `--fail-on` (**R1.5**). Without them `StrEnum` would compare
+  lexicographically, making `Severity.HIGH > Severity.CRITICAL` true.
+- `keyreach/report/report.schema.json` — the published JSON Schema for `--json`
+  output, generated from the models and shipped inside the package. Carries a
+  `schema_version` so consumers can branch on the contract version.
+- `keyreach/report/schema.py`, which generates that schema:
+  `python -m keyreach.report.schema --write` regenerates it and `--check` exits
+  non-zero when it is stale. The `--check` assertion runs under `pytest` today;
+  **R0.9** wires it in as the CI schema-drift job.
+
 ### Changed
 
 - The CI workflow no longer generates its markdownlint config inline; it reads
   the checked-in `.markdownlint-cli2.jsonc`. CI remains hygiene-only —
   ruff/black/mypy/pytest are wired into it in **R0.9**, which owns the pipeline.
+- `implementation_plan.md` §4 now reflects the models as built: `StrEnum` rather
+  than `(str, Enum)`, `Identity.extra` typed `dict[str, str]`, and the frozen /
+  closed-schema / sorting / timezone rules recorded as binding on every provider
+  plugin.
 
 ### Deprecated
 
