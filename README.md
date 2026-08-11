@@ -27,9 +27,9 @@
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Follow along in
-> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** (Phase 0) and **R1.1**–**R1.3**
-> are done. Next is **R1.4**, the interface checkpoint, and then **R1.5**, the
-> CLI that makes all of it usable from a terminal.
+> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** (Phase 0) and **R1.1**–**R1.4**
+> are done. Next is **R1.5**, the CLI that makes all of it usable from a
+> terminal.
 
 ---
 

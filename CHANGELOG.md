@@ -297,6 +297,20 @@ under `Unreleased` in the same pull request as any user-visible change.
   echoes back the access key ID alone), and `aggressive`.
 - An `aws-credential-pair` detection rule for the joined form.
 
+- **A provider conformance suite** (roadmap item **R1.4**) in
+  `tests/test_provider_contract.py`: the plugin contract asserted against every
+  registered provider, parametrised over the live registry so a plugin added
+  later is held to it without anyone remembering. It pins metadata, `detect`
+  purity and strictness, probe-table hygiene, that every provider has a
+  detection rule, that a provider setting `credit` actually appears in
+  `CREDITS.md` **and** in its own source — attribution is a hard rule and
+  nothing checked it until now — and the exact public surface of
+  `ProbeContext`, so widening it again is an edit to a reviewed list rather
+  than a member nobody discusses.
+- **`ProbeClient.requests_made`** — how many requests actually left, as opposed
+  to being served from cache. `plan.md` §11 asks for minimal probe counts; this
+  is the number that claim is about.
+
 ### Changed
 
 - **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
@@ -450,6 +464,25 @@ under `Unreleased` in the same pull request as any user-visible change.
   Tests now normalise help output (styling stripped, wrapping collapsed) and the
   runner pins colour and width; a regression test forces colour on and asserts
   the guarantees still reach the reader.
+
+- **Every provider was fetching its validation endpoint twice** (found by
+  **R1.4**). Each plugin makes its cheapest capability probe double as the
+  liveness check, and each said so in a comment claiming this cost "one request,
+  not two". Counting the requests showed all four issuing it once in `validate`
+  and again in `enumerate` — a wasted request per run against somebody's
+  production service, which is exactly what `plan.md` §11 exists to limit.
+  `ProbeClient` now answers a repeated idempotent request from a per-run cache,
+  keyed as a cassette is. Fixing it there rather than by threading the
+  validation response into `enumerate` leaves the `Provider` signature untouched
+  and fixes it for providers not written yet. Google 7→6 requests, OpenAI 5→4,
+  Anthropic 3→2, AWS 7→6 (12→11 with `--aggressive`), with identical
+  capabilities in every case. A test bans the wording so the reasoning cannot
+  come back.
+- **`httpx.URL(url, params=None)` clears the query string** rather than leaving
+  it alone, so a probe URL carrying its own `?a=b` would have been sent without
+  it. No shipped provider passes a pre-built query, so nothing was mis-sent —
+  the next one to try would have been, silently. Found because three
+  deliberately distinct URLs collapsed into one while measuring request counts.
 
 ### Security
 

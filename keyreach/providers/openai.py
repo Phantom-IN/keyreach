@@ -274,8 +274,13 @@ PROBES: Final[tuple[_Probe, ...]] = (
     ),
 )
 
-#: The probe whose endpoint doubles as each family's liveness check. Reused
-#: rather than duplicated, so a live key costs one request here and not two.
+#: The probe whose endpoint doubles as each family's liveness check.
+#:
+#: R1.4 measured this and found the claim that used to sit here — "one request,
+#: and not two" — was false: naming the same endpoint twice made the request
+#: twice, once in ``validate`` and again in ``enumerate``. It is one request now
+#: because ``ProbeClient`` answers a repeated idempotent GET from a per-run
+#: cache, not because of anything this line does.
 VALIDATE_SERVICE: Final[dict[_Family, str]] = {
     _Family.PLATFORM: "OpenAI Models",
     _Family.ADMIN: "OpenAI Organization Projects",

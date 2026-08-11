@@ -150,8 +150,13 @@ MAPS: Final = "https://maps.googleapis.com/maps/api"
 ROADS: Final = "https://roads.googleapis.com/v1"
 
 #: The validation endpoint: free, read-only, and the same list call used as a
-#: capability probe. Reused rather than duplicated so a live key costs one
-#: request here, not two.
+#: capability probe.
+#:
+#: R1.4 measured this and found the claim that used to sit here — "one request,
+#: not two" — was false: naming the same endpoint twice made the request twice,
+#: once in ``validate`` and again in ``enumerate``. It is one request now
+#: because ``ProbeClient`` answers a repeated idempotent GET from a per-run
+#: cache, not because of anything this line does.
 VALIDATE_URL: Final = f"{GEMINI}/models"
 
 #: Every probe, in a fixed order. Six is deliberate — each additional probe is
