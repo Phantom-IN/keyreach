@@ -285,7 +285,17 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Fixed
 
-- *Nothing yet.*
+- **CLI help assertions that only held on a developer's machine.** Two tests
+  from R0.2 asserted `"--version" in result.output`. `rich` styles the leading
+  hyphen of a flag as its own span, so with colour on the help contains
+  `\x1b[1;36m-\x1b[0m\x1b[1;36m-version\x1b[0m` — in which the literal
+  `--version` does not occur. Whether colour is on depends on whether `rich`
+  believes it is writing to a terminal, and GitHub Actions sets `CI=true`, which
+  makes it believe so. The assertions therefore passed everywhere they had ever
+  been run and failed on the first CI run that executed them, which was R0.9's.
+  Tests now normalise help output (styling stripped, wrapping collapsed) and the
+  runner pins colour and width; a regression test forces colour on and asserts
+  the guarantees still reach the reader.
 
 ### Security
 

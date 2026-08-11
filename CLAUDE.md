@@ -139,6 +139,7 @@ Do not run keyreach against keys you don't own or aren't authorized to test.
 - Cover every scoring band boundary in `test_scoring.py`.
 - `test_determinism.py` must stay green: double-run byte-equality + golden snapshots (timestamp fixed).
 - Add redaction assertions whenever you touch output/evidence paths.
+- **Never assert on raw terminal output.** `rich` colours and wraps according to what it infers about the environment — and it styles a flag's leading hyphen separately, so `"--version" in output` is false whenever colour is on. GitHub Actions sets `CI=true`, which turns colour on, so an assertion like that passes on every developer machine and fails only in CI. Strip styling and collapse whitespace first (`tests/test_cli.py::readable`), and pin colour and width on the runner.
 - When a provider's API changes, update the cassette and golden files in the same PR and note the drift.
 - **Never write a key-shaped literal in source, even a fake one.** Compose test samples from parts (`"sk_" + "live_" + body`). A single literal matches keyreach's own detector *and* GitHub push protection, which blocks the push and offers only a click-through "allow this secret" link — never use it. `tests/test_repo_hygiene.py` catches this before the commit exists; do not narrow the file list it scans.
 
