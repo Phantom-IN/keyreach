@@ -1,0 +1,14 @@
+# Detection rules for the R0.6 engine tests only.
+#
+# A tiny, self-contained rule set so the engine tests do not depend on the
+# shipped rules in keyreach/patterns/ — which cover real providers and will keep
+# changing as plugins land.
+version: 1
+
+rules:
+  - id: cassette-test-key
+    provider: cassette
+    description: keyreach test fixture key
+    pattern: '^csst_[a-z0-9]{32}$'
+    confidence: 0.99
+    source: https://example.invalid/docs

@@ -94,8 +94,33 @@ under `Unreleased` in the same pull request as any user-visible change.
   above a hex digest and would otherwise report every sentence in a codebase.
   It never names a provider, since that signal cannot.
 
+- Engine and HTTP layer (roadmap item **R0.6**). `keyreach/core/http.py` is the
+  only module in keyreach that opens a socket: it holds the async, rate-limited,
+  recordable, redacting, read-only-guarded client and the `ProbeContext` that
+  provider plugins are handed. `keyreach/core/engine.py` orchestrates
+  detect → validate → enumerate and guarantees stable ordering.
+- The read-only guard. `GET`/`HEAD`/`OPTIONS` are allowed; `POST` requires an
+  explicit `read_only_post=True` for RPC-style APIs whose read endpoints need
+  it; `PUT`, `PATCH` and `DELETE` have no code path at all. The guard runs
+  before any socket work, so a denied request never reaches the transport.
+- Redaction of keys in URLs, headers, request and response bodies, evidence
+  strings and cassettes — including percent-encoded forms, and with credential
+  headers dropped wholesale rather than pattern-matched.
+- Cassette record/replay. Replay constructs no HTTP client at all, so tests and
+  CI can never need a live key. Recordings substitute a fixed `<key>`
+  placeholder, which is what lets one cassette replay against any key and makes
+  committed fixtures safe.
+- A bounded, deterministic retry schedule (fixed, never jittered) and a
+  `--delay` pacing lock that deliberately serialises probes when set.
+
 ### Changed
 
+- **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
+  — which forbids importing `httpx`, `requests` or `socket` outside
+  `keyreach/core/http.py` — had never been enforced, because `TID` was missing
+  from the `select` list and ruff applies configuration only for selected rules.
+  The direct-`httpx` ban now actually fires. This is the edit-time half of the
+  `network_isolation` guardrail due in **R0.9**.
 - **Detection patterns are written from vendor documentation, not seeded from
   secrets-patterns-db.** The plan assumed that database was CC-BY-4.0 and could
   be subset with attribution. Verifying the license from the upstream repository

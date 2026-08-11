@@ -177,6 +177,7 @@ is an AI/LLM SDK.
 | Jinja2 | runtime | BSD-3-Clause | 2026-08-11 |
 | PyYAML | runtime | MIT | 2026-08-11 |
 | pytest | dev | MIT | 2026-08-11 |
+| pytest-asyncio | dev | Apache-2.0 | 2026-08-11 |
 | pytest-cov | dev | MIT | 2026-08-11 |
 | respx | dev | BSD-3-Clause | 2026-08-11 |
 | syrupy | dev | MIT | 2026-08-11 |

@@ -69,6 +69,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.2",      # MIT
+  "pytest-asyncio>=0.24", # Apache-2.0 — probes are async from R0.6 onward
   "pytest-cov>=5.0",  # MIT
   "respx>=0.21",      # BSD-3-Clause — record/replay for httpx (cassettes)
   "syrupy>=4.6",      # MIT          — golden-file snapshots
@@ -163,6 +164,9 @@ select = [
   "S",   # flake8-bandit         — security lint; this is a security tool
   "SIM", # flake8-simplify
   "T20", # flake8-print          — output goes through rich/typer, not print()
+  "TID", # flake8-tidy-imports   — enforces the banned-api block below. Without
+  #                                this selected, that config is silently inert:
+  #                                ruff reads it and applies nothing.
   "UP",  # pyupgrade
   "W",   # pycodestyle warnings
 ]
@@ -174,6 +178,17 @@ ignore = [
 # Tests assert (S101), take fixture arguments they don't always use (ARG), and
 # compare against literal expectations (PLR2004) — all correct in a test.
 "tests/**" = ["S101", "ARG", "PLR2004"]
+# The banned-api rule below forbids importing httpx anywhere, which is the
+# point: provider plugins must go through ProbeContext. core/http.py is the one
+# module that legitimately opens sockets, so it is the one exemption — and
+# keeping the exemption to a single named file is what makes the rule mean
+# something (CLAUDE.md, "Where things live").
+"keyreach/core/http.py" = ["TID251"]
+# The HTTP layer's own tests need httpx to build a MockTransport. Scoped to this
+# one file rather than to `tests/**`, so a provider test cannot quietly acquire
+# a direct HTTP dependency — the provider fixtures under tests/ are held to the
+# same rule as real plugins.
+"tests/test_http.py" = ["TID251"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["keyreach"]
@@ -232,6 +247,10 @@ addopts = [
 ]
 xfail_strict = true
 filterwarnings = ["error"]
+# `auto` so an async test needs no per-test marker. Probes are async from R0.6
+# onward, so opting in test by test would be noise.
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["keyreach"]

@@ -17,8 +17,9 @@ import asyncio
 
 import pytest
 
+from keyreach.core.http import ProbeClient, ProbeContext
 from keyreach.core.models import AccessLevel, ValidationResult
-from keyreach.core.provider import ProbeContext, Provider
+from keyreach.core.provider import Provider
 from keyreach.core.registry import (
     PROVIDERS_PACKAGE,
     VALID_CATEGORIES,
@@ -384,7 +385,10 @@ def test_dummy_provider_implements_the_full_contract(
     an event loop.
     """
     provider = registry.get("alpha")
-    context = object()  # ProbeContext is a placeholder until R0.6
+    # ProbeContext became concrete in R0.6, so this is now the real surface a
+    # plugin is handed. The dummy provider issues no requests, so the client is
+    # never entered and no socket is opened.
+    context = ProbeContext(ProbeClient(), "alpha_secret")
 
     result = asyncio.run(provider.validate("alpha_secret", context))
     capabilities = asyncio.run(provider.enumerate("alpha_secret", context))

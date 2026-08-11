@@ -278,6 +278,19 @@ Patterns are loaded from `patterns/detection_rules.yml`. In "unknown" mode, all 
 - **Redaction:** the client masks the key in any logged/recorded request and in evidence strings by default. Full key only surfaces with `--unmask`.
 - **Read-only guard:** the client refuses non-idempotent methods (POST/PUT/PATCH/DELETE) unless a probe is explicitly annotated `read_only_post=True` for providers whose *read* endpoints require POST (e.g. some RPC-style APIs), and even then the probe must be reviewed. Default-deny.
 
+### 6.1 Notes on the implementation (landed in R0.6)
+
+`keyreach/core/http.py` holds `mask_key`, `Redactor`, `ProbeResponse`, `Cassette`, `ProbeClient` and `ProbeContext`. `keyreach/core/engine.py` holds `Engine`, which produces an `EngineResult` (not yet a `Report` — that is R0.8).
+
+- **Redaction substitutes a fixed placeholder `<key>`, not the display mask.** `mask_key` preserves the first four and last three characters, which is right for a report header where a recipient wants to identify *which* key — but it makes every derived string key-specific, so a cassette recorded with one key would never replay against another. Committed fixtures would then only work for whoever recorded them. `mask_key` is therefore used for `Report.key_fingerprint` only; everything else — URLs, headers, bodies, cassettes, evidence — gets the constant.
+- **Credential headers are dropped wholesale**, not pattern-replaced. The redactor only knows the key under test; a second bearer token or a session cookie has no registered secret and would otherwise survive into a committed cassette.
+- **Header names are lower-cased and sorted.** Servers disagree about casing, so preserving it would make a provider's header lookup depend on which server answered.
+- **Cassettes** are JSON, keyed by `(method, redacted URL)`, written sorted with no timestamp. Duplicate keys are rejected: read-only probes are idempotent, so two answers for one request means the recording is wrong. A valid key and an invalid key need **separate cassettes**, because redaction maps both to the same recorded URL.
+- **Replay opens no socket at all** — no `httpx.AsyncClient` is constructed in replay mode. Not opening a socket is a stronger guarantee than intending not to use one.
+- **A provider that raises degrades only its own outcome.** Errors are collected onto `ProviderOutcome.errors` so a report can distinguish "no capability" from "could not determine".
+- **Probe breadth is capped** (`MAX_PROVIDERS_PROBED`). Detection can return several candidates for an ambiguous prefix; probing all of them is authentication traffic against services the key almost certainly does not belong to.
+- **`ProbeResponse.json_body()`**, not `json()` — `BaseModel.json` is pydantic's own deprecated serializer, and overriding it would make the same call mean two different things.
+
 ---
 
 ## 7. Scoring implementation
