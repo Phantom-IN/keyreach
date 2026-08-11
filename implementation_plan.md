@@ -120,6 +120,10 @@ keyreach/
 │   ├── test_scoring.py
 │   ├── test_providers_*.py
 │   └── test_determinism.py
+├── tools/                          # dev tooling; NOT shipped in the wheel
+│   └── guardrails/                 # workflows, ai_ban, network_isolation,
+│                                   # read_only, no_secrets (§11.1)
+│                                   # — run by CI, pre-commit and pytest
 └── .github/workflows/
     ├── ci.yml                      # lint, types, tests, coverage, ai_ban check
     └── drift-canary.yml            # scheduled: detect provider API drift
@@ -393,10 +397,28 @@ The runner substitutes `{KEY}`, executes via the shared recordable client, and e
 `ci.yml` gates every PR:
 - lint (ruff) + format (black) + types (mypy).
 - pytest with coverage threshold.
-- **`ai_ban` check** — fail if any dependency or import matches a denylist of AI/LLM SDKs/endpoints, enforcing `plan.md` §1. Grep source for known model API hostnames too.
+- **`ai_ban` check** — fail if any dependency or import matches a denylist of AI/LLM SDKs, or if any source file references a model *inference endpoint*, enforcing `plan.md` §1.
 - **`network_isolation` check** — fail if any file under `providers/` imports `httpx`/`socket`/`requests` directly (probes must go through `ProbeContext`).
 - **`read_only` check** — static scan flags non-idempotent HTTP methods not annotated/reviewed.
-- schema drift check — regenerate `report.schema.json` and fail on diff.
+- **`no_secrets` check** — keyreach's own detector over the repository.
+- **`workflows` check** — the CI definition itself must parse, its expressions must use GitHub's syntax, and every `needs:` must name a job that exists.
+- drift checks — regenerate `report.schema.json` and the golden reports, and fail on diff.
+
+### 11.1 Notes on the implementation (landed in R0.9)
+
+The five checks are Python modules under `tools/guardrails/`, not shell inlined in the workflow. Each exposes `check() -> list[Violation]` and a `main()`, so one implementation runs as a CI job, as a pre-commit hook, and under `pytest`. `tools/` is outside the distributed package: a user installing keyreach gets a key analyser, not a linter.
+
+- **Every guardrail is unit-tested by planting the violation it exists to catch.** This is the whole point rather than a nicety. R0.6 found ruff's `banned-api` rule had been *silently inert since R0.2* — configured, parsed, and applied to nothing — while three pull requests asserted it was enforcing; R0.8 found an ad-hoc secret scan that enumerated the wrong set of files and reported a clean result it had not earned. `tests/test_guardrails.py` plants an AI SDK, a direct socket under `providers/`, and a non-idempotent probe, and asserts each is caught. Negative controls matter equally: a check that rejects valid code gets switched off.
+- **`ai_ban` bans inference endpoints, not provider hostnames.** §11 previously said "grep source for known model API hostnames too". That rule would make **R1.1 and R1.2 impossible**: enumerating what an exposed Gemini or OpenAI key can reach *is the product*, and doing so means writing `https://api.openai.com/v1/models` into a provider plugin. The distinction that matters is not which host is named but what is asked of it — listing models is a read-only capability probe, `POST /v1/chat/completions` is inference. A test pins both halves. See also `plan.md` §1, which now states the line in product terms.
+- **`ai_ban` and `network_isolation` walk the AST**, so an import inside a function body is caught, and they resolve `importlib.import_module("httpx")`, which no import-based linter sees.
+- **`network_isolation` is an independent implementation, not a wrapper around the ruff rule.** Two mechanisms sharing an implementation share its failure. A test proves the independence by planting a dynamic import, running ruff over it (which passes cleanly), and asserting this check still rejects it.
+- **The provider fixture packages under `tests/` are held to the same rules as real plugins.** A fixture permitted to do what a plugin may not stops proving anything.
+- **Coverage threshold is 100**, over `keyreach` *and* `tools`. Set at the level the suite already meets, because a threshold below where a project sits only ratchets downward. It is not a claim that coverage implies correctness — it is a claim that an untested line should be a deliberate, argued `pragma: no cover`.
+- **The test matrix covers 3.11, 3.12 and 3.13**, every version the package's classifiers claim. A claim nothing tests is a claim, not a fact.
+- **A `package` job installs the built wheel into a clean environment and exercises it from outside the source tree.** keyreach reads three files at run time that are easy to omit from a wheel — the detection rules, the report schema, and the Markdown template — and each works perfectly from a checkout while failing for an installed user.
+- **A workflow that does not parse cannot run the checks that would have caught it.** R0.9's first push failed with a single annotation and no jobs: `ci.yml` used `join(needs.*.result, " ")`, and GitHub's expression language has no double-quoted string literal, so the whole file was rejected. Nothing in the repository could have caught it, because everything that would have runs *inside* that workflow. `guardrails/workflows.py` breaks the circularity by running as a pre-commit hook. It is deliberately narrow — `actionlint` is the thorough tool, and would be the right answer if a Go binary were acceptable in the toolchain — and checks only what invalidates a file wholesale.
+- **Expression output goes into an environment variable, never into a shell command.** GitHub substitutes `${{ }}` textually before the shell parses anything, so interpolating it into a script is a script injection waiting for the right input.
+- **One `ci` anchor job aggregates the rest**, so branch protection needs a single required check. Adding a job does not then require editing branch protection to make it blocking — a gap that is easy to create and invisible once created. It treats `skipped` as failure, since a skipped required job must not read as a pass.
 
 ---
 
