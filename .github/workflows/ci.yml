@@ -1,44 +1,26 @@
-# keyreach CI — HYGIENE ONLY (for now)
+# keyreach CI (roadmap item R0.9 — implementation_plan.md §11).
 #
-# ⚠️ This is a deliberately minimal placeholder pipeline.
+# This workflow is what actually enforces keyreach's hard rules. Until R0.9 it
+# checked governance files and Markdown only, and everything else ran on author
+# and reviewer discipline.
 #
-# keyreach is being built in public, and this workflow intentionally lags the
-# codebase: it checks that the governance files are present and that the
-# Markdown is well-formed, and nothing else.
+# The guardrails are Python modules under tools/guardrails/, not shell pipelines
+# inlined here. That is deliberate:
 #
-# As of R0.2 the repository DOES have a `pyproject.toml`, a `keyreach/` package,
-# and a test suite — but ruff / black / mypy / pytest are not run here yet, and
-# that is on purpose rather than an oversight. Wiring them in is roadmap item
-# R0.9, which owns the CI pipeline end to end; splitting it across two items
-# would mean building the same jobs twice. Until R0.9 lands, those gates run at
-# commit time via .pre-commit-config.yaml (`pre-commit install`).
+#   * they are unit-tested, so each one has been watched to fail. R0.6 found
+#     ruff's banned-api rule had been silently inert since R0.2 — configured,
+#     parsed, and applied to nothing — while three pull requests asserted it was
+#     enforcing. A check nobody has seen fail is a check nobody should trust.
+#   * they run identically here, in .pre-commit-config.yaml, and under pytest,
+#     from one implementation. A contributor learns at commit time, not after a
+#     red build.
+#   * they are readable. `grep -r` in YAML is where subtle exemptions go to hide.
 #
-# ┌────────────────────────────────────────────────────────────────────────────┐
-# │ THE REAL PIPELINE IS ROADMAP ITEM R0.9 — `feat/r0.9-ci-guardrails`.        │
-# │                                                                            │
-# │ It replaces/extends this file with the guardrails specified in             │
-# │ implementation_plan.md §11, which are what actually enforce keyreach's     │
-# │ hard rules:                                                                │
-# │                                                                            │
-# │   • ai_ban            — fail if any dependency, import, or source string   │
-# │                         matches the denylist of AI/LLM SDKs and model API  │
-# │                         hostnames (plan.md §1: no AI/LLM, anywhere, ever)  │
-# │   • network_isolation — fail if anything under keyreach/providers/ imports │
-# │                         httpx / socket / requests directly (probes must go │
-# │                         through ProbeContext)                              │
-# │   • read_only         — static scan flagging non-idempotent HTTP methods   │
-# │                         that aren't explicitly annotated and reviewed      │
-# │   • schema drift      — regenerate report.schema.json and fail on diff     │
-# │   • ruff / black / mypy, and pytest with a coverage threshold              │
-# │                                                                            │
-# │ Acceptance criterion for R0.9: a PR that adds an AI SDK, a direct socket   │
-# │ in providers/, or a non-idempotent probe FAILS CI.                         │
-# └────────────────────────────────────────────────────────────────────────────┘
-#
-# Until then: do NOT add steps here that reference files which do not exist yet
-# — a red X on every commit teaches people to ignore CI.
+# Acceptance criterion for R0.9: a pull request that adds an AI SDK, a direct
+# socket in providers/, or a non-idempotent probe FAILS CI. tests/test_guardrails.py
+# plants all three and asserts each is caught.
 
-name: CI (hygiene)
+name: CI
 
 on:
   push:
@@ -53,7 +35,176 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Pinned so a CPython patch release cannot change a result between runs. The
+  # test matrix below covers the full supported range separately.
+  DEFAULT_PYTHON: '3.11'
+
 jobs:
+  # ── The hard rules ─────────────────────────────────────────────────────────
+  guardrails:
+    name: Guardrails (workflows, ai_ban, network_isolation, read_only, no_secrets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The guardrails enumerate files through `git ls-files`, so they need
+          # a real working tree. Depth 1 is enough — they inspect the tree, not
+          # its history.
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+
+      - run: pip install -e '.[dev]'
+
+      # Run every check even if an earlier one fails, so a contributor sees the
+      # whole picture in one run instead of fixing violations one build at a
+      # time. `python -m tools.guardrails` already does this internally.
+      - name: Run all guardrails
+        run: python -m tools.guardrails
+
+  # ── Generated artifacts must not drift from the code that generates them ───
+  drift:
+    name: Generated artifacts up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+
+      - run: pip install -e '.[dev]'
+
+      - name: report.schema.json matches the models
+        run: python -m keyreach.report.schema --check
+
+      # Golden reports are generated from the renderers exactly as the schema is
+      # generated from the models, so they get the same treatment. Without this,
+      # a renderer change plus a stale snapshot is a silent change to the
+      # artifact a security team receives.
+      - name: Golden reports match the renderers
+        run: python -m tests.regenerate_goldens --check
+
+  # ── Style and types ────────────────────────────────────────────────────────
+  lint:
+    name: Lint and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+
+      - run: pip install -e '.[dev]'
+
+      - name: ruff
+        run: ruff check --output-format=github .
+
+      - name: black
+        run: black --check --diff .
+
+  types:
+    name: Types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+
+      - run: pip install -e '.[dev]'
+
+      # Tests and tooling are typed too. `mypy keyreach` alone passes on code
+      # the pre-commit hook rejects — that discrepancy hid an error through R0.7.
+      - name: mypy
+        run: mypy keyreach tests tools
+
+  # ── Tests ──────────────────────────────────────────────────────────────────
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every version the package claims to support in its classifiers. A
+        # claim nothing tests is a claim, not a fact.
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - run: pip install -e '.[dev]'
+
+      # No network access is needed: every probe replays a committed cassette,
+      # and replay constructs no HTTP client at all (implementation_plan.md
+      # §6.1). If a test ever needs a live key, this is where it will fail.
+      - name: pytest
+        run: pytest -q --cov=keyreach --cov-report=term-missing
+
+  # ── Packaging ──────────────────────────────────────────────────────────────
+  package:
+    name: Wheel builds and ships its data files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+
+      - run: pip install -e '.[dev]'
+
+      - name: Build
+        run: python -m build
+
+      - name: Check metadata
+        run: twine check dist/*
+
+      # keyreach reads three files at run time that are easy to leave out of a
+      # wheel: the detection rules, the report schema, and the Markdown
+      # template. Each has failed for an installed user in other projects while
+      # working perfectly from a checkout, so the wheel is installed into a
+      # clean environment and exercised from outside the source tree.
+      - name: Package data survives installation
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/verify
+          /tmp/verify/bin/pip install --quiet dist/*.whl
+          cd /tmp
+          /tmp/verify/bin/python - <<'PY'
+          from importlib import resources
+
+          from keyreach.core.detect import default_detector
+          from keyreach.report.schema import SCHEMA_PATH
+
+          rules = default_detector.rules()
+          assert rules, "detection rules missing from the wheel"
+          assert SCHEMA_PATH.is_file(), "report.schema.json missing from the wheel"
+          template = resources.files("keyreach.report") / "templates" / "report.md.j2"
+          assert template.is_file(), "Markdown template missing from the wheel"
+          print("package data present:", len(rules), "rules")
+          PY
+
+      - name: CLI entrypoint resolves
+        run: |
+          set -euo pipefail
+          /tmp/verify/bin/keyreach --version
+
+  # ── Repository hygiene (kept from the R0.1 pipeline) ───────────────────────
   governance:
     name: Governance files present
     runs-on: ubuntu-latest
@@ -147,9 +298,39 @@ jobs:
         # release into a surprise red build on an unrelated PR.
         run: npx --yes markdownlint-cli2@0.23.2
 
-  # ── Not yet wired ───────────────────────────────────────────────────────────
-  # Roadmap R0.9 (`feat/r0.9-ci-guardrails`) adds, in this file:
-  #   jobs: ai-ban, network-isolation, read-only, schema-drift, lint, types, test
-  # Roadmap R2.10 (`feat/r2.10-drift-canary`) adds .github/workflows/drift-canary.yml
-  #   — a scheduled provider-API drift check that opens issues automatically.
-  # Roadmap R1.6 (`chore/r1.6-release-0.1`) adds the PyPI publish workflow.
+  # ── Branch-protection anchor ───────────────────────────────────────────────
+  # One required status check instead of eleven. Adding a job above does not
+  # then require editing branch protection to make it blocking — a gap that is
+  # easy to create and invisible once created.
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [guardrails, drift, lint, types, test, package, governance, markdown]
+    steps:
+      - name: Fail if any job did not succeed
+        # Passed as an environment variable rather than interpolated into the
+        # script body. GitHub substitutes `${{ }}` textually before the shell
+        # ever sees it, so expression output spliced into a command is a script
+        # injection waiting for the right input; an env var is data.
+        env:
+          # Note the single quotes: GitHub's expression language has no
+          # double-quoted string literal, and using one is a workflow parse
+          # error rather than a runtime one — the file is rejected whole and
+          # every job silently fails to exist. `guardrails/workflows.py` checks
+          # for this, because a broken workflow cannot run the tests that would
+          # have caught it.
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          set -euo pipefail
+          # Each result is 'success', 'failure', 'cancelled' or 'skipped'.
+          # Anything other than success is a failure here: a skipped required
+          # job must not read as a pass.
+          echo "job results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "::error::A required job reported '$result'."
+              exit 1
+            fi
+          done
+          echo "All required jobs succeeded."

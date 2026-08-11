@@ -9,8 +9,11 @@
 [![No AI/LLM](https://img.shields.io/badge/AI%2FLLM-none%20by%20design-brightgreen)](#core-principles)
 [![Read-only by default](https://img.shields.io/badge/probes-read--only-brightgreen)](SECURITY.md)
 [![CI](https://github.com/Phantom-IN/keyreach/actions/workflows/ci.yml/badge.svg)](https://github.com/Phantom-IN/keyreach/actions/workflows/ci.yml)
-<!-- PyPI and coverage badges are added in roadmap items R0.9 and R1.6, once the
-     full test pipeline and the published package exist. -->
+<!-- A PyPI badge is added in roadmap item R1.6, once the package is published.
+     Coverage is enforced at 100% by CI (pyproject.toml, [tool.coverage.report]
+     fail_under) rather than reported by a third-party badge service, which
+     would mean sending build data to another host for a number CI already
+     gates on. -->
 
 > **⚠️ Status: early — building in public**
 >
@@ -23,10 +26,10 @@
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Follow along in
-> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.8** are done (repo structure,
-> scaffold, models, provider registry, detection, engine and HTTP layer,
-> scoring, reporting). Next is **R0.9 — CI guardrails**, then **R1.1**, the
-> first real provider.
+> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** are done — Phase 0 is complete.
+> The pipeline, the report formats, and the CI guardrails that enforce the hard
+> rules all exist. Next is **R1.1**, the first real provider, which is what makes
+> the tool usable.
 
 ---
 

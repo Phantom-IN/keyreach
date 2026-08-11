@@ -199,7 +199,10 @@ ignore = [
 "tests/test_http.py" = ["TID251"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["keyreach"]
+# `tools` is the dev-tooling package (guardrails); `tests` is importable because
+# fixture provider packages live under it. Both are ours, so neither should sort
+# with third-party imports.
+known-first-party = ["keyreach", "tests", "tools"]
 
 [tool.ruff.lint.flake8-bugbear]
 # typer declares options as call-expression defaults; that is the framework's
@@ -261,7 +264,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
-source = ["keyreach"]
+# `tools` as well as `keyreach`: the guardrails are what enforce the hard rules,
+# and an untested branch in a checker is exactly the failure R0.6 found in ruff's
+# banned-api rule — configured, believed, and applied to nothing.
+source = ["keyreach", "tools"]
 branch = true
 
 [tool.coverage.report]
@@ -272,6 +278,9 @@ exclude_lines = [
   "if TYPE_CHECKING:",
   "raise NotImplementedError",
 ]
-# NOTE: no `fail_under` yet — a coverage threshold lands with the rest of the
-# CI guardrails in roadmap item R0.9 (implementation_plan.md §11), once there is
-# real logic to hold to it.
+# 100, set in R0.9 because the suite already meets it — a threshold below where
+# a project actually sits only ratchets downward. It is not a claim that
+# coverage implies correctness; it is a claim that in a tool which decides
+# whether someone's key is exposed, an untested line should be a deliberate,
+# argued `pragma: no cover` rather than an oversight nobody noticed.
+fail_under = 100

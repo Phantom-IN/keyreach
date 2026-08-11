@@ -74,4 +74,22 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        args: ["keyreach", "tests"]
+        args: ["keyreach", "tests", "tools"]
+
+      # ── The hard rules (roadmap R0.9, implementation_plan.md §11) ──────────
+      # The same checks CI runs, from the same implementation, so a violation is
+      # caught at commit time rather than after a red build. The `workflows`
+      # check has to run here: a workflow file that does not parse cannot run
+      # the suite that would have caught it. Each is unit-tested
+      # in tests/test_guardrails.py — see the header of .github/workflows/ci.yml
+      # for why that matters.
+      #
+      # `pass_filenames: false` because every check enumerates the repository
+      # itself through git: they must see files pre-commit did not hand them,
+      # including untracked ones.
+      - id: guardrails
+        name: guardrails (workflows, ai_ban, network_isolation, read_only, no_secrets)
+        entry: python -m tools.guardrails
+        language: system
+        pass_filenames: false
+        always_run: true
