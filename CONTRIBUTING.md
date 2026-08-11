@@ -70,27 +70,26 @@ And the corresponding **do nots**:
 
 ## Development setup
 
-> **Code arrives in R0.2.** As of the first commit this repository contains
-> governance, docs, and the roadmap only — there is no `pyproject.toml`, no
-> `keyreach/` package, and no test suite yet. The setup below describes what
-> will exist once roadmap item **R0.2 — Project scaffold** merges. Until then,
-> contributions are documentation, roadmap, and process work.
+> **The scaffold is real; the tool is not.** Roadmap item **R0.2** landed, so
+> the package installs and the gates below run green. But `keyreach` only
+> answers `--help` and `--version` — detection, validation, enumeration,
+> scoring and reporting are R0.3 through R1.5.
 
-Planned stack ([`implementation_plan.md`](implementation_plan.md) §1): Python
-3.11+, Typer, httpx, rich, pydantic v2, Jinja2, PyYAML, pytest + respx +
-syrupy. **No AI/LLM dependencies, by design.**
+Stack ([`implementation_plan.md`](implementation_plan.md) §1): Python 3.11+,
+Typer, httpx, rich, pydantic v2, Jinja2, PyYAML, pytest + respx + syrupy.
+**No AI/LLM dependencies, by design** — `tests/test_packaging.py` enforces it.
 
 ```bash
 # clone
 git clone https://github.com/Phantom-IN/keyreach.git
 cd keyreach
 
-# install for development (available after R0.2)
-python -m venv .venv && source .venv/bin/activate
+# install for development — Python 3.11+ required
+python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e '.[dev]'
 pre-commit install
 
-# quality gates — run these before every commit (available after R0.2)
+# quality gates — run these before every commit
 ruff check . && black --check . && mypy keyreach
 pytest -q --cov=keyreach
 
@@ -99,6 +98,11 @@ keyreach <KEY>
 keyreach <KEY> --report md -o out.md
 keyreach <KEY> --json
 ```
+
+Note that CI runs **hygiene checks only** until roadmap item **R0.9** wires the
+full pipeline (`ai_ban`, `network_isolation`, `read_only`, schema drift, plus
+ruff/black/mypy/pytest). Until then `pre-commit` is what actually holds the
+line, so please install it rather than relying on a green check mark.
 
 **Never run keyreach against keys you don't own or aren't authorized to test.**
 See [`SECURITY.md`](SECURITY.md).

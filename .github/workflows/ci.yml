@@ -2,11 +2,16 @@
 #
 # ⚠️ This is a deliberately minimal placeholder pipeline.
 #
-# keyreach is being built in public, and as of the first commit the repository
-# contains governance, documentation, and the roadmap only — there is no
-# `pyproject.toml`, no `keyreach/` package, and no test suite yet. This workflow
-# therefore checks only what actually exists: that the governance files are
-# present, and that the Markdown is well-formed.
+# keyreach is being built in public, and this workflow intentionally lags the
+# codebase: it checks that the governance files are present and that the
+# Markdown is well-formed, and nothing else.
+#
+# As of R0.2 the repository DOES have a `pyproject.toml`, a `keyreach/` package,
+# and a test suite — but ruff / black / mypy / pytest are not run here yet, and
+# that is on purpose rather than an oversight. Wiring them in is roadmap item
+# R0.9, which owns the CI pipeline end to end; splitting it across two items
+# would mean building the same jobs twice. Until R0.9 lands, those gates run at
+# commit time via .pre-commit-config.yaml (`pre-commit install`).
 #
 # ┌────────────────────────────────────────────────────────────────────────────┐
 # │ THE REAL PIPELINE IS ROADMAP ITEM R0.9 — `feat/r0.9-ci-guardrails`.        │
@@ -30,8 +35,8 @@
 # │ in providers/, or a non-idempotent probe FAILS CI.                         │
 # └────────────────────────────────────────────────────────────────────────────┘
 #
-# Until then: do NOT add steps here that reference source files or tests which
-# do not exist yet — a red X on every commit teaches people to ignore CI.
+# Until then: do NOT add steps here that reference files which do not exist yet
+# — a red X on every commit teaches people to ignore CI.
 
 name: CI (hygiene)
 
@@ -135,41 +140,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Write markdownlint config
-        # Kept inline while the repo is docs-only. When R0.2 adds project
-        # tooling, this moves to a checked-in .markdownlint-cli2.jsonc so the
-        # same rules can be run locally via pre-commit.
-        #
-        # plan.md, implementation_plan.md and CLAUDE.md are excluded for now:
-        # they are hand-authored planning documents that predate this workflow
-        # and are kept verbatim in R0.1. Reformatting them is a separate `docs:`
-        # PR — not something to smuggle into the scaffolding commit, and not
-        # friction we want on a one-line edit to plan.md.
-        run: |
-          cat > .markdownlint-cli2.jsonc <<'JSON'
-          {
-            "config": {
-              "MD013": false,  // line length — prose is hard-wrapped, tables are not
-              "MD014": false,  // "$ cmd" without output — issue templates prompt for it
-              "MD024": { "siblings_only": true },  // CHANGELOG repeats headings per release
-              "MD033": false,  // inline HTML — issue/PR templates use HTML comments
-              "MD040": false,  // fenced blocks without a language (illustrative snippets)
-              "MD041": false,  // first line heading — templates start with front matter
-              "MD060": false   // table pipe spacing — cosmetic
-            },
-            "globs": ["**/*.md"],
-            "ignores": [
-              "node_modules/**",
-              "plan.md",
-              "implementation_plan.md",
-              "CLAUDE.md"
-            ]
-          }
-          JSON
-
       - name: Lint Markdown
-        # Pinned deliberately: an unpinned linter turns an upstream release into
-        # a surprise red build on an unrelated PR.
+        # Rules come from the checked-in .markdownlint-cli2.jsonc (added in
+        # R0.2), so this job, the pre-commit hook, and a local run all agree.
+        # Version pinned deliberately: an unpinned linter turns an upstream
+        # release into a surprise red build on an unrelated PR.
         run: npx --yes markdownlint-cli2@0.23.2
 
   # ── Not yet wired ───────────────────────────────────────────────────────────

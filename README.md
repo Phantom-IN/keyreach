@@ -14,13 +14,15 @@
 
 > **⚠️ Status: early — building in public**
 >
-> **There is no working tool yet.** This repository currently contains the
-> plan, the governance, and the roadmap; the first commit is deliberately
-> scaffolding only. Code lands one roadmap item at a time, each on its own
-> feature branch and pull request, so the whole build is auditable in the open.
+> **keyreach cannot analyse a key yet.** The package installs and
+> `keyreach --help` works, but detection, validation, enumeration, scoring and
+> reporting are still ahead — every claim below the fold describes the
+> destination, not today's behavior.
 >
-> Follow along in [`ROADMAP.md`](ROADMAP.md) — the next item up is **R0.2 —
-> Project scaffold**.
+> Code lands one roadmap item at a time, each on its own feature branch and
+> pull request, so the whole build is auditable in the open. Follow along in
+> [`ROADMAP.md`](ROADMAP.md): **R0.1** (repo structure) and **R0.2** (project
+> scaffold) are done; next up is **R0.3 — Core data models**.
 
 ---
 
@@ -114,18 +116,30 @@ see [`implementation_plan.md`](implementation_plan.md) §2.
 
 ## Install
 
-> **Coming soon.** Packaging lands in roadmap item
-> [R0.2](ROADMAP.md#phase-0--foundations); the first published release is
-> [R1.6](ROADMAP.md#phase-1--archetype-providers--mvp-v01).
+The `keyreach` name is reserved on PyPI, but **there is no installable release
+yet** — only a `0.1.0.dev0` placeholder. `pip install keyreach` resolves nothing
+on purpose: pip skips pre-releases by default, so nobody installs a tool that
+cannot do anything. The first real release is
+[R1.6](ROADMAP.md#phase-1--archetype-providers--mvp-v01).
 
 ```console
-# Not available yet — planned:
+# Not available yet — planned for v0.1.0:
 pipx install keyreach
+```
+
+To run the current scaffold from source (Python 3.11+):
+
+```console
+git clone https://github.com/Phantom-IN/keyreach.git
+cd keyreach
+pipx install -e .        # or: pip install -e '.[dev]'
+keyreach --help
 ```
 
 ## Usage
 
-> **Coming soon.** The CLI surface below is the specification from
+> **Coming soon.** Right now only `--help` and `--version` do anything. The CLI
+> surface below is the specification from
 > [`implementation_plan.md`](implementation_plan.md) §12, not a description of
 > working software. CLI UX lands in roadmap item
 > [R1.5](ROADMAP.md#phase-1--archetype-providers--mvp-v01).

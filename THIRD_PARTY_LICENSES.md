@@ -130,9 +130,38 @@ Apache-2.0), and their licenses are distributed with the packages themselves.
 If a dependency is ever **vendored** into the repository, it gets a full entry
 in this file.
 
-Dependency licenses are re-checked whenever a dependency is added or a major
-version is bumped (roadmap item R0.2 introduces `pyproject.toml`; R0.9 wires the
-CI guardrails).
+### Verification record
+
+Every dependency declared in `pyproject.toml` was license-checked from PyPI
+package metadata (`license_expression`, falling back to `license` and then to
+the `License ::` classifiers) when roadmap item **R0.2** introduced it. All are
+permissive and compatible with Apache-2.0 redistribution; none is copyleft; none
+is an AI/LLM SDK.
+
+| Dependency | Group | License | Verified |
+| --- | --- | --- | --- |
+| typer | runtime | MIT | 2026-08-11 |
+| httpx | runtime | BSD-3-Clause | 2026-08-11 |
+| rich | runtime | MIT | 2026-08-11 |
+| pydantic | runtime | MIT | 2026-08-11 |
+| Jinja2 | runtime | BSD-3-Clause | 2026-08-11 |
+| PyYAML | runtime | MIT | 2026-08-11 |
+| pytest | dev | MIT | 2026-08-11 |
+| pytest-cov | dev | MIT | 2026-08-11 |
+| respx | dev | BSD-3-Clause | 2026-08-11 |
+| syrupy | dev | MIT | 2026-08-11 |
+| ruff | dev | MIT | 2026-08-11 |
+| black | dev | MIT | 2026-08-11 |
+| mypy | dev | MIT | 2026-08-11 |
+| pre-commit | dev | MIT | 2026-08-11 |
+| build | dev | MIT | 2026-08-11 |
+| twine | dev | Apache-2.0 | 2026-08-11 |
+| hatchling | build | MIT | 2026-08-11 |
+
+Re-check this table whenever a dependency is added or a major version is bumped.
+Roadmap item **R0.9** wires the CI guardrails that make the AI/LLM half of this
+check automatic; `tests/test_packaging.py` already fails if an AI/LLM SDK is
+declared in any group.
 
 ---
 
