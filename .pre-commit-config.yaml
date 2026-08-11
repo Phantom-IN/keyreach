@@ -1,0 +1,77 @@
+# pre-commit — the same gates CI will run (roadmap R0.9), but at commit time.
+#
+#   pip install -e '.[dev]'
+#   pre-commit install
+#
+# Run across everything once after installing:  pre-commit run --all-files
+#
+# `detect-private-key` is not boilerplate here. keyreach's test suite is built
+# on recorded HTTP cassettes, and a freshly recorded cassette contains the key
+# it was recorded with. This hook is one of the last automatic chances to catch
+# that before it becomes permanent git history — see the block at the top of
+# .gitignore for the full scrubbing procedure.
+
+default_language_version:
+  python: python3.11
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: trailing-whitespace
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.2
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 26.5.1
+    hooks:
+      - id: black
+
+  - repo: local
+    hooks:
+      - id: markdownlint-cli2
+        # Run via npx rather than the upstream pre-commit hook: that hook installs
+        # itself with `npm install -g git+file://…`, which npm 11+ refuses outright
+        # (`EALLOWGIT`), so it cannot install on a current Node toolchain.
+        #
+        # Rules come from .markdownlint-cli2.jsonc, shared with the CI job. The
+        # `exclude` is repeated here because pre-commit passes filenames
+        # explicitly, which bypasses the `ignores` list in that file.
+        #
+        # Version is pinned and must match the `Lint Markdown` step in
+        # .github/workflows/ci.yml — bump both together.
+        #
+        # Requires node/npx on PATH. If you do not have Node installed, skip it:
+        #   SKIP=markdownlint-cli2 git commit …
+        # CI still checks Markdown, so nothing slips through.
+        name: markdownlint-cli2
+        entry: npx --yes markdownlint-cli2@0.23.2
+        language: system
+        types: [markdown]
+        exclude: '^(plan|implementation_plan|CLAUDE)\.md$'
+
+      - id: mypy
+        # Deliberately `language: system` rather than mirrors-mypy: this runs the
+        # mypy from `pip install -e '.[dev]'`, against the real dependencies, so
+        # a contributor's pre-commit result matches `mypy keyreach` exactly.
+        # A pinned mirror would type-check against a different, stubbed-out
+        # environment and disagree with CI.
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: ["keyreach", "tests"]

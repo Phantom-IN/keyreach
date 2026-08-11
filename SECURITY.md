@@ -110,7 +110,7 @@ have found with it.
 
 **Please do not open a public GitHub issue for a security vulnerability.**
 
-Report privately to: **<SECURITY_CONTACT_EMAIL>**
+Report privately to: **[vaibhav.vanage@gmail.com](mailto:vaibhav.vanage@gmail.com)**
 
 If GitHub Private Vulnerability Reporting is enabled on the repository, you may
 also use the **Security → Report a vulnerability** tab at
@@ -203,4 +203,4 @@ there. After the first release, this section will list supported version ranges.
 
 ---
 
-*Questions about this policy: **<SECURITY_CONTACT_EMAIL>**.*
+*Questions about this policy: **[vaibhav.vanage@gmail.com](mailto:vaibhav.vanage@gmail.com)**.*

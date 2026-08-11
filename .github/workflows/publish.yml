@@ -1,0 +1,133 @@
+# Publish keyreach to PyPI — token-free, via PyPI Trusted Publishing (OIDC).
+#
+# ┌────────────────────────────────────────────────────────────────────────────┐
+# │ NO API TOKEN IS STORED ANYWHERE. Not in a repository secret, not in an     │
+# │ environment secret, not on a laptop.                                       │
+# │                                                                            │
+# │ GitHub mints a short-lived OIDC identity token for this workflow run;      │
+# │ PyPI verifies it against a Trusted Publisher registered for this exact     │
+# │ repository + workflow file, and exchanges it for an upload token that      │
+# │ expires in about 15 minutes. There is no long-lived credential to leak,    │
+# │ rotate, or accidentally commit.                                            │
+# │                                                                            │
+# │ That property matters more than usual here: keyreach exists because        │
+# │ long-lived API keys leak. Shipping it via a long-lived API key would be a  │
+# │ bad look and a worse practice.                                             │
+# └────────────────────────────────────────────────────────────────────────────┘
+#
+# ── One-time PyPI setup (do this once, in the PyPI web UI) ────────────────────
+#
+#   https://pypi.org/manage/project/keyreach/settings/publishing/
+#     Owner:            Phantom-IN
+#     Repository name:  keyreach
+#     Workflow name:    publish.yml
+#     Environment name: pypi
+#
+#   If the project does not exist on PyPI yet, register a *pending* publisher
+#   instead, at https://pypi.org/manage/account/publishing/ — same four values.
+#
+# ── Releasing ─────────────────────────────────────────────────────────────────
+#
+#   1. Bump __version__ in keyreach/__init__.py (the single source of truth).
+#   2. Update CHANGELOG.md and merge to main.
+#   3. git tag v0.1.0 && git push origin v0.1.0
+#
+#   The tag must match __version__ exactly or this workflow fails before it
+#   uploads anything — a version/tag mismatch on PyPI is unfixable, because a
+#   version number can never be reused once published.
+#
+# Roadmap note: ROADMAP.md assigns the publish workflow to R1.6. It landed early
+# in R0.2 so the PyPI name could be reserved without a long-lived token. R1.6
+# still owns the actual v0.1.0 release.
+
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never let two publishes race: PyPI rejects a duplicate version, and the
+  # loser of the race fails in a way that looks like a real error.
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+
+    # Deliberately one job rather than the more common build/publish split.
+    # Splitting requires handing the artifact between jobs, which couples this
+    # workflow to a matching pair of upload-artifact/download-artifact major
+    # versions — a needless failure mode for a workflow that only ever runs on
+    # a release tag and cannot be rehearsed. Everything here runs in one
+    # ephemeral runner and nothing is persisted between steps.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/keyreach
+
+    permissions:
+      contents: read
+      id-token: write # REQUIRED: lets GitHub mint the OIDC token PyPI verifies
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade build twine
+
+      - name: Verify the tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          set -euo pipefail
+          version="$(python - <<'PY'
+          import pathlib, re
+          source = pathlib.Path("keyreach/__init__.py").read_text(encoding="utf-8")
+          match = re.search(r'^__version__ = "([^"]+)"', source, re.MULTILINE)
+          if match is None:
+              raise SystemExit("could not find __version__ in keyreach/__init__.py")
+          print(match.group(1))
+          PY
+          )"
+          tag="${GITHUB_REF_NAME}"
+          echo "tag=${tag}  __version__=${version}"
+          if [ "${tag}" != "v${version}" ]; then
+            echo "::error::Tag ${tag} does not match __version__ ${version}. Expected tag v${version}."
+            echo "A PyPI version number can never be reused — refusing to publish."
+            exit 1
+          fi
+
+      - name: Install the package and run the test suite
+        # A release is the one build that must not be broken, and PyPI uploads
+        # are permanent. Note this is separate from the CI guardrails in
+        # roadmap item R0.9; it is this workflow refusing to ship a red build.
+        run: |
+          python -m pip install -e '.[dev]'
+          python -m pytest -q
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check distribution metadata
+        run: python -m twine check --strict dist/*
+
+      - name: List what is about to be published
+        run: ls -l dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Pinned to the maintained v1 release branch, as PyPA documents. No
+        # `password:` — the action detects `id-token: write` and performs the
+        # OIDC exchange itself.
+        with:
+          print-hash: true

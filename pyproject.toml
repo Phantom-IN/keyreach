@@ -1,0 +1,249 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+# ==============================================================================
+# Project metadata
+# ==============================================================================
+
+[project]
+name = "keyreach"
+dynamic = ["version"]  # single-sourced from keyreach/__init__.py, see [tool.hatch.version]
+description = "Map what an exposed API key can actually reach — deterministic, read-only, no AI."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [
+  { name = "Vaibhav Vanage (Phantom-IN)", email = "vaibhav.vanage@gmail.com" },
+]
+keywords = [
+  "security",
+  "api-key",
+  "bug-bounty",
+  "pentest",
+  "credential",
+  "secrets",
+  "capability-enumeration",
+  "disclosure",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Topic :: Software Development :: Quality Assurance",
+  "Typing :: Typed",
+]
+
+# ------------------------------------------------------------------------------
+# Runtime dependencies — the stack fixed in implementation_plan.md §1.
+#
+# ⛔ NO AI/LLM SDKs. Not now, not ever. keyreach handles live secrets; routing one
+#    to a model would itself be a credential leak, and it would destroy the
+#    reproducibility and auditability the whole tool rests on (plan.md §1).
+#    Note the irony to avoid: keyreach PROBES AI providers' endpoints with a
+#    user-supplied key — that is the product — but it must never IMPORT their
+#    SDKs to call a model. Probes are plain httpx requests.
+#    tests/test_packaging.py asserts this; the full `ai_ban` guardrail is R0.9.
+#
+# Every license below was verified from PyPI metadata on 2026-08-11 and recorded
+# in THIRD_PARTY_LICENSES.md. All permissive; none vendored.
+# ------------------------------------------------------------------------------
+dependencies = [
+  "typer>=0.12,<1.0",   # MIT          — CLI
+  "httpx>=0.27,<1.0",   # BSD-3-Clause — async HTTP, the only socket-opening dep
+  "rich>=13.7",         # MIT          — terminal rendering
+  "pydantic>=2.7,<3.0", # MIT          — typed models + JSON schema export
+  "Jinja2>=3.1,<4.0",   # BSD-3-Clause — Markdown/HTML report templates
+  "PyYAML>=6.0,<7.0",   # MIT          — detection rules + declarative probes
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",      # MIT
+  "pytest-cov>=5.0",  # MIT
+  "respx>=0.21",      # BSD-3-Clause — record/replay for httpx (cassettes)
+  "syrupy>=4.6",      # MIT          — golden-file snapshots
+  "ruff>=0.6",        # MIT
+  "black>=24.4",      # MIT
+  "mypy>=1.10",       # MIT
+  "pre-commit>=3.7",  # MIT
+  "build>=1.2",       # MIT
+  "twine>=5.1",       # Apache-2.0
+]
+
+[project.scripts]
+keyreach = "keyreach.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/Phantom-IN/keyreach"
+Repository = "https://github.com/Phantom-IN/keyreach"
+Issues = "https://github.com/Phantom-IN/keyreach/issues"
+Changelog = "https://github.com/Phantom-IN/keyreach/blob/main/CHANGELOG.md"
+Roadmap = "https://github.com/Phantom-IN/keyreach/blob/main/ROADMAP.md"
+"Security Policy" = "https://github.com/Phantom-IN/keyreach/blob/main/SECURITY.md"
+
+# ==============================================================================
+# Build
+# ==============================================================================
+
+[tool.hatch.version]
+# Single source of truth. Bumping keyreach/__init__.py bumps the distribution,
+# so the CLI's --version and the installed metadata can never drift apart
+# (tests/test_cli.py asserts they agree).
+path = "keyreach/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["keyreach"]
+
+[tool.hatch.build.targets.sdist]
+# Ship the governance and planning docs in the sdist: the licences of anything
+# reused travel with the code, and the plans are what the code is reviewed
+# against (CLAUDE.md, "Repo docs & how to use them").
+include = [
+  "/keyreach",
+  "/tests",
+  "/README.md",
+  "/LICENSE",
+  "/NOTICE",
+  "/CREDITS.md",
+  "/THIRD_PARTY_LICENSES.md",
+  "/CHANGELOG.md",
+  "/CONTRIBUTING.md",
+  "/SECURITY.md",
+  "/CODE_OF_CONDUCT.md",
+  "/ROADMAP.md",
+  "/plan.md",
+  "/implementation_plan.md",
+  "/CLAUDE.md",
+]
+
+# ==============================================================================
+# Formatting — black owns layout; ruff never formats (see [tool.ruff]).
+# ==============================================================================
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+# ==============================================================================
+# Linting
+# ==============================================================================
+
+[tool.ruff]
+line-length = 88          # must match [tool.black] or the two will fight
+target-version = "py311"
+src = ["keyreach", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "A",   # flake8-builtins       — no shadowing builtins
+  "ARG", # flake8-unused-arguments
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "DTZ", # flake8-datetimez      — bans naive/ad-hoc clock reads (determinism!)
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "N",   # pep8-naming
+  "PL",  # pylint
+  "PT",  # flake8-pytest-style
+  "PTH", # flake8-use-pathlib
+  "RET", # flake8-return
+  "RUF", # ruff-specific
+  "S",   # flake8-bandit         — security lint; this is a security tool
+  "SIM", # flake8-simplify
+  "T20", # flake8-print          — output goes through rich/typer, not print()
+  "UP",  # pyupgrade
+  "W",   # pycodestyle warnings
+]
+ignore = [
+  "E501", # line length is black's job, and it disagrees on long string literals
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests assert (S101), take fixture arguments they don't always use (ARG), and
+# compare against literal expectations (PLR2004) — all correct in a test.
+"tests/**" = ["S101", "ARG", "PLR2004"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["keyreach"]
+
+[tool.ruff.lint.flake8-bugbear]
+# typer declares options as call-expression defaults; that is the framework's
+# documented API, not the B008 mutable-default bug.
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Provider plugins must not open sockets — they go through ProbeContext, which
+# is what makes rate-limiting, redaction, record/replay and the read-only guard
+# enforceable in one place (implementation_plan.md §6). The `network_isolation`
+# CI check (R0.9) is the real gate; this is the same rule at edit time, so a
+# contributor finds out in their editor rather than in review.
+ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"httpx".msg = "Provider plugins must use ProbeContext, not httpx directly (implementation_plan.md §6). Only keyreach/core/http.py may import httpx."
+"requests".msg = "Not a dependency. All HTTP goes through ProbeContext (implementation_plan.md §6)."
+"socket".msg = "keyreach/core/http.py is the only place sockets are opened (CLAUDE.md, 'Where things live')."
+
+# ==============================================================================
+# Types
+# ==============================================================================
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+warn_no_return = true
+disallow_any_unimported = true
+enable_error_code = [
+  "ignore-without-code",
+  "redundant-expr",
+  "truthy-bool",
+]
+pretty = true
+
+[[tool.mypy.overrides]]
+# Tests exercise the CLI through typer's runner; strictness there buys little
+# and costs readability. They are still fully type-checked, just less pedantic.
+module = "tests.*"
+disallow_untyped_decorators = false
+
+# ==============================================================================
+# Tests
+# ==============================================================================
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+  "--strict-markers",
+  "--strict-config",
+]
+xfail_strict = true
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["keyreach"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
+# NOTE: no `fail_under` yet — a coverage threshold lands with the rest of the
+# CI guardrails in roadmap item R0.9 (implementation_plan.md §11), once there is
+# real logic to hold to it.

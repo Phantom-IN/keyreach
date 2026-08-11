@@ -14,8 +14,8 @@ completes it. One roadmap item per pull request where practical. See
 
 ## Phase 0 — Foundations
 
-- [ ] **R0.1 — Base OSS structure** *(this first commit)* — governance, docs, templates, roadmap, hygiene CI. No source code. *Done when:* repo has all governance/docs files and a clean initial commit on `main`.
-- [ ] **R0.2 — Project scaffold** `feat/r0.2-project-scaffold` — `pyproject.toml` (Apache-2.0, Python 3.11+, deps per `implementation_plan.md` §1, **no AI/LLM deps**), empty `keyreach/` package, Typer CLI entrypoint with `--help`/`--version` only, `pre-commit` config (ruff/black/mypy), pytest harness. *Done when:* `pipx install -e .` works and `keyreach --help` prints; lint/type/test scaffolding runs green with zero real logic.
+- [x] **R0.1 — Base OSS structure** *(first commit)* — governance, docs, templates, roadmap, hygiene CI. No source code. *Done when:* repo has all governance/docs files and a clean initial commit on `main`.
+- [x] **R0.2 — Project scaffold** `feat/r0.2-project-scaffold` — `pyproject.toml` (Apache-2.0, Python 3.11+, deps per `implementation_plan.md` §1, **no AI/LLM deps**), empty `keyreach/` package, Typer CLI entrypoint with `--help`/`--version` only, `pre-commit` config (ruff/black/mypy), pytest harness. *Done when:* `pipx install -e .` works and `keyreach --help` prints; lint/type/test scaffolding runs green with zero real logic. *Also landed:* the `keyreach` name reserved on PyPI (`0.1.0.dev0` placeholder) and `.github/workflows/publish.yml` — token-free publishing via PyPI Trusted Publishing, pulled forward from R1.6 so the name could be held without storing a long-lived API token.
 - [ ] **R0.3 — Core data models** `feat/r0.3-core-models` — pydantic `Capability`, `Identity`, `ValidationResult`, `Report` (`implementation_plan.md` §4); generate and check in `report.schema.json`; unit tests. *Done when:* models validate and schema is generated deterministically.
 - [ ] **R0.4 — Provider base + registry** `feat/r0.4-provider-registry` — `Provider` base class and deterministic registry/discovery (`implementation_plan.md` §4); tests with a dummy provider. *Done when:* registry loads providers in stable order.
 - [ ] **R0.5 — Detection layer** `feat/r0.5-detection` — pattern loader seeded with an **attributed** subset of secrets-patterns-db (CC-BY, update `NOTICE`/`THIRD_PARTY_LICENSES.md`), high-confidence prefix matching + deterministic entropy fallback (`implementation_plan.md` §5); table-driven tests. *Done when:* sample keys map to expected providers/confidence deterministically.
@@ -31,7 +31,7 @@ completes it. One roadmap item per pull request where practical. See
 - [ ] **R1.3 — AWS provider** `feat/r1.3-aws-provider` — `sts get-caller-identity` + read-only permission inference; aggressive enumeration **opt-in and flagged**; fixtures. *Done when:* default run is minimal/read-only; aggressive mode gated.
 - [ ] **R1.4 — Interface acceptance checkpoint** `chore/r1.4-interface-review` — verify the Phase-0 acceptance test: adding the third provider touched only its own file + fixture. *Done when:* confirmed, or the interface is refactored until true.
 - [ ] **R1.5 — CLI UX** `feat/r1.5-cli-ux` — batch input (`-f` / stdin), `--provider`, `--no-enumerate`, `--delay`, `--unmask`, `--fail-on`, fixed exit codes (`implementation_plan.md` §12).
-- [ ] **R1.6 — v0.1 release** `chore/r1.6-release-0.1` — reach ≥10 providers across ≥4 categories (cloud, AI, payment, comms); README usage; CHANGELOG; tag `v0.1.0`; PyPI publish workflow. *Done when:* `pipx install keyreach` (or test index) works end-to-end.
+- [ ] **R1.6 — v0.1 release** `chore/r1.6-release-0.1` — reach ≥10 providers across ≥4 categories (cloud, AI, payment, comms); README usage; CHANGELOG; tag `v0.1.0`; PyPI publish workflow *(already landed in R0.2 — this item just uses it)*. *Done when:* `pipx install keyreach` (or test index) works end-to-end.
 
 ## Phase 2 — Breadth & depth
 

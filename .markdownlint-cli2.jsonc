@@ -1,0 +1,33 @@
+// markdownlint configuration, shared by three consumers so they cannot disagree:
+//   • the `markdown` job in .github/workflows/ci.yml
+//   • the markdownlint-cli2 hook in .pre-commit-config.yaml
+//   • a bare `npx markdownlint-cli2` run locally
+//
+// Checked in as part of roadmap item R0.2, replacing the copy the CI job used
+// to generate inline when this repository had no project tooling.
+{
+  "config": {
+    "MD013": false,                      // line length — prose is hard-wrapped, tables are not
+    "MD014": false,                      // "$ cmd" without output — issue templates prompt for it
+    "MD024": { "siblings_only": true },  // CHANGELOG repeats Added/Fixed under each release
+    "MD033": false,                      // inline HTML — issue and PR templates use HTML comments
+    "MD040": false,                      // fenced blocks without a language (illustrative snippets)
+    "MD041": false,                      // first-line heading — templates start with front matter
+    "MD060": false                       // table pipe spacing — cosmetic
+  },
+  "globs": ["**/*.md"],
+  // Honour .gitignore so a local run never lints .venv/, dist/ or build/ —
+  // dependencies ship their own Markdown and it is not ours to lint.
+  "gitignore": true,
+  "ignores": [
+    "node_modules/**",
+    // Hand-authored planning documents, kept verbatim. They predate this config
+    // and carry ~25 cosmetic violations (a missing blank line between a heading
+    // and the list under it, mostly). Reformatting them is its own `docs:` PR —
+    // not something to smuggle into a scaffolding commit, and not friction worth
+    // imposing on a one-line edit to plan.md.
+    "plan.md",
+    "implementation_plan.md",
+    "CLAUDE.md"
+  ]
+}
