@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "tool": "keyreach",
+  "tool_version": "0.0.0-golden",
+  "provider": "cassette",
+  "provider_category": "generic",
+  "generated_at": "2026-01-01T12:00:00+00:00",
+  "key_fingerprint": "csst******************************bbb",
+  "title": "Exposed cassette API key is no longer valid",
+  "severity": "info",
+  "impact": "The provider rejected this key, so it cannot be used as it stands. Rotate it anyway if it was ever live, and check for prior use.",
+  "severity_rationale": [
+    "No capabilities were confirmed."
+  ],
+  "validation": {
+    "valid": false,
+    "identity": null,
+    "note": "provider rejected the key"
+  },
+  "capabilities": [],
+  "notes": [],
+  "remediation": [
+    "Revoke or rotate this key now. It was found outside the systems that should hold it, so treat it as known to others.",
+    "Remove the key from wherever it leaked — including git history, build logs and image layers, not only the current file.",
+    "Check the provider's audit or usage logs for calls made with this key, especially from addresses or times you do not recognise.",
+    "Scope the replacement: least-privilege permissions, plus referrer, IP or app restrictions where the provider supports them.",
+    "Store the replacement in a secret manager and re-scan the repository before the next deployment."
+  ],
+  "rotation_guide_url": "https://example.invalid/rotate",
+  "docs_url": "https://example.invalid/docs"
+}

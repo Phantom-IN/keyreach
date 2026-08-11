@@ -1,0 +1,39 @@
+╭─ HIGH ───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Exposed cassette API key reaches Cassette Files and 1 other service                              │
+│                                                                                                  │
+│ Anyone holding this key can read private data or spend money against this account. Rotate now.   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+Provider   cassette (generic)
+Key        csst******************************aaa
+Status     valid
+Generated  2026-01-01T12:00:00+00:00
+Account    acct_demo
+Plan       team
+
+Capabilities
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Service           ┃ Access ┃ Detail                    ┃ Flags ┃
+┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ Cassette Files    │ read   │ Can list uploaded files   │ data  │
+│ Cassette Metadata │ read   │ Can read project metadata │ —     │
+└───────────────────┴────────┴───────────────────────────┴───────┘
+
+Why this severity
+  • Reaches private or user data: Cassette Files (read) — Can list uploaded files.
+
+Remediation
+  1. Revoke or rotate this key now. It was found outside the systems that should hold it, so treat
+     it as known to others.
+  2. Remove the key from wherever it leaked — including git history, build logs and image layers,
+     not only the current file.
+  3. Check the provider's audit or usage logs for calls made with this key, especially from
+     addresses or times you do not recognise.
+  4. Scope the replacement: least-privilege permissions, plus referrer, IP or app restrictions where
+     the provider supports them.
+  5. Store the replacement in a secret manager and re-scan the repository before the next
+     deployment.
+
+     Rotation guide: https://example.invalid/rotate
+     Provider docs: https://example.invalid/docs
+
+keyreach 0.0.0-golden · schema 1.0 · deterministic, read-only, no AI

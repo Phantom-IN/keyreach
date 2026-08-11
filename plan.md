@@ -133,6 +133,9 @@ A keyreach report is a self-contained, deterministic finding. Formats: terminal 
 7. **Evidence** — for each capability, a masked, read-only request and a benign response summary that proves the access. This is what turns an informational report into a proven-impact one.
 8. **Remediation** — provider-specific rotation/restriction guidance.
 9. **Attribution footer** — tool name and version, for reproducibility.
+10. **What could not be determined** — probes that failed, and why nothing was probed when nothing was. Added while building the reporting layer: without it, a run where three probes errored renders identically to one where three probes came back empty, and a partial capability map reads as a complete one. An absent finding is not the same as a negative finding, and a report that cannot tell the difference invites a reader to conclude more than keyreach established.
+
+**On what the report must not claim.** A key nobody could identify was never tested, and a report for one says "not probed" rather than "not valid" — the second asserts that a provider refused the key, which is a stronger and different statement. The same discipline applies to the title and the impact line: both are derived from confirmed capabilities, never from the provider's name or the key's shape.
 
 The report is stable: re-running the same key against the same provider state reproduces the same report byte-for-byte (modulo the timestamp).
 

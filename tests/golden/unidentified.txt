@@ -1,0 +1,30 @@
+╭─ INFO ───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Unidentified secret: keyreach could not determine the provider                                   │
+│                                                                                                  │
+│ keyreach could not identify this secret's provider, so nothing was probed and no impact was      │
+│ established. This is not evidence that the secret is harmless.                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+Provider   unknown (generic)
+Key        this********************all
+Status     not probed
+Generated  2026-01-01T12:00:00+00:00
+
+Why this severity
+  • No capabilities were confirmed.
+
+Not determined
+  • No known key format matched, and the value does not look like a credential. Nothing was probed.
+
+Remediation
+  1. Revoke or rotate this key now. It was found outside the systems that should hold it, so treat
+     it as known to others.
+  2. Remove the key from wherever it leaked — including git history, build logs and image layers,
+     not only the current file.
+  3. Check the provider's audit or usage logs for calls made with this key, especially from
+     addresses or times you do not recognise.
+  4. Scope the replacement: least-privilege permissions, plus referrer, IP or app restrictions where
+     the provider supports them.
+  5. Store the replacement in a secret manager and re-scan the repository before the next
+     deployment.
+
+keyreach 0.0.0-golden · schema 1.0 · deterministic, read-only, no AI

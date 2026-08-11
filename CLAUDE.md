@@ -62,9 +62,10 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
 - `keyreach/providers/*` — one file (or YAML) per provider.
-- `keyreach/patterns/detection_rules.yml` — seeded from secrets-patterns-db (CC-BY, attributed).
-- `keyreach/report/` — templates, `render.py`, `report.schema.json`.
-- `tests/fixtures/` — recorded cassettes (no real keys); `tests/golden/` — snapshot reports.
+- `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
+- `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
+- `keyreach/report/render.py` — terminal / JSON / Markdown renderers; `templates/`; `report.schema.json`.
+- `tests/fixtures/` — recorded cassettes (no real keys); `tests/golden/` — snapshot reports, regenerated with `python -m tests.regenerate_goldens`.
 
 ---
 
@@ -106,10 +107,16 @@ Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
 pipx install -e .            # or: pip install -e '.[dev]'
 
 # quality gates (run before every commit)
-ruff check . && black --check . && mypy keyreach
+# `mypy keyreach tests` is what pre-commit and CI run — the tests are typed too,
+# and `mypy keyreach` alone will pass on code that fails the hook.
+ruff check . && black --check . && mypy keyreach tests
 pytest -q --cov=keyreach
 
-# run locally against a throwaway key
+# regenerate checked-in artifacts (both fail the suite when stale)
+python -m keyreach.report.schema --write   # report.schema.json
+python -m tests.regenerate_goldens         # tests/golden/*
+
+# run locally against a throwaway key — R1.5 wires these up
 keyreach <KEY>
 keyreach <KEY> --report md -o out.md
 keyreach <KEY> --json
@@ -126,6 +133,7 @@ Do not run keyreach against keys you don't own or aren't authorized to test.
 - `test_determinism.py` must stay green: double-run byte-equality + golden snapshots (timestamp fixed).
 - Add redaction assertions whenever you touch output/evidence paths.
 - When a provider's API changes, update the cassette and golden files in the same PR and note the drift.
+- **Never write a key-shaped literal in source, even a fake one.** Compose test samples from parts (`"sk_" + "live_" + body`). A single literal matches keyreach's own detector *and* GitHub push protection, which blocks the push and offers only a click-through "allow this secret" link — never use it. `tests/test_repo_hygiene.py` catches this before the commit exists; do not narrow the file list it scans.
 
 ---
 

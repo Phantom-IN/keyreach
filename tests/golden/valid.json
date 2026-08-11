@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "tool": "keyreach",
+  "tool_version": "0.0.0-golden",
+  "provider": "cassette",
+  "provider_category": "generic",
+  "generated_at": "2026-01-01T12:00:00+00:00",
+  "key_fingerprint": "csst******************************aaa",
+  "title": "Exposed cassette API key reaches Cassette Files and 1 other service",
+  "severity": "high",
+  "impact": "Anyone holding this key can read private data or spend money against this account. Rotate now.",
+  "severity_rationale": [
+    "Reaches private or user data: Cassette Files (read) — Can list uploaded files."
+  ],
+  "validation": {
+    "valid": true,
+    "identity": {
+      "account": "acct_demo",
+      "owner": null,
+      "plan_or_tier": "team",
+      "extra": {}
+    },
+    "note": ""
+  },
+  "capabilities": [
+    {
+      "service": "Cassette Files",
+      "access": "read",
+      "detail": "Can list uploaded files",
+      "evidence": "GET https://api.cassette.invalid/v1/files?key=<key> -> 200, 2 files",
+      "risk_weight": 70,
+      "data_sensitive": true,
+      "incurs_cost": false,
+      "restricted": false,
+      "resource_ref": null,
+      "poc": null
+    },
+    {
+      "service": "Cassette Metadata",
+      "access": "read",
+      "detail": "Can read project metadata",
+      "evidence": "GET https://api.cassette.invalid/v1/metadata?key=<key> -> 200, project metadata returned",
+      "risk_weight": 20,
+      "data_sensitive": false,
+      "incurs_cost": false,
+      "restricted": false,
+      "resource_ref": null,
+      "poc": null
+    }
+  ],
+  "notes": [],
+  "remediation": [
+    "Revoke or rotate this key now. It was found outside the systems that should hold it, so treat it as known to others.",
+    "Remove the key from wherever it leaked — including git history, build logs and image layers, not only the current file.",
+    "Check the provider's audit or usage logs for calls made with this key, especially from addresses or times you do not recognise.",
+    "Scope the replacement: least-privilege permissions, plus referrer, IP or app restrictions where the provider supports them.",
+    "Store the replacement in a secret manager and re-scan the repository before the next deployment."
+  ],
+  "rotation_guide_url": "https://example.invalid/rotate",
+  "docs_url": "https://example.invalid/docs"
+}

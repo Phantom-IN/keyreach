@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 import tomllib
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -168,3 +169,15 @@ def test_version_is_single_sourced_from_the_package(
     """Guards against someone reintroducing a hardcoded version in pyproject."""
     assert "version" in pyproject["project"]["dynamic"]
     assert pyproject["tool"]["hatch"]["version"]["path"] == "keyreach/__init__.py"
+
+
+def test_report_templates_are_importable_package_data() -> None:
+    """The Markdown template has to survive installation, not just checkout.
+
+    ``PackageLoader`` reads it through the import system, so this fails the same
+    way a wheel missing the file would — a report that renders from the source
+    tree and crashes for an installed user is the failure mode being guarded.
+    """
+    templates = resources.files("keyreach.report") / "templates"
+
+    assert (templates / "report.md.j2").is_file()

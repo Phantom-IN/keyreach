@@ -34,7 +34,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 # Bumped when the report structure changes in a way that could break a consumer
 # parsing `--json`. The generated report.schema.json pins it, and the schema
@@ -354,6 +354,19 @@ class Report(BaseModel):
         description="Confirmed capabilities, stably sorted by service then access.",
     )
 
+    # Not one of the nine required contents, but the report is where R0.6's
+    # collected probe errors have to land. Without them a run where three
+    # probes failed renders identically to one where three probes found
+    # nothing, and a partial capability map reads as a complete one.
+    notes: list[str] = Field(
+        default_factory=list,
+        description=(
+            "What could not be determined: probe failures, and why nothing was "
+            "probed when nothing was. An empty list means the run was clean, "
+            "not that the capability map is exhaustive."
+        ),
+    )
+
     # 8 — remediation
     remediation: list[str] = Field(
         default_factory=list,
@@ -383,6 +396,20 @@ class Report(BaseModel):
             )
             raise ValueError(msg)
         return value
+
+    @field_serializer("generated_at")
+    def _serialize_generated_at(self, value: datetime) -> str:
+        """Spell the timestamp the same way in every output format.
+
+        pydantic renders a UTC datetime as ``...T12:00:00Z`` while
+        ``datetime.isoformat()`` — which the Markdown template and the terminal
+        renderer call — gives ``...T12:00:00+00:00``. Both are valid RFC 3339
+        and both round-trip, but emitting two spellings of one instant across
+        keyreach's own three formats makes a JSON report and a Markdown report
+        of the same run look like they disagree. Pinned here, on the model, so
+        there is one definition rather than one per renderer.
+        """
+        return value.isoformat()
 
     @field_validator("capabilities")
     @classmethod

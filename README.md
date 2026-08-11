@@ -14,15 +14,19 @@
 
 > **⚠️ Status: early — building in public**
 >
-> **keyreach cannot analyse a key yet.** The package installs and
-> `keyreach --help` works, but detection, validation, enumeration, scoring and
-> reporting are still ahead — every claim below the fold describes the
-> destination, not today's behavior.
+> **keyreach cannot analyse a key yet.** The whole pipeline —
+> detect → validate → enumerate → score → report — is built and tested against
+> recorded fixtures, but **no provider plugin exists**, so a real key still has
+> nothing to be probed against, and the CLI still answers only `--help` and
+> `--version`. Every claim below the fold describes the destination, not today's
+> behavior.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Follow along in
-> [`ROADMAP.md`](ROADMAP.md): **R0.1** (repo structure) and **R0.2** (project
-> scaffold) are done; next up is **R0.3 — Core data models**.
+> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.8** are done (repo structure,
+> scaffold, models, provider registry, detection, engine and HTTP layer,
+> scoring, reporting). Next is **R0.9 — CI guardrails**, then **R1.1**, the
+> first real provider.
 
 ---
 
