@@ -56,6 +56,12 @@
           "title": "Incurs Cost",
           "type": "boolean"
         },
+        "restricted": {
+          "default": false,
+          "description": "Did a referrer, IP or app restriction appear to block real use of this capability? Lowers severity when it holds for every capability, since such restrictions are often bypassable.",
+          "title": "Restricted",
+          "type": "boolean"
+        },
         "resource_ref": {
           "anyOf": [
             {

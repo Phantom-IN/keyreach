@@ -177,7 +177,10 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # Tests assert (S101), take fixture arguments they don't always use (ARG), and
 # compare against literal expectations (PLR2004) — all correct in a test.
-"tests/**" = ["S101", "ARG", "PLR2004"]
+# PLR0913 too: a table-driven suite builds its inputs through one keyword-only
+# factory per model, and splitting that factory up to satisfy an argument count
+# would make the tables less readable, not more.
+"tests/**" = ["S101", "ARG", "PLR2004", "PLR0913"]
 # The banned-api rule below forbids importing httpx anywhere, which is the
 # point: provider plugins must go through ProbeContext. core/http.py is the one
 # module that legitimately opens sockets, so it is the one exemption — and

@@ -26,9 +26,10 @@ from keyreach.core.http import (
     Redactor,
     mask_key,
 )
-from keyreach.core.models import AccessLevel, ValidationResult
+from keyreach.core.models import AccessLevel, Severity, ValidationResult
 from keyreach.core.provider import Provider
 from keyreach.core.registry import ProviderRegistry
+from keyreach.core.scoring import score
 
 CASSETTE_PACKAGE = "tests.cassette_providers"
 CASSETTE = Path(__file__).parent / "fixtures" / "cassette_provider.json"
@@ -239,6 +240,34 @@ def test_engine_result_defaults_are_empty() -> None:
     assert result.outcomes == ()
     assert result.capabilities == ()
     assert not result.valid
+
+
+# --------------------------------------------------------------------------
+# The score step (roadmap R0.7)
+# --------------------------------------------------------------------------
+
+
+async def test_result_scores_the_capabilities_it_found() -> None:
+    """The engine's score step: banding over the merged capability set."""
+    result = await engine().run(VALID_KEY)
+
+    assert result.score == score(result.capabilities)
+    assert result.score.rationale
+
+
+async def test_scoring_a_run_that_found_nothing_is_info() -> None:
+    result = await engine().run(UNKNOWN_KEY)
+
+    assert result.score.severity is Severity.INFO
+    assert result.score.rationale == ("No capabilities were confirmed.",)
+
+
+async def test_score_is_stable_across_identical_runs() -> None:
+    """R0.7's acceptance criterion, exercised through the whole pipeline."""
+    first = await engine().run(VALID_KEY)
+    second = await engine().run(VALID_KEY)
+
+    assert first.score == second.score
 
 
 async def test_result_is_frozen() -> None:

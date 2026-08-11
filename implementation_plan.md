@@ -156,6 +156,7 @@ class Capability(BaseModel):
     risk_weight: int             # 0-100 base risk for this capability (plugin-declared)
     data_sensitive: bool = False # reaches private/user data?
     incurs_cost: bool = False    # can spend money / send messages?
+    restricted: bool = False     # referrer/IP/app restriction appears to block use (§7)
     resource_ref: str | None = None
     poc: str | None = None       # safe, read-only PoC for the report
 
@@ -295,39 +296,35 @@ Patterns are loaded from `patterns/detection_rules.yml`. In "unknown" mode, all 
 
 ## 7. Scoring implementation
 
-Pure function: `score(capabilities: list[Capability]) -> Severity` with a rationale. Deterministic, no thresholds pulled from anything but the capability fields.
+Pure function: `score(capabilities: Sequence[Capability]) -> ScoreResult`, holding the band and the rationale for it. Deterministic, with no threshold pulled from anything but the capability fields. `keyreach/core/scoring.py`; `ScoreResult` lives there rather than in `models.py`, because it is an internal handoff and not part of the published report schema — `Report.severity` and `Report.severity_rationale` are the schema, and `ScoreResult`'s fields are named to match so R0.8 copies them across without translating.
 
 ```python
-def score(caps: list[Capability]) -> ScoreResult:
-    if not caps:
-        return ScoreResult(band="info", rationale=["no capabilities confirmed"])
-
-    worst = max(cap.risk_weight for cap in caps)
-    admin = any(c.access == AccessLevel.ADMIN for c in caps)
-    write = any(c.access == AccessLevel.WRITE for c in caps)
-    data  = any(c.data_sensitive for c in caps)
-    cost  = any(c.incurs_cost for c in caps)
-    breadth = len({c.service for c in caps})
-
-    # deterministic banding — tune constants during Phase 1, keep them explicit
-    if (admin or write) and (data or cost):
-        band = "critical"
-    elif data or cost or write or admin:
-        band = "high"
-    elif worst >= 50 or breadth >= 4:
-        band = "medium"
-    elif worst >= 20:
-        band = "low"
-    else:
-        band = "info"
-
-    rationale = build_rationale(caps, admin, write, data, cost, breadth)
-    return ScoreResult(band=band, rationale=rationale)
+def _band(signals: _Signals) -> Severity:
+    if signals.privileged_and_valuable:          # per capability, see below
+        return Severity.CRITICAL
+    if signals.data_sensitive or signals.incurs_cost or signals.privileged:
+        return Severity.HIGH
+    if (signals.worst_risk_weight >= MEDIUM_RISK_WEIGHT
+            or signals.breadth >= BROAD_SERVICE_COUNT):
+        return Severity.MEDIUM
+    if signals.worst_risk_weight >= LOW_RISK_WEIGHT:
+        return Severity.LOW
+    return Severity.INFO
 ```
 
-`build_rationale` lists the specific capabilities that pushed the band up, so the report can show exactly why. Restriction signals (referrer/IP/app appearing to block use) are represented as a capability flag that can downgrade the band; they are explicit, not fuzzy.
+Constants are named, never inlined: `MEDIUM_RISK_WEIGHT = 50`, `LOW_RISK_WEIGHT = 20`, `BROAD_SERVICE_COUNT = 4`, `MAX_CITED_CAPABILITIES = 5`. Each is a published verdict boundary, so retuning one is a visible, reviewed change.
 
-Every band boundary is covered by a table-driven test (`test_scoring.py`) so tuning never silently changes verdicts.
+### 7.1 Notes on the implementation (landed in R0.7)
+
+- **The Critical test applies to one capability, not to the set.** This section previously sketched it as `(admin or write) and (data or cost)` evaluated with separate `any()` calls across all capabilities — which rates a key Critical when one capability writes to something harmless and a *different* capability reads something sensitive. Neither of those is "write access to sensitive data" (`plan.md` §6), and a Critical filed on that basis falls apart as soon as a triager reads the capability map beside it. Critical now requires a **single** capability that is both privileged and valuable. The High test is unchanged, because each of its disjuncts is a single field and `any()` over the set is the correct reading.
+- **`AccessLevel.UNKNOWN` never satisfies the privileged test.** keyreach cannot claim a write it did not confirm, so an undetermined access level cannot reach Critical. It still counts toward breadth and risk weight, and it always adds a rationale line stating the band may understate real impact — "not determined" is not "harmless" (`core/models.py`).
+- **Restrictions downgrade by exactly one band, and only when every capability is restricted.** `Capability.restricted` is the explicit flag §4 now carries. A referrer check on one of five reachable services does not shrink the blast radius, so a partial restriction changes nothing. And keyreach observes only that a restriction *appears* to be in force — HTTP referrer and IP restrictions are routinely bypassed by sending the header the check expects, which is why `plan.md` §6 places "restricted-but-bypassable" at Medium rather than dismissing it. Collapsing a live payment key to Info on the strength of a spoofable header would be the worst error this function could make. The downgrade never underflows below Info.
+- **The rationale cites each capability once, under the strongest reason that applies.** Otherwise a Stripe charge capability appears on three lines — privileged-and-valuable, spending, and write — and one finding reads as three.
+- **The risk-weight line is emitted only when weight actually reached the band.** A breadth-driven Medium citing "0/100" would argue against its own verdict. Checked against the threshold rather than inferred from the band, because the band reaching the rationale builder is the one *after* any restriction downgrade.
+- **Citations are bounded** at `MAX_CITED_CAPABILITIES` and taken in `sort_key` order, so the truncation is reproducible and a key with sixty capabilities does not produce a sixty-item sentence. The full list is in the capability map beside it.
+- **`Engine`/`EngineResult.score` is a property, not a stored field.** Scoring is pure, so recomputing it can never disagree with the capabilities it derives from, whereas a stored band could be left stale.
+
+Every band boundary is covered by a table-driven test (`tests/test_scoring.py`) so tuning never silently changes verdicts, along with input-order independence and repeated-run equality — R0.7's acceptance criterion.
 
 ---
 

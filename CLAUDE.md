@@ -74,7 +74,9 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 2. Implement:
    - `detect(key)` — pure, high-confidence structural match; add a pattern to `detection_rules.yml` if needed.
    - `validate(key, ctx)` — cheapest read-only liveness + identity call.
-   - `enumerate(key, ctx)` — read-only probes; each match returns a `Capability` with `access`, `detail`, `evidence`, `risk_weight`, and the `data_sensitive`/`incurs_cost` flags set correctly (these drive severity). Return a stably-sorted list.
+   - `enumerate(key, ctx)` — read-only probes; each match returns a `Capability` with `access`, `detail`, `evidence`, `risk_weight`, and the `data_sensitive`/`incurs_cost`/`restricted` flags set correctly (these drive severity — see `core/scoring.py` for the exact rules). Return a stably-sorted list.
+     - `data_sensitive` and `incurs_cost` raise the band; on a **single** capability, either one combined with `write`/`admin` is what makes a finding Critical. Set `restricted` when a referrer/IP/app restriction appears to block real use — it lowers the band by one, but only when it holds for every capability.
+     - Use `AccessLevel.UNKNOWN` when no rule can decide. It is scored as undetermined, never as harmless, and never as a write. Guessing `read` to make a report look tidier understates real impact.
    - metadata: `name`, `category`, `docs_url`, `rotation_guide_url`, and `credit` (upstream project, if derived).
      - `name` must be **lowercase and unique** — it is both the registry key and the literal value `--provider` matches.
      - `category` must be one of the **closed set** enforced by `core/registry.py`: `cloud`, `ai`, `payment`, `comms`, `email`, `devtools`, `database`, `monitoring`, `auth`, `generic`. It drives the v0.1 "≥10 providers across ≥4 categories" measure, so a typo would quietly inflate coverage. Call `validate_provider()` in your plugin's test to catch this before the registry does.
