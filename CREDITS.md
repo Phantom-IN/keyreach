@@ -105,17 +105,30 @@ is live. *Which endpoint to call is a fact, not an expressive work* — keyreach
 re-implements each recipe and **re-verifies it against current provider
 documentation**, since cookbook recipes drift.
 
-### gmapsapiscanner — Ozgur Alp 💡 Reference (verify license before reuse)
+### gmapsapiscanner — Ozgur Alp ♻️ Reusable · MIT (verified 2026-08-11)
 
 <https://github.com/ozguralp/gmapsapiscanner>
 
 A Google `AIza` key scanner probing ~20 Google APIs (Maps, Places, Geocode,
-Roads, FCM, and Gemini Files), with cost annotations per endpoint. This is the
+Roads, FCM, and Gemini Files), with cost annotations per endpoint. The
 **blueprint for keyreach's Google provider** (roadmap R1.1). Its author's own
 stated roadmap — cover *all* Google APIs for greater impact — is essentially
-what the keyreach Google plugin aims to be. Endpoint lists and cost annotations
-are factual; the license is verified before reusing anything expressive, and the
-provider file carries an inline credit header.
+what the keyreach Google plugin aims to be.
+
+**License verified as MIT** from the upstream repository on 2026-08-11, so reuse
+with attribution is permitted. **Nothing was copied even so.** What this project
+contributed is the genuinely hard-won part — *which* Google APIs are worth
+probing with an exposed key; every endpoint, parameter, success rule and cost
+annotation in `keyreach/providers/google.py` was then written from Google's own
+documentation, and each probe cites the page it came from. The provider carries
+an inline credit header, and the MIT license text is recorded in
+[`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
+
+Two places where keyreach deliberately stops short of what this scanner does:
+it does not probe FCM, because the only known probe is to *send* a message; and
+it does not infer that a key which can list Gemini models can also run
+inference, because Google key restrictions can be scoped to individual methods.
+Both are recorded in the provider module.
 
 ### enumerate-iam — Andrés Riancho 💡 Reference
 

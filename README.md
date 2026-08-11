@@ -17,19 +17,19 @@
 
 > **⚠️ Status: early — building in public**
 >
-> **keyreach cannot analyse a key yet.** The whole pipeline —
-> detect → validate → enumerate → score → report — is built and tested against
-> recorded fixtures, but **no provider plugin exists**, so a real key still has
-> nothing to be probed against, and the CLI still answers only `--help` and
-> `--version`. Every claim below the fold describes the destination, not today's
-> behavior.
+> **One provider works; the CLI does not expose it yet.** The whole pipeline —
+> detect → validate → enumerate → score → report — is built, and **Google
+> `AIza` keys** are fully supported: Gemini Files, Gemini Cached Content, Gemini
+> Models, Places, Geocoding and Roads, scored with a rationale. But the CLI
+> still answers only `--help` and `--version` — wiring the pipeline behind it is
+> **R1.5** — so today that capability is reachable from Python, not from a
+> terminal. Everything else below the fold describes the destination.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Follow along in
-> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** are done — Phase 0 is complete.
-> The pipeline, the report formats, and the CI guardrails that enforce the hard
-> rules all exist. Next is **R1.1**, the first real provider, which is what makes
-> the tool usable.
+> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** (Phase 0) and **R1.1** are done.
+> Next are more providers (**R1.2** AI, **R1.3** AWS) and then **R1.5**, the CLI
+> that makes all of it usable from a terminal.
 
 ---
 

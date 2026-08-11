@@ -1,0 +1,65 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"generativelanguage.googleapis.com has not been used in project 402168891234 before or it is disabled.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"SERVICE_DISABLED\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\",\"consumer\":\"projects/402168891234\"}}]}}",
+      "headers": {
+        "content-length": "378",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://generativelanguage.googleapis.com/v1beta/cachedContents?key=<key>"
+    },
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"generativelanguage.googleapis.com has not been used in project 402168891234 before or it is disabled.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"SERVICE_DISABLED\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\",\"consumer\":\"projects/402168891234\"}}]}}",
+      "headers": {
+        "content-length": "378",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://generativelanguage.googleapis.com/v1beta/files?key=<key>"
+    },
+    {
+      "body": "{\"error\":{\"code\":403,\"message\":\"generativelanguage.googleapis.com has not been used in project 402168891234 before or it is disabled.\",\"status\":\"PERMISSION_DENIED\",\"details\":[{\"@type\":\"type.googleapis.com/google.rpc.ErrorInfo\",\"reason\":\"SERVICE_DISABLED\",\"domain\":\"googleapis.com\",\"metadata\":{\"service\":\"generativelanguage.googleapis.com\",\"consumer\":\"projects/402168891234\"}}]}}",
+      "headers": {
+        "content-length": "378",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://generativelanguage.googleapis.com/v1beta/models?key=<key>"
+    },
+    {
+      "body": "{\"results\":[{\"formatted_address\":\"Mountain View, CA\"}],\"status\":\"OK\"}",
+      "headers": {
+        "content-length": "69",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway&key=<key>"
+    },
+    {
+      "body": "{\"candidates\":[{\"name\":\"British Museum\"}],\"status\":\"OK\"}",
+      "headers": {
+        "content-length": "56",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=museum&inputtype=textquery&key=<key>"
+    },
+    {
+      "body": "{\"snappedPoints\":[{\"location\":{\"latitude\":60.17088,\"longitude\":24.942795},\"placeId\":\"ChIJ\"}]}",
+      "headers": {
+        "content-length": "93",
+        "content-type": "application/json; charset=UTF-8"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://roads.googleapis.com/v1/nearestRoads?points=60.170880%2C24.942795&key=<key>"
+    }
+  ],
+  "version": 1
+}

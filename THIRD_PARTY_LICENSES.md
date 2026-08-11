@@ -189,9 +189,8 @@ is an AI/LLM SDK.
 | hatchling | build | MIT | 2026-08-11 |
 
 Re-check this table whenever a dependency is added or a major version is bumped.
-Roadmap item **R0.9** wires the CI guardrails that make the AI/LLM half of this
-check automatic; `tests/test_packaging.py` already fails if an AI/LLM SDK is
-declared in any group.
+The `ai_ban` guardrail (roadmap **R0.9**, `tools/guardrails/ai_ban.py`) makes
+the AI/LLM half of this check automatic in CI, in pre-commit and under `pytest`.
 
 ---
 
@@ -203,8 +202,17 @@ redistributed. They are acknowledged in [`CREDITS.md`](CREDITS.md):
 - **TruffleHog** (AGPL-3.0) — behavior studied, re-implemented from public docs
 - **ScoutSuite** (GPL) — studied only
 - **Pacu** — enumeration approach studied only; exploitation is out of scope
-- **KeyHacks**, **gmapsapiscanner**, **enumerate-iam**, **Prowler**, **nuclei** —
-  methodology and design references
+- **KeyHacks**, **enumerate-iam**, **Prowler**, **nuclei** — methodology and
+  design references
+- **gmapsapiscanner** (MIT, verified 2026-08-11) — the blueprint for
+  `keyreach/providers/google.py` (roadmap R1.1). Its license *would* permit
+  reuse with attribution, and it is listed here rather than above because
+  nothing was in fact copied: it established which Google APIs are worth
+  probing, and every endpoint, parameter and success rule was then written from
+  Google's own documentation, each probe citing its source page. Credited
+  inline in the provider and in [`CREDITS.md`](CREDITS.md). If code or data
+  from it is ever redistributed, move it into the table above with the full MIT
+  text.
 
 If any of these ever contribute actual code or data to keyreach, the copyleft
 ones must be rejected outright, and the permissive ones get a full entry above
