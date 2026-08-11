@@ -160,10 +160,11 @@ class Capability(BaseModel):
     request and a benign response summary that *proves* the access, because that
     string is what a triager on the receiving end will check.
 
-    ``data_sensitive`` and ``incurs_cost`` matter more than anything else on
-    this model — they are what push a finding into the High and Critical bands
-    (``plan.md`` §6). Getting them wrong misreports real-world impact in both
-    directions.
+    ``data_sensitive``, ``incurs_cost`` and ``restricted`` matter more than
+    anything else on this model — they are what push a finding into the High and
+    Critical bands, and what pulls one back down (``plan.md`` §6, and
+    ``core/scoring.py`` for the exact rules). Getting them wrong misreports
+    real-world impact in both directions.
     """
 
     model_config = _config(
@@ -198,6 +199,14 @@ class Capability(BaseModel):
     incurs_cost: bool = Field(
         default=False,
         description="Can spend money or send communications (inference, cloud, SMS)?",
+    )
+    restricted: bool = Field(
+        default=False,
+        description=(
+            "Did a referrer, IP or app restriction appear to block real use of "
+            "this capability? Lowers severity when it holds for every "
+            "capability, since such restrictions are often bypassable."
+        ),
     )
     resource_ref: str | None = Field(
         default=None,

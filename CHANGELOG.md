@@ -113,6 +113,28 @@ under `Unreleased` in the same pull request as any user-visible change.
 - A bounded, deterministic retry schedule (fixed, never jittered) and a
   `--delay` pacing lock that deliberately serialises probes when set.
 
+- Severity scoring (roadmap item **R0.7**) in `keyreach/core/scoring.py`:
+  `score(capabilities)` returns a `ScoreResult` carrying the band and the
+  rationale for it. Pure — no clock, no network, no provider name, no model — so
+  the same capability set always produces the same band and the same rationale,
+  and a triager can re-derive the verdict rather than take it on trust. Wired
+  into the pipeline as `EngineResult.score`.
+- Named banding constants (`MEDIUM_RISK_WEIGHT`, `LOW_RISK_WEIGHT`,
+  `BROAD_SERVICE_COUNT`, `MAX_CITED_CAPABILITIES`) rather than inlined numbers.
+  Each is a published verdict boundary, and `tests/test_scoring.py` pins both
+  sides of every threshold so retuning one is a reviewed change and not a silent
+  reclassification of findings already filed.
+- `Capability.restricted` — the explicit referrer/IP/app restriction flag
+  `implementation_plan.md` §7 always specified but the model did not carry. When
+  it holds for *every* confirmed capability it lowers the band by exactly one,
+  never below Info: keyreach can observe that a restriction appears to be in
+  force but cannot prove it holds, and such restrictions are routinely bypassed
+  by sending the header the check expects.
+- `AccessLevel.UNKNOWN` scores as undetermined rather than harmless. It can
+  never satisfy the privileged-access test — keyreach does not claim a write it
+  did not confirm — but it counts toward breadth and risk weight and always adds
+  a rationale line saying the band may understate real impact.
+
 ### Changed
 
 - **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
@@ -139,7 +161,16 @@ under `Unreleased` in the same pull request as any user-visible change.
   plugin. It also documents `Provider` as an ABC, the `ProbeContext` placeholder,
   and gains §4.1 covering the registry.
 - `CLAUDE.md`'s "How to add a provider" checklist now states the lowercase-name
-  and closed-category rules the registry enforces.
+  and closed-category rules the registry enforces, and the `restricted` flag
+  alongside `data_sensitive` and `incurs_cost`.
+- **The Critical band now requires a single capability to be both privileged and
+  valuable.** `implementation_plan.md` §7 sketched the test as
+  `(admin or write) and (data or cost)` evaluated across the whole capability
+  set, which rates a key Critical when one capability can write to something
+  harmless and a *different* capability can read something sensitive. Neither is
+  "write access to sensitive data" (`plan.md` §6), and a Critical filed on that
+  basis would not survive triage. §7 was corrected and gained a §7.1 recording
+  this and the other scoring decisions as built.
 
 ### Deprecated
 

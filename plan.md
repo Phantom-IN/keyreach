@@ -105,11 +105,13 @@ Severity is **computed deterministically from the capabilities keyreach actually
 **What drives severity:** the worst confirmed access level (read / write / admin), whether the key can reach **private or user data**, whether it can incur **direct financial cost** (LLM inference billing, cloud spend, SMS/email sending, payment operations), the **breadth** of reachable services, and whether restrictions (referrer/IP/app) appear to block real-world abuse (recorded and used to downgrade).
 
 **Bands:**
-- **Critical** — write/admin to sensitive data or money movement (e.g. a live payment key that can charge/refund; a cloud key with broad write/admin; a database key with read/write to production data).
+- **Critical** — write/admin to sensitive data or money movement (e.g. a live payment key that can charge/refund; a cloud key with broad write/admin; a database key with read/write to production data). The privileged access and the sensitive reach must be **the same confirmed capability**: write access *here* plus sensitive data *there* is not write access to sensitive data, and a Critical filed on that pairing would not survive triage.
 - **High** — read access to private user data, or the ability to spend money / send communications at scale (e.g. a key that can reach an LLM provider's uploaded-files or cached-content endpoints; a mail-sending key; an SMS-capable key).
 - **Medium** — meaningful non-public functionality without direct data exfiltration or spend, or restricted-but-bypassable keys.
 - **Low** — limited, largely public functionality; quota/billing nuisance only.
-- **Info** — valid but effectively harmless or fully restricted.
+- **Info** — valid but effectively harmless.
+
+**How restrictions are treated.** A restriction (referrer/IP/app) that appears to block use lowers the band by **one**, and only when it holds for *every* confirmed capability — a referrer check on one of five reachable services does not shrink the blast radius of the other four. It never lowers a band to Info from above. keyreach can observe that a restriction appears to be in force; it cannot prove the restriction holds, and HTTP referrer and IP restrictions are routinely bypassed by sending the header the check expects. That is exactly why "restricted-but-bypassable" sits at Medium above rather than being dismissed, and why collapsing a live payment key to Info on the strength of a spoofable header would be the worst mistake the severity model could make. An earlier draft of this section read "Info — valid but effectively harmless **or fully restricted**", which contradicted the Medium band directly above it; the safer reading wins.
 
 **Every rating ships with its rationale** — the specific confirmed capabilities that drove the band. That rationale *is* the bounty argument, and it lets the receiving team verify the claim.
 

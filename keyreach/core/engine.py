@@ -1,13 +1,13 @@
-"""Pipeline orchestration: detect → validate → enumerate.
+"""Pipeline orchestration: detect → validate → enumerate → score.
 
 The engine is where the stages meet. It owns the two things a single stage
 cannot: the lifetime of the HTTP client, and the ordering guarantees that make a
 run reproducible (``implementation_plan.md`` §6).
 
-Scoring and reporting are not here yet — they arrive with ``scoring.py`` in
-roadmap R0.7 and ``report/render.py`` in R0.8, and the engine grows two more
-steps then. What it produces today is an :class:`EngineResult`: what the key is,
-whether it is live, and what it reaches.
+Reporting is not here yet — it arrives with ``report/render.py`` in roadmap
+R0.8. What the engine produces today is an :class:`EngineResult`: what the key
+is, whether it is live, what it reaches, and the band that reachable set
+justifies.
 
 **Ordering.** Providers are tried in detection-confidence order, ties broken by
 name. Capabilities are re-sorted before they leave the engine, because probes
@@ -28,6 +28,11 @@ from typing import TYPE_CHECKING, Final
 
 from pydantic import BaseModel, ConfigDict, Field
 
+# `scoring` is imported as a module, not `from ... import score`:
+# `EngineResult.score` is a property of the same name, and a bare `score(...)`
+# inside it would read as recursion to anyone skimming the file, even though
+# Python resolves it to the module global.
+from keyreach.core import scoring
 from keyreach.core.detect import DetectionMatch, Detector, default_detector
 from keyreach.core.http import (
     DEFAULT_CONCURRENCY,
@@ -107,6 +112,17 @@ class EngineResult(BaseModel):
             for capability in outcome.capabilities
         ]
         return tuple(sorted(merged, key=lambda capability: capability.sort_key))
+
+    @property
+    def score(self) -> scoring.ScoreResult:
+        """Severity and rationale for the merged capability set.
+
+        A property rather than a stored field: scoring is pure, so recomputing
+        it can never disagree with the capabilities it is derived from, and a
+        stored band could be left stale by a caller constructing an
+        ``EngineResult`` by hand in a test.
+        """
+        return scoring.score(self.capabilities)
 
 
 #: Providers probed for one key, at most. Detection can legitimately return
