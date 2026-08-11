@@ -76,6 +76,8 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
    - `validate(key, ctx)` — cheapest read-only liveness + identity call.
    - `enumerate(key, ctx)` — read-only probes; each match returns a `Capability` with `access`, `detail`, `evidence`, `risk_weight`, and the `data_sensitive`/`incurs_cost` flags set correctly (these drive severity). Return a stably-sorted list.
    - metadata: `name`, `category`, `docs_url`, `rotation_guide_url`, and `credit` (upstream project, if derived).
+     - `name` must be **lowercase and unique** — it is both the registry key and the literal value `--provider` matches.
+     - `category` must be one of the **closed set** enforced by `core/registry.py`: `cloud`, `ai`, `payment`, `comms`, `email`, `devtools`, `database`, `monitoring`, `auth`, `generic`. It drives the v0.1 "≥10 providers across ≥4 categories" measure, so a typo would quietly inflate coverage. Call `validate_provider()` in your plugin's test to catch this before the registry does.
 3. Record fixtures for a **valid** and an **invalid/expired** key response; scrub secrets.
 4. Add tests: detection, provider behavior, and update golden snapshots.
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.

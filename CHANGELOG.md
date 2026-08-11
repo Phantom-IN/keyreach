@@ -60,6 +60,26 @@ under `Unreleased` in the same pull request as any user-visible change.
   non-zero when it is stale. The `--check` assertion runs under `pytest` today;
   **R0.9** wires it in as the CI schema-drift job.
 
+- The provider plugin contract (roadmap item **R0.4**) in
+  `keyreach/core/provider.py`: `Provider` is an abstract base class with
+  `detect`, `validate` and `enumerate`, plus the `name` / `category` /
+  `docs_url` / `rotation_guide_url` / `credit` metadata. Abstract on purpose —
+  a plugin missing a method fails when the registry loads it, not halfway
+  through probing a live key.
+- `keyreach/core/registry.py` — deterministic plugin discovery. Module names are
+  sorted before import (`pkgutil` walks a package in filesystem order, which
+  varies by platform), and providers are returned sorted by name. Detection
+  candidates rank by descending confidence then name, so equally-confident
+  providers never swap places between runs.
+- Registry guardrails: provider names must be lowercase and unique, categories
+  are a closed set, only classes defined in the scanned module are registered,
+  underscore-prefixed modules are treated as shared helpers, and a `detect()`
+  return value that is non-numeric, boolean or outside `0.0`–`1.0` is rejected
+  at the boundary. `validate_provider()` is public so plugin authors can assert
+  their own metadata in their own tests.
+- `keyreach/providers/` — the plugin package, empty until **R1.1** adds the
+  Google `AIza` archetype.
+
 ### Changed
 
 - The CI workflow no longer generates its markdownlint config inline; it reads
@@ -68,7 +88,10 @@ under `Unreleased` in the same pull request as any user-visible change.
 - `implementation_plan.md` §4 now reflects the models as built: `StrEnum` rather
   than `(str, Enum)`, `Identity.extra` typed `dict[str, str]`, and the frozen /
   closed-schema / sorting / timezone rules recorded as binding on every provider
-  plugin.
+  plugin. It also documents `Provider` as an ABC, the `ProbeContext` placeholder,
+  and gains §4.1 covering the registry.
+- `CLAUDE.md`'s "How to add a provider" checklist now states the lowercase-name
+  and closed-category rules the registry enforces.
 
 ### Deprecated
 
