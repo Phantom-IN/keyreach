@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"invalid x-api-key\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.anthropic.com/v1/models"
+    }
+  ],
+  "version": 1
+}

@@ -104,7 +104,7 @@ rules:
     # Negative lookahead keeps Anthropic (`sk-ant-`) and OpenAI's own more
     # specific prefixes from matching here as well. Without it a single key
     # would produce two candidates and waste a probe against the wrong vendor.
-    pattern: '^sk-(?!ant-|proj-|svcacct-)[A-Za-z0-9_-]{20,}$'
+    pattern: '^sk-(?!admin-|ant-|proj-|svcacct-)[A-Za-z0-9_-]{20,}$'
     confidence: 0.90
     source: https://platform.openai.com/docs/api-reference/authentication
 
@@ -114,6 +114,18 @@ rules:
     pattern: '^sk-svcacct-[A-Za-z0-9_-]{20,}$'
     confidence: 0.99
     source: https://platform.openai.com/docs/api-reference/authentication
+
+  - id: openai-admin-key
+    provider: openai
+    description: OpenAI admin API key
+    # A distinct format worth naming: an admin key reaches the Administration
+    # API — organization members, projects, API keys, spend — and reaches no
+    # model at all. keyreach probes it against a completely different endpoint
+    # set (keyreach/providers/openai.py), so calling it "an OpenAI API key"
+    # would describe the wrong exposure to whoever reads the report.
+    pattern: '^sk-admin-[A-Za-z0-9_-]{20,}$'
+    confidence: 0.99
+    source: https://developers.openai.com/api/docs/guides/admin-apis
 
   # ── Payment ───────────────────────────────────────────────────────────────
   - id: stripe-secret-key

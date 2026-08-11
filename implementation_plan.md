@@ -101,11 +101,12 @@ keyreach/
 │   │   └── probes.py               # declarative YAML probe runner (§8)
 │   ├── providers/
 │   │   ├── google.py               # archetype 1  (credit: gmapsapiscanner, MIT)
-│   │   ├── openai.py               # archetype 2
+│   │   ├── openai.py               # archetype 2  (no prior art; two key families)
+│   │   ├── anthropic.py            # archetype 2b (no prior art; two key families)
 │   │   ├── aws.py                  # archetype 3
 │   │   └── ...                     # breadth per plan.md §8
 │   ├── patterns/
-│   │   └── detection_rules.yml     # seeded from secrets-patterns-db (CC-BY, attributed)
+│   │   └── detection_rules.yml     # written from vendor docs; nothing copied (§5)
 │   └── report/
 │       ├── render.py
 │       ├── schema.py               # generates report.schema.json from the models
@@ -410,6 +411,7 @@ The five checks are Python modules under `tools/guardrails/`, not shell inlined 
 
 - **Every guardrail is unit-tested by planting the violation it exists to catch.** This is the whole point rather than a nicety. R0.6 found ruff's `banned-api` rule had been *silently inert since R0.2* — configured, parsed, and applied to nothing — while three pull requests asserted it was enforcing; R0.8 found an ad-hoc secret scan that enumerated the wrong set of files and reported a clean result it had not earned. `tests/test_guardrails.py` plants an AI SDK, a direct socket under `providers/`, and a non-idempotent probe, and asserts each is caught. Negative controls matter equally: a check that rejects valid code gets switched off.
 - **`ai_ban` bans inference endpoints, not provider hostnames.** §11 previously said "grep source for known model API hostnames too". That rule would make **R1.1 and R1.2 impossible**: enumerating what an exposed Gemini or OpenAI key can reach *is the product*, and doing so means writing `https://api.openai.com/v1/models` into a provider plugin. The distinction that matters is not which host is named but what is asked of it — listing models is a read-only capability probe, `POST /v1/chat/completions` is inference. A test pins both halves. See also `plan.md` §1, which now states the line in product terms.
+- **`ai_ban`'s endpoint paths carry no API version** (corrected in R1.2). They read `/v1/chat/completions` as shipped, which made the check blind to the convention every provider plugin here follows: a plugin declares `API = "https://api.openai.com/v1"` and composes probes from it, so the line that would call a model reads `f"{API}/chat/completions"` and contains no version. Planting that line during R1.2 produced a clean report from a guardrail whose entire purpose is to catch it — the third time a check in this repository has been believed to work and did not. Fragments are matched with a trailing boundary so `/complete` does not fire on `/completed`, and a following `/` still matches so a sub-resource of a banned endpoint is caught rather than excused.
 - **`ai_ban` and `network_isolation` walk the AST**, so an import inside a function body is caught, and they resolve `importlib.import_module("httpx")`, which no import-based linter sees.
 - **`network_isolation` is an independent implementation, not a wrapper around the ruff rule.** Two mechanisms sharing an implementation share its failure. A test proves the independence by planting a dynamic import, running ruff over it (which passes cleanly), and asserting this check still rejects it.
 - **The provider fixture packages under `tests/` are held to the same rules as real plugins.** A fixture permitted to do what a plugin may not stops proving anything.

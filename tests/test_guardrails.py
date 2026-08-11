@@ -132,6 +132,48 @@ def test_ai_ban_catches_an_inference_endpoint(planted: Path, endpoint: str) -> N
     assert "never calls a model" in violations[0].message
 
 
+def test_ai_ban_catches_an_endpoint_composed_from_a_base_constant(
+    planted: Path,
+) -> None:
+    """The miss that R1.2 found, pinned so it cannot come back.
+
+    Every provider plugin declares a base constant and composes probes from it,
+    so the line that would call a model reads `f"{API}/chat/completions"` and
+    never contains the API version. `ai_ban` matched version-qualified paths
+    until R1.2, so it read this exact line and reported the repository clean.
+    Found by planting it, not by reasoning about it — which is the only way this
+    class of bug ever surfaces (`CLAUDE.md` hard rule 7).
+    """
+    planted.write_text(
+        'API = "https://api.example.invalid/v1"\n'
+        'CALL = f"{API}/chat' + '/completions"\n',
+        encoding="utf-8",
+    )
+
+    violations = [v for v in ai_ban.check_endpoints() if v.path.endswith(planted.name)]
+
+    assert violations
+    assert "never calls a model" in violations[0].message
+
+
+def test_ai_ban_does_not_fire_on_a_path_that_merely_starts_the_same_way(
+    planted: Path,
+) -> None:
+    """A guardrail that cries wolf is one people start disabling.
+
+    `/complete` is banned; a job status path ending `/completed` is not, and the
+    two differ by one character. The boundary that separates them is asserted
+    here rather than assumed, because a false positive in a required CI check
+    costs more trust than it protects.
+    """
+    planted.write_text(
+        "STATUS = 'https://api.example.invalid/v1/jobs" + "/completed'\n",
+        encoding="utf-8",
+    )
+
+    assert [v for v in ai_ban.check_endpoints() if v.path.endswith(planted.name)] == []
+
+
 def test_ai_ban_allows_a_read_only_capability_probe(planted: Path) -> None:
     """The rule that keeps R1.1 and R1.2 buildable.
 
