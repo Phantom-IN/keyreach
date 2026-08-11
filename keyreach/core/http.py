@@ -31,7 +31,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import Awaitable, Iterable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from types import TracebackType
@@ -231,6 +232,11 @@ DEFAULT_CONCURRENCY: Final = 5
 #: Bounds of the 2xx success range.
 _HTTP_OK_MIN: Final = 200
 _HTTP_OK_EXCLUSIVE_MAX: Final = 300
+
+
+def _utc_now() -> datetime:
+    """The default clock. Injectable so a test never depends on the real one."""
+    return datetime.now(tz=UTC)
 
 
 class ProbeResponse(BaseModel):
@@ -435,12 +441,14 @@ class ProbeClient:
         mode: RecordMode = RecordMode.OFF,
         transport: httpx.AsyncBaseTransport | None = None,
         user_agent: str = "keyreach",
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self.redactor = redactor if redactor is not None else Redactor()
         self.delay = delay
         self.timeout = timeout
         self.mode = mode
         self.cassette = cassette
+        self._clock = clock if clock is not None else _utc_now
         self._semaphore = asyncio.Semaphore(concurrency)
         self._pace_lock = asyncio.Lock()
         self._user_agent = user_agent
@@ -450,6 +458,24 @@ class ProbeClient:
         if mode is not RecordMode.OFF and cassette is None:
             msg = f"record mode {mode.value!r} requires a cassette"
             raise CassetteError(msg)
+
+    def now(self) -> datetime:
+        """Current UTC time, for request signing only.
+
+        Added in R1.3, because AWS SigV4 requires a request timestamp within a
+        few minutes of the server's clock and there is no way to authenticate to
+        AWS without one. It lives here rather than in the provider because
+        nondeterminism control belongs to the engine, never to a plugin
+        (``CLAUDE.md``, "Architecture at a glance") — the engine owns one clock
+        for the whole run and a test can pin it.
+
+        Reading it is not a determinism violation, on exactly the grounds set
+        out at the top of this module for pacing: ``plan.md`` §1 forbids
+        time-dependent *verdicts*, and a signature timestamp reaches a request
+        header and nothing else. It is never part of a cassette key, a
+        capability, a severity, or a report.
+        """
+        return self._clock()
 
     async def __aenter__(self) -> ProbeClient:
         if self.mode is RecordMode.REPLAY:
@@ -633,13 +659,20 @@ class ProbeContext:
     underneath and cannot be opted out of.
     """
 
-    def __init__(self, client: ProbeClient, key: str) -> None:
+    def __init__(
+        self, client: ProbeClient, key: str, *, aggressive: bool = False
+    ) -> None:
         self._client = client
         self._key = key
+        #: Opt-in noisy enumeration (``plan.md`` §11). **Never** default true.
+        #: A provider reads this to decide whether to run probes that are
+        #: read-only but loud enough to trip a defender's alerting; R1.5 surfaces
+        #: it as ``--aggressive``, behind an explicit warning.
+        self.aggressive = aggressive
         client.redactor.add(key)
 
     def __repr__(self) -> str:
-        return f"<ProbeContext key={self.masked_key!r}>"
+        return f"<ProbeContext key={self.masked_key!r} aggressive={self.aggressive}>"
 
     @property
     def masked_key(self) -> str:
@@ -662,6 +695,31 @@ class ProbeContext:
     def mask(self, text: str) -> str:
         """Redact any known secret in ``text``. Use before writing evidence."""
         return self._client.redactor.redact(text)
+
+    def protect(self, secret: str) -> None:
+        """Register a further secret for redaction.
+
+        Added in R1.3. Some credentials are **composite**: an AWS credential is
+        an access key id, a secret access key and sometimes a session token,
+        pasted as one string. The redactor is seeded with the whole string, so
+        a provider that splits it must register the parts — otherwise a response
+        body echoing back just the access key id would sail through masked
+        output that was only ever looking for the concatenation.
+
+        Values shorter than :data:`MIN_REDACTABLE_LENGTH` are ignored, exactly
+        as in :meth:`Redactor.add`: replacing a three-character "secret"
+        everywhere would corrupt the report rather than protect anything.
+        """
+        self._client.redactor.add(secret)
+
+    def now(self) -> datetime:
+        """Current UTC time, for request signing only. See :meth:`ProbeClient.now`.
+
+        A provider must not read the clock itself (``CLAUDE.md``). This is the
+        one sanctioned route, it exists for AWS SigV4, and what it returns must
+        never reach a capability, a severity, or a report.
+        """
+        return self._client.now()
 
     async def get(
         self,

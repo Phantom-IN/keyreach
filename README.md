@@ -17,19 +17,19 @@
 
 > **⚠️ Status: early — building in public**
 >
-> **Three providers work; the CLI does not expose them yet.** The whole
+> **Four providers work; the CLI does not expose them yet.** The whole
 > pipeline — detect → validate → enumerate → score → report — is built, and
-> **Google `AIza`**, **OpenAI `sk-…`** and **Anthropic `sk-ant-…`** keys are
-> supported, each scored with a rationale. But the CLI still answers only
-> `--help` and `--version` — wiring the pipeline behind it is **R1.5** — so
-> today that capability is reachable from Python, not from a terminal.
-> Everything else below the fold describes the destination.
+> **Google `AIza`**, **OpenAI `sk-…`**, **Anthropic `sk-ant-…`** and **AWS
+> `AKIA`/`ASIA`** credentials are supported, each scored with a rationale. But
+> the CLI still answers only `--help` and `--version` — wiring the pipeline
+> behind it is **R1.5** — so today that capability is reachable from Python, not
+> from a terminal. Everything else below the fold describes the destination.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Follow along in
-> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** (Phase 0), **R1.1** and **R1.2**
-> are done. Next is **R1.3** (AWS) and then **R1.5**, the CLI that makes all of
-> it usable from a terminal.
+> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** (Phase 0) and **R1.1**–**R1.3**
+> are done. Next is **R1.4**, the interface checkpoint, and then **R1.5**, the
+> CLI that makes all of it usable from a terminal.
 
 ---
 
@@ -160,6 +160,7 @@ keyreach -f keys.txt              # batch from file
 cat keys.txt | keyreach -         # batch from stdin
 keyreach KEY --provider google    # force provider, skip detection
 keyreach KEY --no-enumerate       # validity + identity only
+keyreach KEY --aggressive         # opt-in noisy enumeration; off by default
 keyreach KEY --delay 500ms        # rate-limit probes
 keyreach KEY --unmask             # show full key (off by default)
 keyreach KEY --fail-on high       # exit nonzero if band >= high (CI gating)
@@ -179,8 +180,19 @@ list is [`plan.md`](plan.md) §8; the shipping order is
 **v0.1 target:** ≥10 providers across ≥4 categories, including cloud, AI,
 payment, and comms.
 
-**Shipped so far:** `google` (cloud), `openai` (ai), `anthropic` (ai) —
-3 providers across 2 categories.
+**Shipped so far:** `google` (cloud), `openai` (ai), `anthropic` (ai), `aws`
+(cloud) — 4 providers across 2 categories.
+
+**AWS takes two halves.** Every other provider authenticates with one string;
+AWS signs each request with an access key ID *and* a secret access key, so
+keyreach accepts them joined by a colon — `AKIA…:<secret>`, or
+`ASIA…:<secret>:<session token>` for temporary credentials. A bare `AKIA…` is
+still recognised and reported; it just cannot be probed, and keyreach says which
+half is missing instead of calling the credential dead. AWS enumeration is
+deliberately quiet by default: six read-only calls about the credential itself.
+A wider cross-service sweep exists behind an explicit opt-in
+(`--aggressive`, R1.5), because a sweep looks like reconnaissance to whoever is
+watching the account.
 
 For AI keys specifically, note what keyreach will *not* tell you: it never calls
 a model, so it cannot confirm that an exposed key can run inference or spend

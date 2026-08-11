@@ -261,6 +261,42 @@ under `Unreleased` in the same pull request as any user-visible change.
   admin key reaches a completely different endpoint set, so calling it "an
   OpenAI API key" would describe the wrong exposure to whoever reads the report.
 
+- **The AWS provider** (roadmap item **R1.3**) in `keyreach/providers/aws.py`.
+  Blueprint credit **enumerate-iam** (Andrés Riancho), license verified
+  **GPL-3.0** from the upstream repository — copyleft, so nothing could be
+  copied and nothing was. Every endpoint, API version and error code was written
+  from AWS's own documentation, each probe citing its source page.
+- **SigV4 request signing**, implemented from AWS's published specification.
+  Verified against **botocore**, AWS's own reference implementation, in a
+  throwaway environment: all twelve probes signed identically for both long-term
+  and temporary credentials, 24 comparisons. Four of those vectors are pinned in
+  `tests/test_provider_aws.py` so CI checks the signer without AWS's SDK
+  installed; botocore is not a keyreach dependency and no code was taken from it.
+- **Composite credentials.** AWS is the first credential that is not one string —
+  nothing can be signed without the secret access key — so keyreach accepts a
+  colon-joined `AKIA…:<secret>`, or `ASIA…:<secret>:<session token>` for
+  temporary credentials. A bare access key ID is still detected and reported;
+  validation says which half is missing rather than reporting the credential as
+  dead.
+- **Six default probes, all about the credential itself**: STS caller identity,
+  the caller's IAM user, its access keys, the account alias, the account IAM
+  summary, and the S3 bucket list.
+- **An opt-in aggressive sweep** across IAM users and roles, EC2, RDS, SNS and
+  SQS, gated on `ProbeContext.aggressive` and off by default. Every capability
+  it produces says "found by opt-in aggressive enumeration", so a reader can
+  tell which findings cost a sweep. Every aggressive probe is still read-only —
+  the distinction is quiet versus loud, not read versus write.
+- **Root credentials are reported as `ADMIN`.** AWS documents that the root user
+  has complete access to every resource and that no IAM policy can constrain it,
+  so an ARN ending `:root` establishes administrative access by the vendor's own
+  access model rather than by inference. Every other AWS capability is `READ`:
+  reading IAM does not establish writing it.
+- Three `ProbeContext` hooks AWS required: `now()` (a UTC clock for SigV4
+  timestamps, injectable via `Engine(clock=...)`), `protect()` (registers a
+  composite credential's parts with the redactor, because `iam:ListAccessKeys`
+  echoes back the access key ID alone), and `aggressive`.
+- An `aws-credential-pair` detection rule for the joined form.
+
 ### Changed
 
 - **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
@@ -348,6 +384,25 @@ under `Unreleased` in the same pull request as any user-visible change.
   scopes (`users.read` is separate from `users.write`), so the identical finding
   there is recorded as `read`. Neither is a judgement about which vendor is
   riskier.
+- **A provider may now see a clock, for request signing only.** `plan.md` §1
+  forbids time-dependent *verdicts*, and R1.3 is the first item where a
+  credential cannot be used at all without a timestamp: AWS SigV4 refuses a
+  request whose clock is minutes stale. `ctx.now()` is the one sanctioned route,
+  the engine owns it so a test can pin it, and because AWS signs in a header
+  rather than the query string the timestamp never enters a cassette key.
+  `tests/test_provider_aws.py` runs the same cassette under clocks five years
+  apart and asserts byte-identical output.
+- **`plan.md` §11's aggressive-mode clause stopped being hypothetical.** It read
+  "if ever added"; the gate now exists, defaults off, and has something behind
+  it. §11 also gains the composite-credential masking rule.
+- **`implementation_plan.md` §12 gains `--aggressive`** and a note on the AWS
+  credential format, which is the first CLI input that is not a single token.
+- **`enumerate-iam`'s license is recorded as GPL-3.0**, verified from upstream.
+  It was previously listed only as a "methodology and design reference" with no
+  license noted. This is the mirror image of R1.1's gmapsapiscanner finding: that
+  one was MIT, so reuse *would* have been allowed and "nothing was copied" was a
+  choice; this one is copyleft, so the same sentence is load-bearing.
+  `CREDITS.md` and `THIRD_PARTY_LICENSES.md` now say which is which.
 - The CI workflow no longer runs hygiene checks only. It now gates every pull
   request on the four guardrails, ruff/black/mypy, tests with a coverage floor,
   both drift checks, and a wheel-install check — the gates that had been running

@@ -65,7 +65,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider: `google.py`, `openai.py`, `anthropic.py`. The two AI plugins share a probe-table shape and deliberately share no code; **R1.4** is the checkpoint that decides whether that abstraction is real, and extracting it early would answer that question by assuming it.
+- `keyreach/providers/*` — one file (or YAML) per provider: `google.py`, `openai.py`, `anthropic.py`, `aws.py`. The two AI plugins share a probe-table shape and deliberately share no code; **R1.4** is the checkpoint that decides whether that abstraction is real, and extracting it early would answer that question by assuming it.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
 - `keyreach/report/render.py` — terminal / JSON / Markdown renderers; `templates/`; `report.schema.json`.
@@ -100,6 +100,9 @@ Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
 - pydantic v2 models for all structured data; never pass around raw dicts for capabilities/reports.
 - Async probes via `httpx` **through `ProbeContext` only**.
 - Deterministic sorting before any output. No `set` iteration in output paths.
+- **A plugin never reads the clock.** The one exception is `ctx.now()`, added in R1.3 for AWS SigV4, which refuses a request whose timestamp is stale. It is sanctioned only for request signing: anything it returns that reaches a capability, a severity or a report is a bug. `Engine(clock=...)` injects it so tests can pin it.
+- **Split a composite credential? Register the parts.** `ctx.protect(part)` adds a secret to the redactor. Seeding with the whole pasted string does not mask a response echoing back one half — `iam:ListAccessKeys` returns exactly that.
+- **Anything noisy goes behind `ctx.aggressive`**, which defaults to false and is surfaced as `--aggressive` (R1.5). Mark the capabilities it produces so a reader can tell which findings cost a sweep. Read-only is not the same as quiet.
 - Evidence strings are masked and read-only; include the request and a benign response summary that proves the capability.
 - Timestamps: use the engine-injected `generated_at`; never call the clock directly in report code.
 
