@@ -23,28 +23,20 @@ probed, so a nondeterministic ``detect`` would make the whole run irreproducible
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING
+
+from keyreach.core.http import ProbeContext
 
 if TYPE_CHECKING:
     from keyreach.core.models import Capability, ValidationResult
 
+__all__ = ["ProbeContext", "Provider"]
 
-@runtime_checkable
-class ProbeContext(Protocol):
-    """The sanctioned, recordable HTTP surface handed to a provider.
-
-    **Placeholder until roadmap R0.6.** The concrete implementation — a
-    rate-limited, recordable, redacting, read-only-guarded client — lands with
-    the engine in ``keyreach/core/http.py`` (``implementation_plan.md`` §6),
-    which is the item that owns the design of ``get``/``post`` and the response
-    type they return.
-
-    It is declared here, empty, rather than left as an untyped parameter so that
-    the plugin contract reads correctly today and R0.6 can fill in the surface
-    without changing a single provider signature. Being structurally empty, it
-    currently accepts any object; that is a known and temporary gap, not a
-    statement that providers may pass anything.
-    """
+# `ProbeContext` was an empty Protocol here from R0.4 until R0.6 built the real
+# thing. It is now re-exported from `keyreach.core.http`, which owns it, so that
+# `from keyreach.core.provider import ProbeContext` — the import every provider
+# plugin writes — keeps working unchanged. The placeholder existed precisely so
+# that filling it in would not touch a single provider signature.
 
 
 class Provider(ABC):

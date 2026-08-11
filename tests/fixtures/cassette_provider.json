@@ -1,0 +1,35 @@
+{
+  "interactions": [
+    {
+      "body": "{\"files\":[\"notes.txt\",\"budget.csv\"]}",
+      "headers": {
+        "content-length": "36",
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.cassette.invalid/v1/files?key=<key>"
+    },
+    {
+      "body": "{\"project\":\"demo\",\"region\":\"eu\"}",
+      "headers": {
+        "content-length": "32",
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.cassette.invalid/v1/metadata?key=<key>"
+    },
+    {
+      "body": "{\"account\":\"acct_demo\",\"plan\":\"team\"}",
+      "headers": {
+        "content-length": "37",
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.cassette.invalid/v1/whoami?key=<key>"
+    }
+  ],
+  "version": 1
+}

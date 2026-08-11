@@ -1,0 +1,15 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":\"invalid api key\"}",
+      "headers": {
+        "content-length": "27",
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.cassette.invalid/v1/whoami?key=<key>"
+    }
+  ],
+  "version": 1
+}
