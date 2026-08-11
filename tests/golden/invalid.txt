@@ -1,0 +1,31 @@
+╭─ INFO ───────────────────────────────────────────────────────────────────────────────────────────╮
+│ Exposed cassette API key is no longer valid                                                      │
+│                                                                                                  │
+│ The provider rejected this key, so it cannot be used as it stands. Rotate it anyway if it was    │
+│ ever live, and check for prior use.                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+Provider   cassette (generic)
+Key        csst******************************bbb
+Status     not valid
+Generated  2026-01-01T12:00:00+00:00
+Note       provider rejected the key
+
+Why this severity
+  • No capabilities were confirmed.
+
+Remediation
+  1. Revoke or rotate this key now. It was found outside the systems that should hold it, so treat
+     it as known to others.
+  2. Remove the key from wherever it leaked — including git history, build logs and image layers,
+     not only the current file.
+  3. Check the provider's audit or usage logs for calls made with this key, especially from
+     addresses or times you do not recognise.
+  4. Scope the replacement: least-privilege permissions, plus referrer, IP or app restrictions where
+     the provider supports them.
+  5. Store the replacement in a secret manager and re-scan the repository before the next
+     deployment.
+
+     Rotation guide: https://example.invalid/rotate
+     Provider docs: https://example.invalid/docs
+
+keyreach 0.0.0-golden · schema 1.0 · deterministic, read-only, no AI

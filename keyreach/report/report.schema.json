@@ -284,6 +284,14 @@
       "title": "Capabilities",
       "type": "array"
     },
+    "notes": {
+      "description": "What could not be determined: probe failures, and why nothing was probed when nothing was. An empty list means the run was clean, not that the capability map is exhaustive.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
     "remediation": {
       "description": "Provider-specific rotation and restriction guidance.",
       "items": {

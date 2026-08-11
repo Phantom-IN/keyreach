@@ -76,7 +76,7 @@ And the corresponding **do nots**:
 > scoring and reporting are R0.3 through R1.5.
 
 Stack ([`implementation_plan.md`](implementation_plan.md) §1): Python 3.11+,
-Typer, httpx, rich, pydantic v2, Jinja2, PyYAML, pytest + respx + syrupy.
+Typer, httpx, rich, pydantic v2, Jinja2, PyYAML, pytest.
 **No AI/LLM dependencies, by design** — `tests/test_packaging.py` enforces it.
 
 ```bash

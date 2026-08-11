@@ -179,8 +179,6 @@ is an AI/LLM SDK.
 | pytest | dev | MIT | 2026-08-11 |
 | pytest-asyncio | dev | Apache-2.0 | 2026-08-11 |
 | pytest-cov | dev | MIT | 2026-08-11 |
-| respx | dev | BSD-3-Clause | 2026-08-11 |
-| syrupy | dev | MIT | 2026-08-11 |
 | ruff | dev | MIT | 2026-08-11 |
 | black | dev | MIT | 2026-08-11 |
 | mypy | dev | MIT | 2026-08-11 |

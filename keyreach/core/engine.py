@@ -60,6 +60,15 @@ class ProviderOutcome(BaseModel):
     provider: str = Field(description="Provider name.")
     category: str = Field(description="Provider category.")
     confidence: float = Field(ge=0.0, le=1.0, description="Detection confidence.")
+    # Copied off the plugin here rather than looked up again at report time, so
+    # a report can be rendered from an EngineResult alone — including one
+    # deserialized from a file, where the registry is not in play.
+    docs_url: str | None = Field(
+        default=None, description="Provider's API documentation."
+    )
+    rotation_guide_url: str | None = Field(
+        default=None, description="Provider's key rotation documentation."
+    )
     validation: ValidationResult = Field(description="Liveness and identity.")
     capabilities: tuple[Capability, ...] = Field(
         default=(), description="Confirmed capabilities, stably sorted."
@@ -259,6 +268,8 @@ class Engine:
                 provider=provider.name,
                 category=provider.category,
                 confidence=confidence,
+                docs_url=provider.docs_url,
+                rotation_guide_url=provider.rotation_guide_url,
                 validation=ValidationResult(
                     valid=False, note="validation could not be completed"
                 ),
@@ -282,6 +293,8 @@ class Engine:
             provider=provider.name,
             category=provider.category,
             confidence=confidence,
+            docs_url=provider.docs_url,
+            rotation_guide_url=provider.rotation_guide_url,
             validation=validation,
             capabilities=capabilities,
             errors=tuple(errors),

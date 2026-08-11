@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "tool": "keyreach",
+  "tool_version": "0.0.0-golden",
+  "provider": "unknown",
+  "provider_category": "generic",
+  "generated_at": "2026-01-01T12:00:00+00:00",
+  "key_fingerprint": "this********************all",
+  "title": "Unidentified secret: keyreach could not determine the provider",
+  "severity": "info",
+  "impact": "keyreach could not identify this secret's provider, so nothing was probed and no impact was established. This is not evidence that the secret is harmless.",
+  "severity_rationale": [
+    "No capabilities were confirmed."
+  ],
+  "validation": {
+    "valid": false,
+    "identity": null,
+    "note": ""
+  },
+  "capabilities": [],
+  "notes": [
+    "No known key format matched, and the value does not look like a credential. Nothing was probed."
+  ],
+  "remediation": [
+    "Revoke or rotate this key now. It was found outside the systems that should hold it, so treat it as known to others.",
+    "Remove the key from wherever it leaked — including git history, build logs and image layers, not only the current file.",
+    "Check the provider's audit or usage logs for calls made with this key, especially from addresses or times you do not recognise.",
+    "Scope the replacement: least-privilege permissions, plus referrer, IP or app restrictions where the provider supports them.",
+    "Store the replacement in a secret manager and re-scan the repository before the next deployment."
+  ],
+  "rotation_guide_url": null,
+  "docs_url": null
+}
