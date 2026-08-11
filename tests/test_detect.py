@@ -73,6 +73,7 @@ ANTHROPIC_KEY = "sk-ant-" + "api03-" + _body(90)
 OPENAI_KEY = "sk-" + _body(48)
 OPENAI_PROJECT_KEY = "sk-" + "proj-" + _body(40)
 OPENAI_SERVICE_KEY = "sk-" + "svcacct-" + _body(40)
+OPENAI_ADMIN_KEY = "sk-" + "admin-" + _body(40)
 STRIPE_KEY = "sk_" + "live_" + _body(24)
 STRIPE_TEST_KEY = "sk_" + "test_" + _body(24)
 STRIPE_RESTRICTED_KEY = "rk_" + "live_" + _body(24)
@@ -97,6 +98,7 @@ DETECTION_TABLE = [
     (OPENAI_KEY, "openai", 0.90),
     (OPENAI_PROJECT_KEY, "openai", 0.99),
     (OPENAI_SERVICE_KEY, "openai", 0.99),
+    (OPENAI_ADMIN_KEY, "openai", 0.99),
     (STRIPE_KEY, "stripe", 0.99),
     (STRIPE_TEST_KEY, "stripe", 0.99),
     (STRIPE_RESTRICTED_KEY, "stripe", 0.99),
@@ -193,7 +195,10 @@ def test_anthropic_key_is_not_also_reported_as_openai(detector: Detector) -> Non
     assert providers == {"anthropic"}
 
 
-@pytest.mark.parametrize("key", [OPENAI_PROJECT_KEY, OPENAI_SERVICE_KEY, ANTHROPIC_KEY])
+@pytest.mark.parametrize(
+    "key",
+    [OPENAI_PROJECT_KEY, OPENAI_SERVICE_KEY, OPENAI_ADMIN_KEY, ANTHROPIC_KEY],
+)
 def test_specific_sk_prefixes_yield_exactly_one_candidate(
     detector: Detector, key: str
 ) -> None:

@@ -17,19 +17,19 @@
 
 > **⚠️ Status: early — building in public**
 >
-> **One provider works; the CLI does not expose it yet.** The whole pipeline —
-> detect → validate → enumerate → score → report — is built, and **Google
-> `AIza` keys** are fully supported: Gemini Files, Gemini Cached Content, Gemini
-> Models, Places, Geocoding and Roads, scored with a rationale. But the CLI
-> still answers only `--help` and `--version` — wiring the pipeline behind it is
-> **R1.5** — so today that capability is reachable from Python, not from a
-> terminal. Everything else below the fold describes the destination.
+> **Three providers work; the CLI does not expose them yet.** The whole
+> pipeline — detect → validate → enumerate → score → report — is built, and
+> **Google `AIza`**, **OpenAI `sk-…`** and **Anthropic `sk-ant-…`** keys are
+> supported, each scored with a rationale. But the CLI still answers only
+> `--help` and `--version` — wiring the pipeline behind it is **R1.5** — so
+> today that capability is reachable from Python, not from a terminal.
+> Everything else below the fold describes the destination.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Follow along in
-> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** (Phase 0) and **R1.1** are done.
-> Next are more providers (**R1.2** AI, **R1.3** AWS) and then **R1.5**, the CLI
-> that makes all of it usable from a terminal.
+> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** (Phase 0), **R1.1** and **R1.2**
+> are done. Next is **R1.3** (AWS) and then **R1.5**, the CLI that makes all of
+> it usable from a terminal.
 
 ---
 
@@ -178,6 +178,16 @@ list is [`plan.md`](plan.md) §8; the shipping order is
 
 **v0.1 target:** ≥10 providers across ≥4 categories, including cloud, AI,
 payment, and comms.
+
+**Shipped so far:** `google` (cloud), `openai` (ai), `anthropic` (ai) —
+3 providers across 2 categories.
+
+For AI keys specifically, note what keyreach will *not* tell you: it never calls
+a model, so it cannot confirm that an exposed key can run inference or spend
+money, and it does not claim otherwise. Both vendors scope keys per endpoint, so
+listing models does not imply generating with them. keyreach reports what it
+confirmed — reachability, uploaded files, fine-tunes, organization access — and
+says which claims it did not test. See [`plan.md`](plan.md) §1.
 
 ## Documentation
 

@@ -1,0 +1,45 @@
+{
+  "interactions": [
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"file-9Vt2Qa\",\"object\":\"file\",\"bytes\":184320,\"created_at\":1730419200,\"filename\":\"support-transcripts.jsonl\",\"purpose\":\"fine-tune\"},{\"id\":\"file-4Hb7Zx\",\"object\":\"file\",\"bytes\":20480,\"created_at\":1730505600,\"filename\":\"customer-list.csv\",\"purpose\":\"assistants\"}],\"has_more\":false}",
+      "headers": {
+        "content-type": "application/json",
+        "openai-organization": "org-7Qk2Mn"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.openai.com/v1/files"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"ftjob-3Ld8Rk\",\"object\":\"fine_tuning.job\",\"model\":\"gpt-4o-mini-2024-07-18\",\"training_file\":\"file-9Vt2Qa\",\"status\":\"succeeded\"}],\"has_more\":false}",
+      "headers": {
+        "content-type": "application/json",
+        "openai-organization": "org-7Qk2Mn"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.openai.com/v1/fine_tuning/jobs"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"gpt-4o\",\"object\":\"model\",\"created\":1715367049,\"owned_by\":\"system\"},{\"id\":\"gpt-4o-mini\",\"object\":\"model\",\"created\":1721172741,\"owned_by\":\"system\"}]}",
+      "headers": {
+        "content-type": "application/json",
+        "openai-organization": "org-7Qk2Mn"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.openai.com/v1/models"
+    },
+    {
+      "body": "{\"error\":{\"message\":\"You have insufficient permissions for this operation.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":\"insufficient_permissions\"}}",
+      "headers": {
+        "content-type": "application/json",
+        "openai-organization": "org-7Qk2Mn"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.openai.com/v1/vector_stores"
+    }
+  ],
+  "version": 1
+}

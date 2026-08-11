@@ -18,10 +18,20 @@ roadmap items R1.1 and R1.2 impossible: enumerating what an exposed OpenAI or
 Gemini key can reach *is the product*, and doing it means writing
 ``https://api.openai.com/v1/models`` into a provider plugin. The distinction
 that actually matters is not which host is named but what is asked of it —
-listing models is a read-only capability probe, calling
-``/v1/chat/completions`` is inference. So the ban is on the second, and
-``test_guardrails.py`` pins both halves: the allowed URL must pass and the
-banned one must fail.
+listing models is a read-only capability probe, calling the chat completions
+endpoint is inference. So the ban is on the second, and ``test_guardrails.py``
+pins both halves: the allowed URL must pass and the banned one must fail.
+
+**Why the paths carry no API version.** They did until R1.2, and that made the
+check blind to the convention every provider plugin in this repository follows.
+A plugin declares a base constant — ``API = "https://api.openai.com/v1"`` — and
+composes probes from it, so the string on the line that would call a model is
+``f"{API}/chat/completions"``. Matching ``/v1/chat/completions`` never sees it.
+This was found by planting exactly that line while building R1.2 and watching
+``ai_ban`` report a clean repository, which is the third time a check in this
+repo has been believed to work and did not (``CLAUDE.md`` hard rule 7). The
+fragments are now version-independent and matched with a trailing boundary, so
+``/complete`` does not also fire on a path ending ``/completed``.
 
 Note the shape of the rule this protects. keyreach sends a user's key to that
 key's *own* provider, read-only. It must never send a key, a response, or a
@@ -115,19 +125,32 @@ BANNED_DISTRIBUTIONS: Final = frozenset(
 #: Inference endpoints. Reaching one of these means *calling a model*, which is
 #: what `plan.md` §1 forbids — as opposed to naming a provider's host, which a
 #: capability probe legitimately does.
+#:
+#: Written **without** an API version prefix, because provider plugins compose
+#: URLs from a base constant and a version-qualified fragment would never appear
+#: on the line that matters. See the module docstring.
 BANNED_ENDPOINTS: Final = (
-    "/v1/chat/completions",
-    "/v1/completions",
-    "/v1/responses",
-    "/v1/messages",
-    "/v1/complete",
-    "/v1/embeddings",
-    "/v1/images/generations",
-    "/v1/audio/speech",
-    "/v1/audio/transcriptions",
+    "/chat/completions",
+    "/completions",
+    "/responses",
+    "/messages",
+    "/complete",
+    "/embeddings",
+    "/images/generations",
+    "/audio/speech",
+    "/audio/transcriptions",
     ":generateContent",
     ":streamGenerateContent",
     ":embedContent",
+)
+
+#: The fragments above, each required to end at a path boundary. Without the
+#: lookahead, `/complete` would fire on a perfectly innocent path ending
+#: `/completed`, and a guardrail that cries wolf is one people start disabling.
+#: A following `/` still matches, so a sub-resource of a banned endpoint — the
+#: Anthropic message-batches path, for instance — is caught rather than excused.
+_ENDPOINT_RE: Final = re.compile(
+    "(?:" + "|".join(re.escape(path) for path in BANNED_ENDPOINTS) + r")(?![\w-])"
 )
 
 #: This module lists the banned strings, so it necessarily contains them, as
@@ -274,12 +297,11 @@ def check_endpoints() -> list[Violation]:
                 Violation(
                     path,
                     number,
-                    f"references the model-inference endpoint {endpoint!r}. "
+                    f"references the model-inference endpoint {found.group()!r}. "
                     "keyreach probes providers read-only; it never calls a "
                     "model (plan.md §1).",
                 )
-                for endpoint in BANNED_ENDPOINTS
-                if endpoint in line
+                for found in _ENDPOINT_RE.finditer(line)
             )
     return violations
 

@@ -1,0 +1,41 @@
+{
+  "interactions": [
+    {
+      "body": "{\"data\":[{\"id\":\"apikey_01Rj2N8SVvo6BePZj99NhmiT\",\"type\":\"api_key\",\"name\":\"batch-pipeline\",\"status\":\"active\",\"created_at\":\"2025-05-21T14:02:55Z\",\"expires_at\":null,\"workspace_id\":\"wrkspc_01JwQvzr7rXLA5AGx3HKfFUJ\"}],\"has_more\":true,\"first_id\":\"apikey_01Rj2N8SVvo6BePZj99NhmiT\",\"last_id\":\"apikey_01Rj2N8SVvo6BePZj99NhmiT\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.anthropic.com/v1/organizations/api_keys?limit=1"
+    },
+    {
+      "body": "{\"data\":[{\"starting_at\":\"2025-01-01T00:00:00Z\",\"ending_at\":\"2025-01-02T00:00:00Z\",\"results\":[{\"currency\":\"USD\",\"amount\":\"41977\",\"workspace_id\":null,\"description\":\"Claude Opus Input Tokens\"}]}],\"has_more\":false,\"next_page\":null}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.anthropic.com/v1/organizations/cost_report?starting_at=2025-01-01T00%3A00%3A00Z&limit=1"
+    },
+    {
+      "body": "{\"id\":\"3f2a91c4-77b6-4e18-9d21-6c5e4a0b8d33\",\"type\":\"organization\",\"name\":\"Northwind Analytics\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.anthropic.com/v1/organizations/me"
+    },
+    {
+      "body": "{\"data\":[{\"id\":\"user_01WCz1YtqLLxrDwLfsxrEjMk\",\"type\":\"user\",\"email\":\"priya.raman@example.com\",\"name\":\"Priya Raman\",\"role\":\"admin\",\"added_at\":\"2025-03-04T09:12:11Z\"}],\"has_more\":true,\"first_id\":\"user_01WCz1YtqLLxrDwLfsxrEjMk\",\"last_id\":\"user_01WCz1YtqLLxrDwLfsxrEjMk\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.anthropic.com/v1/organizations/users?limit=1"
+    }
+  ],
+  "version": 1
+}

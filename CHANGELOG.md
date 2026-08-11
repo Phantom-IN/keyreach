@@ -225,6 +225,42 @@ under `Unreleased` in the same pull request as any user-visible change.
   shapes rather than recorded from a live key, which keyreach's own rules
   forbid holding.
 
+- **The OpenAI and Anthropic providers** (roadmap item **R1.2**) in
+  `keyreach/providers/openai.py` and `keyreach/providers/anthropic.py` — two
+  plugins rather than one, because the two vendors share nothing but a `sk-`
+  prefix: different auth headers, different error vocabularies, different
+  administration models. No prior art; every endpoint, header and error code was
+  written from the vendor's own documentation, with each probe citing its page.
+- **Key families.** Each vendor issues two credentials behind one prefix: an
+  administration key (`sk-admin-`, `sk-ant-admin`) reaches the organization API
+  and no model at all, and every other key is the reverse. Both plugins select
+  the endpoint set from the documented prefix and probe only that, so a key
+  costs two to four requests instead of every probe in the table (`plan.md`
+  §11). Validation reuses the family's cheapest probe, so a live key costs one
+  request there, not two.
+- Identity for both: OpenAI's organization is read from the `openai-organization`
+  response header on the liveness check, and Anthropic's from
+  `/v1/organizations/me`. Neither vendor offers a free "who am I" endpoint, so
+  neither costs an extra request.
+- **Billing and tier**, for administration keys only — OpenAI's organization
+  costs endpoint and Anthropic's cost report. Both take a fixed window constant
+  rather than a relative one: reading the clock for a start time would give two
+  runs of the same key different request URLs and a report that cannot be
+  reproduced.
+- Validation that distinguishes *rejected* from *out of credit* from *rate
+  limited*. An OpenAI quota failure is proof of a **live** key — OpenAI only
+  knows whose quota to check once it has accepted the credential — and reporting
+  it as invalid would retire a key that starts working again the moment the
+  account is topped up.
+- Six committed cassettes — live platform key, invalid key and live
+  administration key for each vendor — constructed from published response
+  shapes rather than recorded from a live key, which keyreach's own rules forbid
+  holding.
+- An `openai-admin-key` detection rule, and `admin-` added to the generic
+  OpenAI rule's negative lookahead so one key still yields one candidate. An
+  admin key reaches a completely different endpoint set, so calling it "an
+  OpenAI API key" would describe the wrong exposure to whoever reads the report.
+
 ### Changed
 
 - **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
@@ -284,6 +320,34 @@ under `Unreleased` in the same pull request as any user-visible change.
   named but what is asked of it — listing models is a read-only capability
   probe, `POST /v1/chat/completions` is inference. `plan.md` §1 now states this
   in product terms and §11 gained a §11.1.
+- **`ai_ban`'s inference-endpoint paths are now version-independent.** They read
+  `/v1/chat/completions` until R1.2, which made the check blind to the
+  convention every provider plugin in this repository follows: a plugin declares
+  `API = "https://api.openai.com/v1"` and composes probes from it, so the line
+  that would call a model reads `f"{API}/chat/completions"` and contains no
+  version at all. Found by planting exactly that line while building R1.2 and
+  watching `ai_ban` report a clean repository — the third time a check here has
+  been believed to work and did not (`CLAUDE.md` hard rule 7). Matching now uses
+  a trailing boundary so `/complete` does not also fire on a path ending
+  `/completed`, and `tests/test_guardrails.py` plants both the miss and that
+  near-miss.
+- **keyreach reports AI-key *reachability*, never inference or spend.** Both AI
+  plugins leave `incurs_cost` unset on every capability. Confirming that a key
+  can spend means calling a model, which `plan.md` §1 forbids, and neither
+  vendor's key format implies the permission: OpenAI project keys carry
+  per-endpoint scopes, so a "Read Only" key lists models and is refused
+  everything else. This under-reports the common case on purpose; the
+  alternative is asserting a capability keyreach did not confirm. `plan.md` §1
+  now states this consequence alongside the rule that produces it.
+- **The same probe shape yields opposite access levels for the two vendors, and
+  both are sourced.** Anthropic documents that Claude Console admin keys "do not
+  have selectable scopes; every key carries full access to all endpoints that
+  accept Admin API keys" — which include removing members — so an Admin API read
+  establishes the matching write by the vendor's own access model, and those
+  capabilities are recorded as `admin`. OpenAI admin keys *do* carry per-resource
+  scopes (`users.read` is separate from `users.write`), so the identical finding
+  there is recorded as `read`. Neither is a judgement about which vendor is
+  riskier.
 - The CI workflow no longer runs hygiene checks only. It now gates every pull
   request on the four guardrails, ruff/black/mypy, tests with a coverage floor,
   both drift checks, and a wheel-install check — the gates that had been running

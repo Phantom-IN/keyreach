@@ -1,0 +1,23 @@
+{
+  "interactions": [
+    {
+      "body": "{\"data\":[{\"id\":\"file_011CNha8iCJcU1wXNR6q4V8w\",\"type\":\"file\",\"created_at\":\"2026-04-15T18:37:24.100435Z\",\"filename\":\"q3-board-pack.pdf\",\"mime_type\":\"application/pdf\",\"size_bytes\":102400,\"downloadable\":false}],\"first_id\":\"file_011CNha8iCJcU1wXNR6q4V8w\",\"has_more\":false,\"last_id\":\"file_011CNha8iCJcU1wXNR6q4V8w\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.anthropic.com/v1/files"
+    },
+    {
+      "body": "{\"data\":[{\"id\":\"claude-opus-4-6\",\"type\":\"model\",\"display_name\":\"Claude Opus 4.6\",\"created_at\":\"2026-02-04T00:00:00Z\"},{\"id\":\"claude-sonnet-4-6\",\"type\":\"model\",\"display_name\":\"Claude Sonnet 4.6\",\"created_at\":\"2026-02-04T00:00:00Z\"}],\"first_id\":\"claude-opus-4-6\",\"has_more\":false,\"last_id\":\"claude-sonnet-4-6\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.anthropic.com/v1/models"
+    }
+  ],
+  "version": 1
+}
