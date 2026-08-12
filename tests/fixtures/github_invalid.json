@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"message\":\"Bad credentials\",\"documentation_url\":\"https://docs.github.com/rest\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.github.com/user"
+    }
+  ],
+  "version": 1
+}

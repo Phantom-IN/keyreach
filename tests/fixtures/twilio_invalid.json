@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"code\":20003,\"message\":\"Authenticate\",\"more_info\":\"https://www.twilio.com/docs/errors/20003\",\"status\":401}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.twilio.com/2010-04-01/Accounts/<key>.json"
+    }
+  ],
+  "version": 1
+}

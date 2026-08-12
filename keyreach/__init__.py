@@ -26,7 +26,12 @@ __all__ = ["__version__"]
 # build time via hatchling (``[tool.hatch.version]``), so the CLI's ``--version``
 # and the installed distribution metadata cannot drift apart.
 #
-# This is a ``.dev`` release: the PyPI name is reserved, but ``pip install
-# keyreach`` deliberately resolves nothing, because there is nothing worth
-# installing yet. The first real release is ``0.1.0`` — roadmap item R1.6.
-__version__ = "0.1.0.dev0"
+# ``0.1.0`` is the first real release (roadmap item R1.6): ten providers across
+# five categories, the full CLI, and the guarantees above enforced by CI rather
+# than asserted. It replaces the ``0.1.0.dev0`` placeholder that held the PyPI
+# name from R0.2 onwards and deliberately resolved to nothing.
+#
+# Releasing is tag-driven: ``.github/workflows/publish.yml`` refuses to publish
+# when the git tag does not match this string, so a bump here and a tag are the
+# whole procedure.
+__version__ = "0.1.0"

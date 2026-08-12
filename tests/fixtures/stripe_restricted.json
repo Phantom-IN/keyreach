@@ -1,0 +1,68 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":{\"message\":\"The provided key does not have the required permissions.\",\"type\":\"invalid_request_error\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.stripe.com/v1/account"
+    },
+    {
+      "body": "{\"error\":{\"message\":\"The provided key does not have the required permissions.\",\"type\":\"invalid_request_error\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.stripe.com/v1/balance"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"ch_3QeNorthwind0002\",\"amount\":900}],\"has_more\":false}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.stripe.com/v1/charges?limit=1"
+    },
+    {
+      "body": "{\"error\":{\"message\":\"The provided key does not have the required permissions.\",\"type\":\"invalid_request_error\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.stripe.com/v1/customers?limit=1"
+    },
+    {
+      "body": "{\"error\":{\"message\":\"The provided key does not have the required permissions.\",\"type\":\"invalid_request_error\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.stripe.com/v1/payment_intents?limit=1"
+    },
+    {
+      "body": "{\"error\":{\"message\":\"The provided key does not have the required permissions.\",\"type\":\"invalid_request_error\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.stripe.com/v1/payouts?limit=1"
+    },
+    {
+      "body": "{\"error\":{\"message\":\"The provided key does not have the required permissions.\",\"type\":\"invalid_request_error\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.stripe.com/v1/subscriptions?limit=1"
+    }
+  ],
+  "version": 1
+}

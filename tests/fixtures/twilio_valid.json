@@ -1,0 +1,50 @@
+{
+  "interactions": [
+    {
+      "body": "{\"sid\":\"<key>\",\"friendly_name\":\"Northwind Ops\",\"status\":\"active\",\"type\":\"Full\",\"date_created\":\"Tue, 04 Feb 2025 10:00:00 +0000\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.twilio.com/2010-04-01/Accounts/<key>.json"
+    },
+    {
+      "body": "{\"account_sid\":\"<key>\",\"balance\":\"142.75\",\"currency\":\"USD\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.twilio.com/2010-04-01/Accounts/<key>/Balance.json"
+    },
+    {
+      "body": "{\"calls\":[{\"sid\":\"CA0northwind0000000000000000000001\",\"from\":\"+15550001111\",\"to\":\"+15550002222\",\"status\":\"completed\",\"price\":\"-0.0085\"}],\"page\":0,\"page_size\":1}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.twilio.com/2010-04-01/Accounts/<key>/Calls.json?PageSize=1"
+    },
+    {
+      "body": "{\"incoming_phone_numbers\":[{\"sid\":\"PN0northwind0000000000000000000001\",\"phone_number\":\"+15550001111\",\"friendly_name\":\"Ops line\"}],\"page\":0,\"page_size\":1}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.twilio.com/2010-04-01/Accounts/<key>/IncomingPhoneNumbers.json?PageSize=1"
+    },
+    {
+      "body": "{\"messages\":[{\"sid\":\"SM0northwind0000000000000000000001\",\"body\":\"Your Northwind verification code is 411982\",\"from\":\"+15550001111\",\"to\":\"+15550003333\",\"status\":\"delivered\"}],\"page\":0,\"page_size\":1}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.twilio.com/2010-04-01/Accounts/<key>/Messages.json?PageSize=1"
+    }
+  ],
+  "version": 1
+}

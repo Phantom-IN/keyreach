@@ -65,7 +65,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider: `google.py`, `openai.py`, `anthropic.py`, `aws.py`. The two AI plugins share a probe-table shape and deliberately share no code; **R1.4** is the checkpoint that decides whether that abstraction is real, and extracting it early would answer that question by assuming it.
+- `keyreach/providers/*` — one file (or YAML) per provider. Ten as of v0.1: `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py` (payment); `slack.py`, `twilio.py`, `telegram.py` (comms); `github.py` (devtools). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, which is the evidence. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
 - `keyreach/report/render.py` — terminal / JSON / Markdown renderers; `templates/`; `report.schema.json`.
@@ -91,6 +91,22 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Two things R1.6 found, which the next provider will meet again
+
+- **`ai_ban`'s endpoint list matches case-sensitively, and that is load-bearing.**
+  Twilio's message resource is `/Messages.json`; the banned inference path is the
+  same word in lower case. `tests/test_guardrails.py` pins both directions, so
+  "make the match case-insensitive" fails rather than silently breaking
+  `keyreach/providers/twilio.py`. The check also scans *prose in source files* —
+  it fired on the Twilio module docstring that was explaining this very point,
+  which is the check working. Describe a banned path; do not spell it.
+- **A cassette URL is the redacted URL.** When a credential appears in the
+  request path (Telegram's token, Twilio's Account SID), redaction runs *after*
+  the URL is built, so the recorded form carries the literal `<key>` placeholder.
+  Do not generate a fixture by putting `<key>` through a URL builder: `httpx`
+  percent-encodes the angle brackets, and the resulting cassette never matches at
+  replay. Build with a real-looking value and substitute afterwards.
 
 ---
 

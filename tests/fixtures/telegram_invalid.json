@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"ok\":false,\"error_code\":401,\"description\":\"Unauthorized\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.telegram.org/bot<key>/getMe"
+    }
+  ],
+  "version": 1
+}

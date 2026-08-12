@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":{\"message\":\"Invalid API Key provided: <redacted>\",\"type\":\"invalid_request_error\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.stripe.com/v1/account"
+    }
+  ],
+  "version": 1
+}

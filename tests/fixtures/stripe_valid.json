@@ -1,0 +1,68 @@
+{
+  "interactions": [
+    {
+      "body": "{\"id\":\"acct_1QeNorthwind0001\",\"object\":\"account\",\"business_profile\":{\"name\":\"Northwind Coffee Ltd\"},\"country\":\"GB\",\"default_currency\":\"gbp\",\"charges_enabled\":true,\"payouts_enabled\":true}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.stripe.com/v1/account"
+    },
+    {
+      "body": "{\"object\":\"balance\",\"available\":[{\"amount\":420150,\"currency\":\"gbp\"}],\"pending\":[{\"amount\":18900,\"currency\":\"gbp\"}],\"livemode\":true}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.stripe.com/v1/balance"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"ch_3QeNorthwind0001\",\"amount\":2400,\"currency\":\"gbp\",\"billing_details\":{\"email\":\"buyer@example.invalid\"}}],\"has_more\":true}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.stripe.com/v1/charges?limit=1"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"cus_QeNorthwind01\",\"email\":\"buyer@example.invalid\",\"name\":\"A Buyer\"}],\"has_more\":true}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.stripe.com/v1/customers?limit=1"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[],\"has_more\":false}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.stripe.com/v1/payment_intents?limit=1"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"po_1QeNorthwind0001\",\"amount\":380000}],\"has_more\":false}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.stripe.com/v1/payouts?limit=1"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[],\"has_more\":false}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.stripe.com/v1/subscriptions?limit=1"
+    }
+  ],
+  "version": 1
+}
