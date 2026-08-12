@@ -29,6 +29,7 @@ from keyreach.core.engine import Engine, EngineResult
 from keyreach.core.http import Cassette, ProbeResponse, RecordMode
 from keyreach.core.models import AccessLevel, Severity
 from keyreach.core.registry import ProviderRegistry, validate_provider
+from keyreach.providers.paystack import PaystackProvider
 from keyreach.providers.stripe import (
     PROBES,
     StripeProvider,
@@ -55,11 +56,19 @@ NOT_A_KEY = "sk_" + "live_" + "short"
 
 
 def run(fixture: str, key: str = LIVE_SECRET) -> EngineResult:
-    """One full pipeline run against a committed cassette. Opens no socket."""
+    """One full pipeline run against a committed cassette. Opens no socket.
+
+    Names the provider explicitly. Since R2.1, Paystack documents the same
+    `sk_live_`/`sk_test_` prefix and is therefore an equally-ranked candidate for
+    every key in this module — see `test_paystack_claims_the_same_prefix` below.
+    Leaving detection to choose would make these fixtures depend on an
+    alphabetical tie-break rather than on anything about Stripe.
+    """
     engine = Engine(
         registry=ProviderRegistry("keyreach.providers"),
         cassette=Cassette(FIXTURES / f"{fixture}.json"),
         mode=RecordMode.REPLAY,
+        force_provider="stripe",
     )
     return asyncio.run(engine.run(key))
 
@@ -120,14 +129,27 @@ def test_detect_is_pure() -> None:
 @pytest.mark.parametrize("key", [LIVE_SECRET, TEST_SECRET, LIVE_RESTRICTED])
 def test_the_plugin_and_the_rule_set_agree_on_the_key_format(key: str) -> None:
     """Two places describe a Stripe key. They must not drift apart."""
-    matched = [
+    matched = {
         match.provider
         for match in default_detector.detect(key)
         if match.provider is not None
-    ]
+    }
 
-    assert matched == ["stripe"]
+    assert "stripe" in matched
     assert StripeProvider().detect(key) > 0.0
+
+
+def test_paystack_claims_the_same_prefix() -> None:
+    """Recorded here as well as in the Paystack module, because it is a fact
+    about *this* plugin too: a `sk_live_` key is no longer unambiguously Stripe.
+
+    Only the secret and restricted formats collide. Paystack documents no
+    equivalent of `rk_`, so a restricted key remains Stripe's alone.
+    """
+    assert PaystackProvider().detect(LIVE_SECRET) == StripeProvider().detect(
+        LIVE_SECRET
+    )
+    assert PaystackProvider().detect(LIVE_RESTRICTED) == 0.0
 
 
 def test_a_publishable_key_is_not_claimed_by_anything() -> None:

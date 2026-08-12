@@ -17,17 +17,18 @@
 
 > **v0.1.0 — the first release.**
 >
-> **Ten providers across five categories, usable from a terminal.** The whole
+> **Twelve providers across five categories, usable from a terminal.** The whole
 > pipeline — detect → validate → enumerate → score → report — is built and
 > covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
-> **payment** (`stripe`, `razorpay`), **communications** (`slack`, `twilio`,
-> `telegram`), and **dev platforms** (`github`). Each key is scored from the
-> capabilities keyreach actually confirmed, with the rationale attached.
+> **payment** (`stripe`, `razorpay`, `paystack`, `paypal`), **communications**
+> (`slack`, `twilio`, `telegram`), and **dev platforms** (`github`). Each key is
+> scored from the capabilities keyreach actually confirmed, with the rationale
+> attached.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Phase 0
-> (**R0.1**–**R0.9**) and Phase 1 (**R1.1**–**R1.6**) are done; Phase 2 adds
-> breadth and depth. Follow along in [`ROADMAP.md`](ROADMAP.md).
+> (**R0.1**–**R0.9**) and Phase 1 (**R1.1**–**R1.6**) are done; Phase 2 is under
+> way. Follow along in [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -178,6 +179,7 @@ keyreach 'AKIA...:<secret access key>'                  # AWS
 keyreach 'ASIA...:<secret>:<session token>'             # AWS, temporary
 keyreach 'AC<32 hex>:<auth token>'                      # Twilio
 keyreach 'rzp_live_...:<key secret>'                    # Razorpay
+keyreach 'CLIENT_ID:CLIENT_SECRET' --provider paypal    # PayPal
 ```
 
 Half a credential is still recognised and still reported — keyreach tells you
@@ -278,10 +280,11 @@ monitoring, auth/identity, and a generic bearer/JWT inspector. The full target
 list is [`plan.md`](plan.md) §8; the shipping order is
 [`ROADMAP.md`](ROADMAP.md).
 
-**v0.1 ships 10 providers across 5 categories** — the target was ≥10 across ≥4,
-including cloud, AI, payment and comms. It is asserted by a test rather than
-counted by hand (`tests/test_provider_contract.py`), so a deleted provider or a
-typo'd category fails the build.
+**12 providers across 5 categories.** v0.1 shipped 10 — the target was ≥10
+across ≥4, including cloud, AI, payment and comms — and R2.1 added two more. The
+count is asserted by a test rather than counted by hand
+(`tests/test_provider_contract.py`), so a deleted provider or a typo'd category
+fails the build.
 
 | Provider | Category | Credential | What a live key is shown to reach |
 | --- | --- | --- | --- |
@@ -291,6 +294,8 @@ typo'd category fails the build.
 | `anthropic` | ai | `sk-ant-…`, `sk-ant-admin…` | models, files; organization, members, API keys and cost for admin keys |
 | `stripe` | payment | `sk_live_…`, `sk_test_…`, `rk_…` | account, balance, charges, customers, payment intents, payouts, subscriptions |
 | `razorpay` | payment | `rzp_live_…:secret` | payments, orders, customers, settlements |
+| `paystack` | payment | `sk_live_…`, `sk_test_…` | balance, customers, settlements, subaccounts, transactions |
+| `paypal` | payment | `client_id:client_secret` *(needs `--provider paypal`)* | disputes, invoices, products, subscription plans — with write read from the granted OAuth scopes |
 | `slack` | comms | `xoxb-…`, `xoxp-…` | workspace, members, channels, files |
 | `twilio` | comms | `AC…:auth token` | account and tier, balance, message log, call log, phone numbers |
 | `telegram` | comms | `<bot id>:<secret>` | bot identity, webhook target, commands; group-message reach when privacy mode is off |
@@ -312,6 +317,26 @@ probably commit. Where a vendor *documents* an access model — Stripe's
 Anthropic's unscoped Console admin keys — keyreach reports the stronger verdict
 and cites the sentence. Everywhere else it under-reports and says so. See
 [`plan.md`](plan.md) §1.
+
+**Two things about detection are worth knowing.**
+
+*Some credentials cannot be detected at all.* PayPal, like a growing number of
+payment APIs, authenticates with OAuth client credentials — opaque strings with
+no published prefix, length or charset. keyreach will not ship a rule guessed
+from that, because a pattern matching "long opaque string, colon, long opaque
+string" would claim a large share of every base64 blob a scanner emits. So name
+it yourself, and the report records that you did rather than pretending a rule
+recognised it:
+
+```console
+keyreach 'CLIENT_ID:CLIENT_SECRET' --provider paypal
+```
+
+*Some prefixes belong to two vendors.* Stripe and Paystack both document
+`sk_live_` and `sk_test_`. keyreach probes both and reports whichever one
+authenticates, rather than ranking a guess — so a `sk_live_` key costs one
+wasted request against the vendor it does not belong to. `--provider` settles it
+for free if you already know.
 
 Enumeration is quiet by default. The wider AWS cross-service sweep is behind
 `--aggressive`, because a sweep looks like reconnaissance to whoever is watching

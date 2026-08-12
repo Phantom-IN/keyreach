@@ -803,22 +803,63 @@ async def test_distinct_urls_are_not_conflated() -> None:
     assert c.requests_made == 2
 
 
-async def test_a_read_only_post_is_never_cached() -> None:
-    """POST is a read here by argument and review, not by HTTP semantics.
+async def test_a_read_only_post_is_cached_like_any_other_read() -> None:
+    """Reversed in R2.1, and the reversal is the point.
 
-    The cache is sound because keyreach's GETs are idempotent — the same
-    assumption `Cassette` already makes when it rejects a duplicate recording.
-    Extending that to POST would be assuming something nobody has established.
+    This test used to assert the opposite, on the grounds that "POST is a read
+    here by argument and review, not by HTTP semantics". That was cautious in
+    the wrong direction. `read_only_post=True` is the provider asserting the
+    call is a read, in a form the `read_only` guardrail forces to be argued in
+    review — an assertion strong enough to permit the request at all is strong
+    enough to answer it from cache.
+
+    The first provider to actually use the flag proved the cost of the old rule:
+    PayPal cannot reach any endpoint without exchanging its client credentials
+    for a token, and needs one in `validate` and again in `enumerate`. Excluding
+    it reintroduced, for exactly one provider, the double-request defect R1.4
+    was created to remove.
     """
     seen: list[str] = []
 
     async with client(transport=counting_transport(seen)) as c:
         context = ProbeContext(c, SECRET)
-        await context.post(API, read_only_post=True)
-        await context.post(API, read_only_post=True)
+        await context.post(
+            API, content="grant_type=client_credentials", read_only_post=True
+        )
+        await context.post(
+            API, content="grant_type=client_credentials", read_only_post=True
+        )
+
+    assert len(seen) == 1
+    assert c.requests_made == 1
+
+
+async def test_two_posts_to_one_url_with_different_bodies_are_different_requests() -> (
+    None
+):
+    """Why the cache key gained the body in R2.1.
+
+    A GET carries no body, so keying on the URL alone was safe for every
+    provider through v0.1. The moment POST responses became cacheable, keying on
+    the URL alone would serve the first body's answer to the second — a silent
+    wrong answer, and one no existing test could have caught.
+    """
+    seen: list[str] = []
+
+    async with client(transport=counting_transport(seen)) as c:
+        context = ProbeContext(c, SECRET)
+        await context.post(API, content="query=first", read_only_post=True)
+        await context.post(API, content="query=second", read_only_post=True)
 
     assert len(seen) == 2
     assert c.requests_made == 2
+
+
+async def test_an_unannotated_post_is_still_refused_outright() -> None:
+    """Caching a `read_only_post` did not soften the default-deny."""
+    async with client() as c:
+        with pytest.raises(ReadOnlyViolationError):
+            await ProbeContext(c, SECRET).post(API, content="x")
 
 
 async def test_the_cache_does_not_leak_between_runs() -> None:

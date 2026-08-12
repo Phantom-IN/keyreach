@@ -12,7 +12,62 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **`paypal` and `paystack` providers (roadmap item **R2.1**)**, taking payment
+  coverage to five providers and keyreach to twelve:
+  - **`paystack`** — balance, customers, settlements, subaccounts and
+    transactions. Its base URL, every path and its error envelope were verified
+    against Paystack's own API, and the `perPage` parameter against Paystack's
+    published SDK.
+  - **`paypal`** — disputes, invoices, products and subscription plans, with
+    access levels read from the `scope` field of the token response. Every path
+    and both host names come from PayPal's own OpenAPI specifications, which is
+    why invoicing is `/v2/` and the rest are `/v1/`.
+- **`Provider.detectable`**, so a provider whose vendor publishes no credential
+  format can declare that instead of shipping a guessed detection rule. PayPal
+  is the first: its client id and secret are opaque strings, and a rule matching
+  them would claim a large share of every base64 blob a scanner emits. Such a
+  provider is never a detection candidate and is reached with
+  `--provider paypal`, which the report already records as the operator's
+  assertion rather than a rule's verdict. `tests/test_provider_contract.py`
+  requires every provider to be reachable one way or the other.
+- Detection rule for Paystack secret keys, deliberately identical to Stripe's —
+  see **Fixed** below.
+
+### Changed
+
+- **`read_only_post` responses now join the per-run response cache**, with the
+  request body added to the cache key. This reverses a rule R1.4 introduced
+  ("a `read_only_post` probe is a read by argument and review, not by HTTP
+  semantics, and this cache will not assume otherwise"), which the first
+  provider to use the flag showed was cautious in the wrong direction: PayPal
+  needs a token in `validate` and again in `enumerate`, so excluding it
+  reintroduced R1.4's own double-request defect for exactly one provider. The
+  assertion `read_only_post=True` makes is already strong enough to permit the
+  request — the `read_only` guardrail forces it to be argued in review — so it
+  is strong enough to answer it from cache. The body joined the key because two
+  POSTs to one URL with different bodies are different requests, a hazard no GET
+  could ever have hit.
+- **Coinbase and Flutterwave are no longer planned for R2.1.** Neither publishes
+  a credential format a detection rule could be written from: Coinbase's CDP
+  credential is a UUID key id plus a secret requiring ES256 JWT signing, and
+  Flutterwave documents its *test* secret prefix but not its live one — a rule
+  matching only test keys would detect the harmless credential and miss the
+  dangerous one. `plan.md` §5.2 records the general finding, which is that the
+  payment category is migrating to OAuth client credentials that have no
+  detectable shape at all.
+
+### Fixed
+
+- **Paystack and Stripe document the same `sk_live_`/`sk_test_` prefix**, which
+  is keyreach's first real detection collision. Neither rule was narrowed to
+  resolve it — that would invent a fact neither vendor has stated. Both fire at
+  equal confidence, the engine probes both candidates, and the vendor that
+  authenticates decides, at a cost of one wasted request to the one that does
+  not. `implementation_plan.md` §5 specified that resolution in R0.5 and nothing
+  had ever exercised it. Both plugins say so in their rejection notes, so a user
+  who sees "Paystack did not accept this key" does not conclude the key is dead.
 
 ## [0.1.0] - 2026-08-12
 

@@ -132,16 +132,61 @@ def write_rules(path: Path, body: str) -> Path:
 # --------------------------------------------------------------------------
 
 
+#: Prefixes more than one vendor documents, so more than one rule fires.
+#:
+#: Only one entry, and it took until R2.1 to appear: Stripe and Paystack both
+#: document `sk_live_`/`sk_test_` and neither publishes a length or charset that
+#: separates them. `implementation_plan.md` §5 always said ambiguity is settled
+#: at the probe stage rather than by ranking one rule above another, and this is
+#: the case it was written for.
+AMBIGUOUS_PREFIXES = {
+    "sk_live_": {"paystack", "stripe"},
+    "sk_test_": {"paystack", "stripe"},
+}
+
+
+def expected_providers(key: str, provider: str) -> set[str]:
+    """Every provider legitimately entitled to claim ``key``."""
+    for prefix, sharers in AMBIGUOUS_PREFIXES.items():
+        if key.startswith(prefix):
+            return sharers
+    return {provider}
+
+
 @pytest.mark.parametrize(("key", "provider", "confidence"), DETECTION_TABLE)
 def test_sample_keys_map_to_expected_provider_and_confidence(
     detector: Detector, key: str, provider: str, confidence: float
 ) -> None:
-    """R0.5 acceptance criterion, one row at a time."""
+    """R0.5 acceptance criterion, one row at a time.
+
+    Asserts the *set* of claimants rather than the first one. Until R2.1 every
+    key had exactly one, and asserting `matches[0]` was the same thing; now that
+    two vendors share a prefix, asserting the first would be asserting the
+    tie-break — which is alphabetical, and says nothing about either vendor.
+    """
     matches = detector.detect(key)
 
     assert matches, f"no match for {provider} key"
-    assert matches[0].provider == provider
-    assert matches[0].confidence == pytest.approx(confidence)
+    assert {match.provider for match in matches} == expected_providers(key, provider)
+
+    claimed = next(match for match in matches if match.provider == provider)
+    assert claimed.confidence == pytest.approx(confidence)
+
+
+def test_a_shared_prefix_yields_every_claimant_not_a_winner(
+    detector: Detector,
+) -> None:
+    """The collision, pinned. Neither vendor is ranked above the other.
+
+    A thumb on the scale here would settle the ambiguity by assertion. Equal
+    confidence hands the decision to the probe stage, where the vendor that
+    accepts the key decides — and costs one wasted request to the one that does
+    not (`keyreach/providers/paystack.py`).
+    """
+    matches = detector.detect(STRIPE_KEY)
+
+    assert [match.provider for match in matches] == ["paystack", "stripe"]
+    assert len({match.confidence for match in matches}) == 1
 
 
 @pytest.mark.parametrize(("key", "provider", "confidence"), DETECTION_TABLE)
