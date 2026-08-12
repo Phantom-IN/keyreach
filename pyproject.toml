@@ -88,7 +88,7 @@ dev = [
 ]
 
 [project.scripts]
-keyreach = "keyreach.cli:app"
+keyreach = "keyreach.cli:run"
 
 [project.urls]
 Homepage = "https://github.com/Phantom-IN/keyreach"
