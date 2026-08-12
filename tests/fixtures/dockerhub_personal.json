@@ -1,0 +1,31 @@
+{
+  "interactions": [
+    {
+      "body": "{\"access_token\":\"<key>\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 200,
+      "url": "https://hub.docker.com/v2/auth/token"
+    },
+    {
+      "body": "{\"count\":3,\"active_count\":2,\"next\":null,\"previous\":null,\"results\":[{\"uuid\":\"00000000-0000-4000-8000-00000000000a\",\"token_label\":\"ci-publish\",\"scopes\":[\"repo:write\"],\"is_active\":true,\"token\":\"\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://hub.docker.com/v2/access-tokens?page_size=1"
+    },
+    {
+      "body": "{\"count\":14,\"next\":null,\"previous\":null,\"results\":[{\"name\":\"warehouse-api\",\"namespace\":\"northwind\",\"is_private\":true,\"pull_count\":8123}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://hub.docker.com/v2/namespaces/northwind/repositories?page_size=1"
+    }
+  ]
+}

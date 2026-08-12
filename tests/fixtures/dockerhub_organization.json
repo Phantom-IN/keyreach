@@ -1,0 +1,49 @@
+{
+  "interactions": [
+    {
+      "body": "{\"access_token\":\"<key>\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 200,
+      "url": "https://hub.docker.com/v2/auth/token"
+    },
+    {
+      "body": "[{\"id\":\"00000000-0000-4000-8000-00000000000b\",\"username\":\"a-maintainer\",\"full_name\":\"A Maintainer\",\"role\":\"owner\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://hub.docker.com/v2/orgs/northwind-inc/members"
+    },
+    {
+      "body": "{\"restricted_images\":{\"enabled\":true,\"allow_official_images\":true,\"allow_verified_publishers\":false}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://hub.docker.com/v2/orgs/northwind-inc/settings"
+    },
+    {
+      "body": "{\"total\":2,\"next\":null,\"previous\":null,\"results\":[{\"id\":\"00000000-0000-4000-8000-00000000000c\",\"label\":\"ci-pipeline\",\"created_by\":\"a-maintainer\",\"is_active\":true}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://hub.docker.com/v2/orgs/northwind-inc/access-tokens?page_size=1"
+    },
+    {
+      "body": "{\"count\":31,\"next\":null,\"previous\":null,\"results\":[{\"name\":\"billing-worker\",\"namespace\":\"northwind-inc\",\"is_private\":true,\"pull_count\":204}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://hub.docker.com/v2/namespaces/northwind-inc/repositories?page_size=1"
+    }
+  ]
+}

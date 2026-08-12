@@ -31,6 +31,7 @@ from keyreach.core.detect import (
     looks_like_secret,
     shannon_entropy,
 )
+from keyreach.core.registry import ProviderRegistry
 
 # --------------------------------------------------------------------------
 # Synthetic sample keys
@@ -83,12 +84,22 @@ GITHUB_FINE_GRAINED = "github" + "_pat_" + _body(22) + "_" + _body(59)
 GITLAB_KEY = "glpat" + "-" + _body(20)
 SENDGRID_KEY = "SG." + _body(22) + "." + _body(43)
 TWILIO_SID = "AC" + _body(32, _HEX)
-NPM_KEY = "npm" + "_" + _body(36)
 PYPI_KEY = "pypi" + "-" + _body(55)
+DOCKERHUB_KEY = "northwind:" + "dckr" + "_pat_" + _body(24)
+DOCKERHUB_ORG_KEY = "northwind-inc:" + "dckr" + "_oat_" + _body(24)
 TELEGRAM_KEY = _body(9, "123456789") + ":" + _body(35)
 DIGITALOCEAN_KEY = "dop" + "_v1_" + _body(64, _HEX)
 RESEND_KEY = "re" + "_" + _body(8) + "_" + _body(24)
 MAILCHIMP_KEY = _body(32, _HEX) + "-" + "us14"
+
+#: R2.4 withdrew the `npm` rule for the same reason R2.3 withdrew Mailgun's:
+#: npm publishes no token format anywhere in its own documentation. Kept here to
+#: assert that nothing claims it any more — see `tests/test_provider_npm.py`.
+#:
+#: The digits are load-bearing. `looks_like_secret` requires at least one, to
+#: keep the entropy fallback off `someVeryLongVariableNameHere`, so a sample of
+#: pure letters would fall through to *nothing* and prove the wrong thing.
+NPM_LEGACY_KEY = "npm" + "_" + _body(30) + _body(6, "0123456789")
 
 #: R2.3 withdrew the `mailgun` rule: the page it was sourced to no longer
 #: documents any key format, and neither does any other page Mailgun publishes.
@@ -115,8 +126,9 @@ DETECTION_TABLE = [
     (GITLAB_KEY, "gitlab", 0.99),
     (SENDGRID_KEY, "sendgrid", 0.95),
     (TWILIO_SID, "twilio", 0.95),
-    (NPM_KEY, "npm", 0.99),
     (PYPI_KEY, "pypi", 0.99),
+    (DOCKERHUB_KEY, "dockerhub", 0.99),
+    (DOCKERHUB_ORG_KEY, "dockerhub", 0.99),
     (TELEGRAM_KEY, "telegram", 0.95),
     (DIGITALOCEAN_KEY, "digitalocean", 0.99),
     (RESEND_KEY, "resend", 0.95),
@@ -135,6 +147,42 @@ def test_the_withdrawn_mailgun_rule_claims_nothing() -> None:
     matches = Detector().detect(MAILGUN_LEGACY_KEY)
 
     assert [match.provider for match in matches] == [None]
+
+
+def test_the_withdrawn_npm_rule_claims_nothing() -> None:
+    """R2.4 withdrew the second rule, on the same ground as the first.
+
+    npm's own documentation describes a token as "a hexadecimal string", which
+    is not a format and contradicts the charset the rule matched, and npm's CLI
+    and CI/CD guides both refuse to print a token value anywhere. Two
+    withdrawals in two items is the pattern `plan.md` §5.2 now records: vendors
+    are increasingly declining to publish credential formats at all.
+    """
+    matches = Detector().detect(NPM_LEGACY_KEY)
+
+    assert [match.provider for match in matches] == [None]
+
+
+def test_pypi_is_detected_and_deliberately_has_no_plugin() -> None:
+    """A rule may legitimately run ahead of a plugin — here it runs *instead* of one.
+
+    PyPI documents nine APIs and exactly one takes an API token:
+    `POST upload.pypi.org/legacy/`, which publishes a package. There is no
+    authenticated read, so keyreach cannot validate or enumerate a PyPI token
+    without performing a write, and it will not.
+
+    That is a different failure from an undetectable credential, and worth
+    keeping apart: Mailgun and npm cannot be *recognised*; PyPI can be
+    recognised and cannot be *probed*. Detection alone still earns its place —
+    the report names the vendor and the rotation guide — so the rule stays and
+    nothing should "fix" this by adding a plugin that posts.
+    """
+    matches = Detector().detect(PYPI_KEY)
+
+    assert [match.provider for match in matches] == ["pypi"]
+    assert "pypi" not in [
+        provider.name for provider in ProviderRegistry("keyreach.providers").providers()
+    ]
 
 
 @pytest.fixture

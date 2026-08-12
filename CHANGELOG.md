@@ -14,6 +14,28 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **Four dev-platform providers (roadmap item **R2.4**)** — `gitlab`,
+  `bitbucket`, `npm` and `dockerhub` — taking dev platforms to five and keyreach
+  to **twenty-three providers across six categories**.
+  - **`gitlab`** — account, private projects and groups, with write and admin
+    read from `GET /personal_access_tokens/self`, which returns the calling
+    token's own scopes. The third shape keyreach has met for that: a response
+    header at GitHub, a resource at SendGrid, and here a resource that also
+    carries `active`, `revoked` and `expires_at`.
+  - **`bitbucket`** — account, email addresses and workspaces, from
+    `<atlassian email>:<api token>`.
+  - **`npm`** — every access token on the account, and staged package versions.
+  - **`dockerhub`** — repositories including private ones, plus organization
+    members, settings and tokens for an organization token.
+- **Docker Hub detection from both documented prefixes.** Docker's prose
+  access-token pages publish no format at all; its OpenAPI specification
+  examples `dckr_pat_…` as the auth request's secret and `dckr_oat_…` as an
+  organization token's value. The prefix also selects the probe table, because
+  Docker documents the accompanying identifier as a username for one kind and an
+  organization name for the other.
+- **A third `read_only_post`**, after PayPal (R2.1) and Zoom (R2.2): Docker
+  Hub's token exchange, which creates no repository and pushes no image.
+
 - **Five email/marketing providers (roadmap item **R2.3**)** — `sendgrid`,
   `mailgun`, `postmark`, `resend` and `mailchimp` — opening the `email`
   category and taking keyreach to **nineteen providers across six categories**.
@@ -86,6 +108,27 @@ under `Unreleased` in the same pull request as any user-visible change.
   see **Fixed** below.
 
 ### Changed
+
+- **The `npm` detection rule was withdrawn** and `npm` now ships
+  `detectable = False`, reached with `--provider npm`. This is the second
+  withdrawal in two roadmap items, on the same ground as Mailgun's in R2.3: npm
+  describes a token only as "a hexadecimal string that you can use to
+  authenticate" — no prefix, and a charset the rule contradicted — while its CLI
+  reference and CI/CD guide both deliberately avoid printing a token value. The
+  page also records that legacy tokens were removed in November 2025, so the
+  rule was written against a format npm no longer issues.
+- **The `gitlab` detection rule's citation was corrected.** `glpat-` is still
+  documented, on GitLab's token-prefix table; the personal-access-token guide
+  the rule had cited since R0.5 now says only that tokens "inherit the default
+  prefix setting". The rule was right and its source was not — a state between
+  "sound" and "withdrawn" that only re-verification finds.
+- **`pypi` now ships as a detection rule with no plugin, deliberately.** PyPI
+  documents nine APIs and exactly one accepts an API token:
+  `POST upload.pypi.org/legacy/`, which publishes a package. There is no
+  authenticated read, so keyreach cannot enumerate a PyPI token without
+  performing a write. Detection still reports the vendor, the severity and the
+  rotation guide. Undetectable and un-enumerable are now recorded as separate
+  failures in `plan.md` §5.2.
 
 - **The `mailgun` detection rule was withdrawn** and `mailgun` now ships
   `detectable = False`, reached with `--provider mailgun`. keyreach carried

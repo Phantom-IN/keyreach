@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "",
+      "headers": {
+        "content-length": "0",
+        "content-type": "text/plain"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.bitbucket.org/2.0/user"
+    }
+  ]
+}

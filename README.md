@@ -17,13 +17,13 @@
 
 > **v0.1.0 — the first release.**
 >
-> **Nineteen providers across six categories, usable from a terminal.** The whole
-> pipeline — detect → validate → enumerate → score → report — is built and
+> **Twenty-three providers across six categories, usable from a terminal.** The
+> whole pipeline — detect → validate → enumerate → score → report — is built and
 > covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
 > **payment** (`stripe`, `razorpay`, `paystack`, `paypal`), **communications**
 > (`slack`, `twilio`, `telegram`, `discord`, `zoom`), **email/marketing**
 > (`sendgrid`, `mailgun`, `postmark`, `resend`, `mailchimp`), and **dev
-> platforms** (`github`). Each key is
+> platforms** (`github`, `gitlab`, `bitbucket`, `npm`, `dockerhub`). Each key is
 > scored from the capabilities keyreach actually confirmed, with the rationale
 > attached.
 >
@@ -283,11 +283,12 @@ monitoring, auth/identity, and a generic bearer/JWT inspector. The full target
 list is [`plan.md`](plan.md) §8; the shipping order is
 [`ROADMAP.md`](ROADMAP.md).
 
-**19 providers across 6 categories.** v0.1 shipped 10 — the target was ≥10
+**23 providers across 6 categories.** v0.1 shipped 10 — the target was ≥10
 across ≥4, including cloud, AI, payment and comms — R2.1 and R2.2 added two
-each, and R2.3 opened the email category with five. The count is asserted by a
-test rather than counted by hand (`tests/test_provider_contract.py`), so a
-deleted provider or a typo'd category fails the build.
+each, R2.3 opened the email category with five, and R2.4 took dev platforms to
+five. The count is asserted by a test rather than counted by hand
+(`tests/test_provider_contract.py`), so a deleted provider or a typo'd category
+fails the build.
 
 | Provider | Category | Credential | What a live key is shown to reach |
 | --- | --- | --- | --- |
@@ -310,6 +311,10 @@ deleted provider or a typo'd category fails the build.
 | `resend` | email | `re_…` | API keys, audiences, broadcasts, domains — or, for a sending-only key, the send capability alone |
 | `mailchimp` | email | `<hex>-<dc>` | account, audiences, campaigns, reports, automations — with access read from the role Mailchimp returns |
 | `github` | devtools | `ghp_…`, `gho_…`, `github_pat_…` | account, private repositories, organizations, email addresses, gists |
+| `gitlab` | devtools | `glpat-…` | account, private projects, groups — with write and admin read from the token's own scopes |
+| `bitbucket` | devtools | `<email>:<api token>` *(needs `--provider bitbucket`)* | account, email addresses, workspaces |
+| `npm` | devtools | access token *(needs `--provider npm`)* | every token on the account, staged package versions |
+| `dockerhub` | devtools | `<identifier>:dckr_pat_…` / `dckr_oat_…` | repositories including private ones; org members, settings and tokens for an organization token |
 
 **Severity is computed, and the differences are the point.** A `sk_live_` Stripe
 key rates Critical and a `sk_test_` one does not, because Stripe documents
@@ -344,13 +349,23 @@ keyreach 'BOT_TOKEN' --provider discord
 keyreach 'ACCOUNT_ID:CLIENT_ID:CLIENT_SECRET' --provider zoom
 keyreach 'API_KEY' --provider mailgun
 keyreach 'SERVER_OR_ACCOUNT_TOKEN' --provider postmark
+keyreach 'EMAIL:API_TOKEN' --provider bitbucket
+keyreach 'ACCESS_TOKEN' --provider npm
 ```
 
-*Mailgun is the first provider keyreach could once detect and no longer can.* It
-shipped a `key-…` rule from R0.5, sourced to Mailgun's authentication page; that
-page now documents no key format at all, and neither does any other page Mailgun
-publishes. A rule nobody can re-verify is worse than no rule, so it was
-withdrawn — see [`ROADMAP.md`](ROADMAP.md) R2.3.
+*Mailgun and npm are providers keyreach could once detect and no longer can.*
+Both shipped a rule from R0.5, and both vendors have since stopped documenting
+any credential format — Mailgun's authentication page and npm's access-token
+page each describe how to send a token and never what one looks like. A rule
+nobody can re-verify is worse than no rule, so both were withdrawn; see
+[`ROADMAP.md`](ROADMAP.md) R2.3 and R2.4. A withdrawn rule is not silence: the
+entropy fallback still reports the value as a secret of unknown provenance.
+
+*PyPI is recognised and deliberately not probed.* Its token format is documented
+and the rule is sound, but PyPI publishes exactly one endpoint that accepts an
+API token — a package upload. keyreach will not perform a write to establish a
+capability, so it reports the vendor, the severity and the rotation guide, and
+stops there.
 
 *Postmark's two token types look identical*, so keyreach does not ask you which
 you have. It tries both headers, and Postmark's own refusal names the one it

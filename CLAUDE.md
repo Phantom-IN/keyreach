@@ -65,7 +65,8 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider. Nineteen as of R2.3 (`sendgrid`, `mailgun`, `postmark`, `resend`, `mailchimp` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py` (devtools). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, and R2.3 added five more — including two undetectable ones and a host derived per key — again without touching it. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
+- `keyreach/providers/*` — one file (or YAML) per provider. Twenty-three as of R2.4 (`gitlab`, `bitbucket`, `npm`, `dockerhub` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.py`, `dockerhub.py` (devtools). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, and R2.4 four — four consecutive items, none of which needed an interface change. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
+  - **`pypi` is a detection rule with no plugin, on purpose.** PyPI's only token-accepting endpoint is a package upload, so no plugin can exist without performing a write. Do not add one. See `plan.md` §5.2 and `tests/test_detect.py::test_pypi_is_detected_and_deliberately_has_no_plugin`.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
 - `keyreach/report/render.py` — terminal / JSON / Markdown renderers; `templates/`; `report.schema.json`.
@@ -91,6 +92,28 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Three things R2.4 found
+
+- **Re-verify every rule you touch, including the ones you are not changing.**
+  R2.4 opened by opening the `source:` URL of all three devtools rules that
+  already existed. One was sound, one was **correct but cited to a page that no
+  longer supports it** (GitLab moved its prefix table), and one was
+  **unsupportable anywhere** and was withdrawn (npm). A `source` that does not
+  support its rule is worth nothing — re-verification is the only thing the
+  field is for. Two withdrawals in two items is a trend, not a coincidence.
+- **A vendor's OpenAPI specification is a primary source, and is sometimes the
+  only one.** Docker Hub's prose token pages publish no format; its published
+  specification examples `dckr_pat_…` and `dckr_oat_…` in the request and
+  response schemas. Check the machine-readable spec before concluding a vendor
+  publishes nothing — Bitbucket's and Docker's both answered questions their
+  prose did not, including which endpoints are **deprecated**, which is worth
+  avoiding in a probe table.
+- **Detection and enumeration fail independently.** Undetectable means no rule
+  can be written; un-enumerable means no read-only probe exists. PyPI is the
+  second: format documented, rule sound, and its only token-accepting endpoint
+  is a package upload. It ships as a rule with **no plugin**. Do not "fix" that
+  by adding one that posts.
 
 ### Three things R2.3 found
 

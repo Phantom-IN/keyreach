@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"message\":\"401 Unauthorized\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://gitlab.com/api/v4/personal_access_tokens/self"
+    }
+  ]
+}

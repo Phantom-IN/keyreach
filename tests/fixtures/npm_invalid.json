@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "",
+      "headers": {
+        "www-authenticate": "Basic, Bearer"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://registry.npmjs.org/-/npm/v1/tokens"
+    }
+  ]
+}
