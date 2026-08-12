@@ -1,0 +1,59 @@
+{
+  "interactions": [
+    {
+      "body": "{\"total_records\":2,\"groups\":[{\"id\":\"g-northwind-01\",\"name\":\"Engineering\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.zoom.us/v2/groups"
+    },
+    {
+      "body": "{\"id\":\"u-northwind-01\",\"account_id\":\"acct-northwind\",\"email\":\"ops@northwind.example\",\"type\":2,\"role_name\":\"Owner\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.zoom.us/v2/users/me"
+    },
+    {
+      "body": "{\"page_size\":1,\"total_records\":31,\"meetings\":[{\"id\":84000000001,\"topic\":\"Board sync\",\"join_url\":\"https://zoom.us/j/84000000001\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.zoom.us/v2/users/me/meetings?page_size=1"
+    },
+    {
+      "body": "{\"page_size\":1,\"total_records\":9,\"meetings\":[{\"uuid\":\"nwRecording001==\",\"topic\":\"Board sync\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.zoom.us/v2/users/me/recordings?page_size=1"
+    },
+    {
+      "body": "{\"page_size\":1,\"total_records\":148,\"users\":[{\"id\":\"u-northwind-01\",\"email\":\"ops@northwind.example\",\"first_name\":\"Ops\",\"type\":2}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.zoom.us/v2/users?page_size=1"
+    },
+    {
+      "body": "{\"access_token\":\"eyJzdiI6IjAwMDAwMSIsImFsZyI6IkhTNTEyIn0.northwind\",\"token_type\":\"bearer\",\"expires_in\":3600,\"scope\":\"user:read:list_users:admin cloud_recording:read:list_user_recordings meeting:read:list_meetings group:read:list_groups:admin\",\"api_url\":\"https://api.zoom.us\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 200,
+      "url": "https://zoom.us/oauth/token"
+    }
+  ],
+  "version": 1
+}

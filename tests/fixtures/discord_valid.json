@@ -1,0 +1,32 @@
+{
+  "interactions": [
+    {
+      "body": "{\"id\":\"1290000000000000001\",\"name\":\"Northwind Ops\",\"bot_public\":false,\"flags\":278528,\"owner\":{\"id\":\"440000000000000002\",\"username\":\"northwind-admin\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://discord.com/api/v10/applications/@me"
+    },
+    {
+      "body": "{\"id\":\"1290000000000000001\",\"username\":\"northwind-ops\",\"discriminator\":\"0\",\"bot\":true,\"verified\":true}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://discord.com/api/v10/users/@me"
+    },
+    {
+      "body": "[{\"id\":\"990000000000000003\",\"name\":\"Northwind HQ\",\"owner\":false,\"permissions\":\"8\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://discord.com/api/v10/users/@me/guilds?limit=1"
+    }
+  ],
+  "version": 1
+}

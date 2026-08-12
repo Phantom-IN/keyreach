@@ -1,0 +1,32 @@
+{
+  "interactions": [
+    {
+      "body": "{\"message\":\"Missing Access\",\"code\":50001}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://discord.com/api/v10/applications/@me"
+    },
+    {
+      "body": "{\"id\":\"1290000000000000001\",\"username\":\"northwind-ops\",\"bot\":true}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://discord.com/api/v10/users/@me"
+    },
+    {
+      "body": "[{\"id\":\"990000000000000003\",\"name\":\"Northwind HQ\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://discord.com/api/v10/users/@me/guilds?limit=1"
+    }
+  ],
+  "version": 1
+}

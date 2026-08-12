@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"message\":\"401: Unauthorized\",\"code\":0}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://discord.com/api/v10/users/@me"
+    }
+  ],
+  "version": 1
+}
