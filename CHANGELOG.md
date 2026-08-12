@@ -311,6 +311,28 @@ under `Unreleased` in the same pull request as any user-visible change.
   to being served from cache. `plan.md` §11 asks for minimal probe counts; this
   is the number that claim is about.
 
+- **The CLI** (roadmap item **R1.5**) — keyreach is usable from a terminal.
+  `keyreach KEY` runs the whole pipeline and prints a report; `-f keys.txt` and
+  `-f -` take a batch from a file or stdin; `--report terminal|json|md`, `--json`
+  and `-o PATH` choose and place the output; `--provider`, `--no-enumerate`,
+  `--aggressive`, `--delay 500ms`, `--unmask`, `--fail-on BAND` and `--quiet`
+  do what `implementation_plan.md` §12 says they do.
+- **An ASCII startup banner** on stderr, carrying the version, the three
+  guarantees, and the authorized-use reminder `plan.md` §11 asks for. Plain
+  ASCII deliberately: box-drawing characters become mojibake over ssh, in a
+  Windows console, and in CI log viewers. `--quiet` suppresses it, and
+  `--version` never prints it, because release tooling parses that.
+- **stdout carries only the report.** The banner, the aggressive-mode warning,
+  the unmask warning and every error go to stderr, so `keyreach KEY --json | jq`
+  works and `keyreach KEY --report md > finding.md` writes a file containing
+  nothing but the finding.
+- **Fixed exit codes**: `0` clean, `2` a finding at or above `--fail-on`, `1`
+  anything went wrong. `2` means a finding and nothing else.
+- **`Engine(force_provider=...)`**, behind `--provider`. The run records in
+  `Report.notes` that detection was overridden — a capability map produced that
+  way rests on the operator's claim rather than on a rule, and a reader cannot
+  otherwise tell the two apart.
+
 ### Changed
 
 - **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
@@ -417,6 +439,18 @@ under `Unreleased` in the same pull request as any user-visible change.
   one was MIT, so reuse *would* have been allowed and "nothing was copied" was a
   choice; this one is copyleft, so the same sentence is load-bearing.
   `CREDITS.md` and `THIRD_PARTY_LICENSES.md` now say which is which.
+- **The console script points at `keyreach.cli.run`, not at the typer app.**
+  Click exits `2` on a malformed command line, and keyreach's `2` means "a
+  finding at or above `--fail-on`" — the same number for "your CI config has a
+  typo" and "this key is Critical", in the one place these codes are read by a
+  machine. `run` is a total mapping from whatever click exited with onto the
+  three documented codes. It is built on the exit code rather than on exception
+  types because **typer vendors its own copy of click**, so
+  `except click.UsageError` imported from the real package names a class that is
+  never raised and catches nothing — which is how the first implementation was
+  written, and it looked correct.
+- **`plan.md` §11's first-run reminder exists.** It had been a requirement with
+  nowhere to live until there was a CLI to put it in.
 - The CI workflow no longer runs hygiene checks only. It now gates every pull
   request on the four guardrails, ruff/black/mypy, tests with a coverage floor,
   both drift checks, and a wheel-install check — the gates that had been running

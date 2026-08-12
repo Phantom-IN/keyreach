@@ -145,29 +145,56 @@ keyreach --help
 
 ## Usage
 
-> **Coming soon.** Right now only `--help` and `--version` do anything. The CLI
-> surface below is the specification from
-> [`implementation_plan.md`](implementation_plan.md) §12, not a description of
-> working software. CLI UX lands in roadmap item
-> [R1.5](ROADMAP.md#phase-1--archetype-providers--mvp-v01).
+```console
+$ keyreach AIza...
+    __                                   __
+   / /_____  __  ______  ___  ____ _____/ /_
+  / //_/ _ \/ / / / ___// _ \/ __ `/ ___/ __ \
+ / ,< /  __/ /_/ / /   /  __/ /_/ / /__/ / / /
+/_/|_|\___/\__, /_/    \___/\__,_/\___/_/ /_/
+          /____/
+  v0.1.0  |  deterministic  |  read-only  |  no AI
+  Use only against keys you own or are explicitly authorized to test.
+```
 
 ```console
 keyreach KEY                      # detect → validate → enumerate → score → terminal report
 keyreach KEY --report md -o out.md
-keyreach KEY --report html -o out.html
 keyreach KEY --json               # machine-readable, schema-validated
-keyreach -f keys.txt              # batch from file
-cat keys.txt | keyreach -         # batch from stdin
+keyreach -f keys.txt              # batch from a file, one key per line
+cat keys.txt | keyreach -f -      # batch from stdin (keeps keys out of shell history)
 keyreach KEY --provider google    # force provider, skip detection
 keyreach KEY --no-enumerate       # validity + identity only
-keyreach KEY --aggressive         # opt-in noisy enumeration; off by default
-keyreach KEY --delay 500ms        # rate-limit probes
+keyreach KEY --aggressive         # opt-in noisy enumeration; off by default, warned
+keyreach KEY --delay 500ms        # pace probes
 keyreach KEY --unmask             # show full key (off by default)
-keyreach KEY --fail-on high       # exit nonzero if band >= high (CI gating)
+keyreach KEY --fail-on high       # exit 2 if band >= high (CI gating)
+keyreach KEY --quiet              # no banner, no warnings
 ```
 
-Planned exit codes: `0` success/info, `2` a finding at or above the `--fail-on`
-threshold, `1` operational error.
+**AWS takes both halves.** `keyreach 'AKIA...:<secret access key>'`, or
+`'ASIA...:<secret>:<session token>'` for temporary credentials. A bare `AKIA...`
+is still recognised and reported — keyreach just tells you which half is
+missing instead of calling the credential dead.
+
+**stdout is the report; stderr is everything else.** The banner, warnings and
+errors go to stderr, so `keyreach KEY --json | jq` works and
+`keyreach KEY --report md > finding.md` writes a file containing nothing but the
+finding.
+
+**Exit codes** — fixed, documented, and safe to gate CI on:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Ran cleanly; nothing reached the `--fail-on` threshold |
+| `2` | A finding at or above `--fail-on` |
+| `1` | Something went wrong — bad flag, unreadable file, unknown provider |
+
+`2` means a finding and nothing else. A malformed command line exits `1`, so a
+typo in a CI config can never be mistaken for a Critical key.
+
+HTML output (`--report html`) arrives in
+[R2.9](ROADMAP.md#phase-2--breadth--depth).
 
 ## Provider coverage
 

@@ -128,10 +128,11 @@ python -m tools.guardrails read_only       # or one by name
 python -m keyreach.report.schema --write   # report.schema.json
 python -m tests.regenerate_goldens         # tests/golden/*
 
-# run locally against a throwaway key — R1.5 wires these up
-keyreach <KEY>
+# run locally against a throwaway key
+keyreach <KEY>                       # terminal report; banner on stderr
 keyreach <KEY> --report md -o out.md
-keyreach <KEY> --json
+keyreach <KEY> --json --quiet        # stdout is only the report
+keyreach -f keys.txt --fail-on high  # batch; exit 2 at or above the band
 ```
 
 Do not run keyreach against keys you don't own or aren't authorized to test.

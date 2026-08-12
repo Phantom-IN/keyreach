@@ -477,11 +477,27 @@ keyreach KEY --aggressive         # opt-in noisy enumeration; off by default, wa
 keyreach KEY --delay 500ms        # rate-limit probes
 keyreach KEY --unmask             # show full key (off by default)
 keyreach KEY --fail-on high       # exit nonzero if band >= high (CI gating)
+keyreach KEY -o out.md            # write the report to a file
+keyreach KEY --quiet              # suppress the banner and warnings
 ```
 
 Exit codes: `0` success/info, `2` finding at/above `--fail-on` threshold, `1` operational error. Codes are fixed and documented.
 
 **AWS takes a composite credential** (R1.3). Every other provider authenticates with one string; AWS signs each request with an access key ID *and* a secret access key, plus a session token for temporary credentials, so the CLI accepts them colon-joined: `keyreach 'AKIA…:<secret>'`, or `'ASIA…:<secret>:<session token>'`. A bare access key ID is still detected and reported — recognising one in a leak is useful — but it cannot be probed, and validation says which half is missing rather than reporting the credential as dead.
+
+---
+
+### 12.1 Notes on the implementation (landed in R1.5)
+
+- **stdout is the report; stderr is everything else.** The banner, the aggressive-mode warning, the unmask warning and every error go to stderr, so `keyreach KEY --json | jq` works and `keyreach KEY --report md > finding.md` writes a file containing nothing but the finding. A tool that decorates its own machine-readable output cannot be piped.
+- **The exit-code contract is enforced, not inherited.** Click exits `2` on a malformed command line and keyreach's `2` means "a finding at or above `--fail-on`" — the same number for "your CI config has a typo" and "this key is Critical", in the one place these codes are read by a machine. The console script therefore points at `keyreach.cli.run`, not at the typer app: `run` is a total mapping from whatever click exited with onto `0`/`1`/`2`, and a finding is signalled internally with a code click never produces. It is built on the exit code rather than on exception types **because typer vendors its own copy of click**, so `except click.UsageError` — imported from the real package — names a class that is never raised and catches nothing. That was written first, and it looked correct.
+- **The clock is read exactly once, at this boundary.** Every stage below the CLI is a pure function of its inputs; `generated_at` is stamped here and passed down (§9.1).
+- **A single key yields a JSON object; a batch yields an array.** The shape follows the *invocation*, not the number of keys, so a script written against `--file` keeps working on the day that file contains exactly one key. Inferring it from `len(reports)` was the first implementation and a test caught it.
+- **Blank lines and `#` comments are skipped in a key file; duplicates are kept.** A scanner's output can be fed in unedited, and a batch never silently scans fewer things than it was asked to.
+- **`--json` and `--report` are the same setting spelled two ways, so a contradiction is an error** rather than a precedence rule nobody remembers. Letting one silently win is how a user ends up with Markdown in a file they told keyreach to fill with JSON.
+- **`--provider` records that it was used.** A capability map produced by forcing a provider rests on the operator's claim rather than on a rule, and `Report.notes` says so — a reader cannot otherwise tell an assertion from a verdict.
+- **Colour is emitted only for a real terminal**: terminal format, no `-o`, and `stdout.isatty()`. ANSI escapes in a pipe or a file are noise that breaks diffing.
+- **The banner is plain ASCII**, printed to stderr, and carries the authorized-use reminder `plan.md` §11 asks for. Box-drawing characters become mojibake over ssh, in a Windows console, and in CI log viewers. A test asserts `banner().isascii()` — which failed the first time, because the tagline separators were `·`.
 
 ---
 

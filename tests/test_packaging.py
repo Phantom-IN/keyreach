@@ -159,8 +159,17 @@ def test_requires_python_3_11_or_newer(pyproject: dict[str, Any]) -> None:
     assert pyproject["project"]["requires-python"] == ">=3.11"
 
 
-def test_console_script_points_at_the_cli_app(pyproject: dict[str, Any]) -> None:
-    assert pyproject["project"]["scripts"] == {"keyreach": "keyreach.cli:app"}
+def test_console_script_points_at_the_exit_code_wrapper(
+    pyproject: dict[str, Any],
+) -> None:
+    """`run`, not `app` — and the difference is the exit-code contract.
+
+    Pointing the binary straight at the typer app would let click's exit code 2
+    for a malformed command line reach the shell, where `implementation_plan.md`
+    §12 says 2 means "a finding at or above --fail-on". `keyreach.cli.run` is the
+    single place that mapping happens, so it has to be what actually runs.
+    """
+    assert pyproject["project"]["scripts"] == {"keyreach": "keyreach.cli:run"}
 
 
 def test_version_is_single_sourced_from_the_package(

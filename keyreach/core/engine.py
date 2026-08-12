@@ -137,6 +137,11 @@ class EngineResult(BaseModel):
         return scoring.score(self.capabilities)
 
 
+#: Confidence recorded for a provider named with ``--provider``. Deliberately
+#: 1.0: the operator asserted it, and the report says so in its notes rather
+#: than dressing an assertion up as a detection score.
+FORCED_CONFIDENCE: Final = 1.0
+
 #: Providers probed for one key, at most. Detection can legitimately return
 #: several candidates for an ambiguous prefix, but probing every one of them
 #: means authentication traffic against services the key almost certainly does
@@ -160,6 +165,7 @@ class Engine:
         cassette: Cassette | None = None,
         mode: RecordMode = RecordMode.OFF,
         enumerate_capabilities: bool = True,
+        force_provider: str | None = None,
         aggressive: bool = False,
         clock: Callable[[], datetime] | None = None,
         max_providers: int = MAX_PROVIDERS_PROBED,
@@ -174,6 +180,13 @@ class Engine:
         self.mode = mode
         #: Mirrors `--no-enumerate` (R1.5): validity and identity only.
         self.enumerate_capabilities = enumerate_capabilities
+        #: Mirrors `--provider` (R1.5): probe this provider and skip detection
+        #: entirely. The escape hatch for a key whose format keyreach does not
+        #: recognise yet, and the way to settle an ambiguous prefix by hand.
+        #: The run records that detection was overridden, because a capability
+        #: map produced this way rests on the operator's claim rather than on a
+        #: rule, and a reader of the report is entitled to know which.
+        self.force_provider = force_provider
         #: Mirrors `--aggressive` (R1.5). **Off by default, always** — probes
         #: behind this flag are still read-only, but noisy enough to trip a
         #: defender's alerting, which `plan.md` §11 requires be opt-in, flagged
@@ -189,8 +202,18 @@ class Engine:
         """Detect, validate and enumerate a single key."""
         fingerprint = key if self.unmask else mask_key(key)
         detections = self.detector.detect(key)
+        notes: tuple[str, ...] = ()
 
-        candidates = self._candidates(detections)
+        if self.force_provider is not None:
+            candidates = [(self.registry.get(self.force_provider), FORCED_CONFIDENCE)]
+            notes = (
+                f"Detection was overridden: {self.force_provider!r} was probed "
+                "because it was named on the command line, not because a rule "
+                "recognised this key.",
+            )
+        else:
+            candidates = self._candidates(detections)
+
         if not candidates:
             return EngineResult(
                 key_fingerprint=fingerprint,
@@ -218,6 +241,7 @@ class Engine:
         return EngineResult(
             key_fingerprint=fingerprint,
             detections=detections,
+            notes=notes,
             outcomes=tuple(sorted(outcomes, key=lambda outcome: outcome.sort_key)),
         )
 
