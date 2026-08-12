@@ -1,0 +1,40 @@
+{
+  "interactions": [
+    {
+      "body": "{\"total_count\":2,\"items\":[{\"id\":\"key_0000000a\",\"description\":\"Production domain key\",\"kind\":\"domain\",\"role\":\"sending\",\"is_disabled\":false,\"domain_name\":\"northwind.example\",\"requestor\":\"ops@northwind.example\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.mailgun.net/v1/keys"
+    },
+    {
+      "body": "{\"total_count\":2,\"items\":[{\"name\":\"northwind.example\",\"state\":\"active\",\"type\":\"custom\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.mailgun.net/v3/domains?limit=1"
+    },
+    {
+      "body": "{\"items\":[{\"address\":\"announce@northwind.example\",\"members_count\":1204,\"access_level\":\"readonly\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.mailgun.net/v3/lists/pages?limit=1"
+    },
+    {
+      "body": "{\"total_count\":1,\"items\":[{\"id\":\"0000000000000000000000aa\",\"priority\":0,\"description\":\"support inbox\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.mailgun.net/v3/routes?limit=1"
+    }
+  ]
+}

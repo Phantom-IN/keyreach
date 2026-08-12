@@ -1,0 +1,40 @@
+{
+  "interactions": [
+    {
+      "body": "{\"statusCode\":401,\"message\":\"This API key is restricted to only send emails\",\"name\":\"restricted_api_key\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.resend.com/api-keys"
+    },
+    {
+      "body": "{\"statusCode\":401,\"message\":\"This API key is restricted to only send emails\",\"name\":\"restricted_api_key\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.resend.com/audiences"
+    },
+    {
+      "body": "{\"statusCode\":401,\"message\":\"This API key is restricted to only send emails\",\"name\":\"restricted_api_key\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.resend.com/broadcasts"
+    },
+    {
+      "body": "{\"statusCode\":401,\"message\":\"This API key is restricted to only send emails\",\"name\":\"restricted_api_key\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.resend.com/domains"
+    }
+  ]
+}

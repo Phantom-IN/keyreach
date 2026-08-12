@@ -230,16 +230,60 @@ rules:
   - id: sendgrid-api-key
     provider: sendgrid
     description: SendGrid API key
-    pattern: '^SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$'
-    confidence: 0.99
-    source: https://www.twilio.com/docs/sendgrid/ui/account-and-settings/api-keys
-
-  - id: mailgun-api-key
-    provider: mailgun
-    description: Mailgun private API key
-    pattern: '^key-[0-9a-f]{32}$'
+    # `SG.` followed by two dot-separated segments, which is the shape SendGrid
+    # publishes in the create-API-key response example ("SG.xxxxxxxx.yyyyyyyy").
+    #
+    # R2.3 relaxed this from `{22}` and `{43}`. Those lengths are correct for
+    # every key seen in the wild, and SendGrid has never published either of
+    # them — they were an unsourced fact wearing a `source:` field. A rule that
+    # pins a length the vendor does not state stops matching the day the vendor
+    # changes it, silently, which is the failure mode a detector cannot afford.
+    # The `SG.` prefix carries the specificity here; the segment minimums are
+    # entropy floors, not a claim about SendGrid's format.
+    pattern: '^SG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}$'
     confidence: 0.95
-    source: https://documentation.mailgun.com/docs/mailgun/api-reference/authentication/
+    source: https://www.twilio.com/docs/sendgrid/api-reference/api-keys/create-api-keys
+
+  # NO `mailgun` RULE — WITHDRAWN IN R2.3, DELIBERATELY.
+  #
+  # This file carried `^key-[0-9a-f]{32}$` from R0.5, sourced to Mailgun's
+  # authentication page. Re-verifying that page in R2.3 found it now documents
+  # only `curl --user 'api:YOUR_API_KEY'` — no prefix, no length, no charset —
+  # and neither does any other page Mailgun publishes, including the API key
+  # management guide it rewrote around its RBAC roles.
+  #
+  # So the rule's cited source no longer supports it, and a rule nobody can
+  # re-verify is exactly what the PROVENANCE note above exists to prevent. It is
+  # withdrawn rather than re-sourced or quietly kept: `keyreach/providers/
+  # mailgun.py` sets `detectable = False` and is reached with `--provider
+  # mailgun`, which records in the report that the operator asserted it.
+  #
+  # This is the first rule keyreach has had to withdraw because a vendor stopped
+  # publishing a format, and it is the drift that **R2.10**'s canary is meant to
+  # catch without a human re-reading the docs.
+
+  - id: resend-api-key
+    provider: resend
+    description: Resend API key
+    # `re_` plus an opaque body, from the token in Resend's own create-API-key
+    # response example. Resend publishes the prefix by example and states no
+    # length, so this constrains the prefix and the charset only.
+    pattern: '^re_[A-Za-z0-9_]{16,}$'
+    confidence: 0.95
+    source: https://resend.com/docs/api-reference/api-keys/create-api-key
+
+  - id: mailchimp-api-key
+    provider: mailchimp
+    description: Mailchimp Marketing API key
+    # Documented as "key-dc": a hex body, a hyphen, and the data centre
+    # subdomain that also decides which host the key must be sent to. Mailchimp's
+    # own example is `0123456789abcdef0123456789abcde-us6`, whose body is 31
+    # characters; keys issued today are 32. The range spans both rather than
+    # picking the one that suits — the vendor's example is the only published
+    # length there is.
+    pattern: '^[0-9a-f]{30,32}-[a-z]{2,4}[0-9]{1,3}$'
+    confidence: 0.95
+    source: https://mailchimp.com/developer/marketing/docs/fundamentals/
 
   # ── Dev platforms / source / CI ───────────────────────────────────────────
   - id: github-token

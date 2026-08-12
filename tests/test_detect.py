@@ -87,7 +87,14 @@ NPM_KEY = "npm" + "_" + _body(36)
 PYPI_KEY = "pypi" + "-" + _body(55)
 TELEGRAM_KEY = _body(9, "123456789") + ":" + _body(35)
 DIGITALOCEAN_KEY = "dop" + "_v1_" + _body(64, _HEX)
-MAILGUN_KEY = "key" + "-" + _body(32, _HEX)
+RESEND_KEY = "re" + "_" + _body(8) + "_" + _body(24)
+MAILCHIMP_KEY = _body(32, _HEX) + "-" + "us14"
+
+#: R2.3 withdrew the `mailgun` rule: the page it was sourced to no longer
+#: documents any key format, and neither does any other page Mailgun publishes.
+#: The legacy shape is kept here to assert that nothing claims it any more —
+#: see `tests/test_provider_mailgun.py` for the full argument.
+MAILGUN_LEGACY_KEY = "key" + "-" + _body(32, _HEX)
 
 #: (key, expected provider, expected confidence). The acceptance criterion.
 DETECTION_TABLE = [
@@ -106,14 +113,28 @@ DETECTION_TABLE = [
     (GITHUB_KEY, "github", 0.99),
     (GITHUB_FINE_GRAINED, "github", 0.99),
     (GITLAB_KEY, "gitlab", 0.99),
-    (SENDGRID_KEY, "sendgrid", 0.99),
+    (SENDGRID_KEY, "sendgrid", 0.95),
     (TWILIO_SID, "twilio", 0.95),
     (NPM_KEY, "npm", 0.99),
     (PYPI_KEY, "pypi", 0.99),
     (TELEGRAM_KEY, "telegram", 0.95),
     (DIGITALOCEAN_KEY, "digitalocean", 0.99),
-    (MAILGUN_KEY, "mailgun", 0.95),
+    (RESEND_KEY, "resend", 0.95),
+    (MAILCHIMP_KEY, "mailchimp", 0.95),
 ]
+
+
+def test_the_withdrawn_mailgun_rule_claims_nothing() -> None:
+    """R2.3 withdrew the rule; this is what that costs, stated as a test.
+
+    Mailgun's documentation no longer publishes any key format, so no rule can
+    be re-verified against it. The legacy shape now falls through to the entropy
+    fallback — recognised as *a* secret, attributed to nobody — which is the
+    honest residual answer rather than silence.
+    """
+    matches = Detector().detect(MAILGUN_LEGACY_KEY)
+
+    assert [match.provider for match in matches] == [None]
 
 
 @pytest.fixture

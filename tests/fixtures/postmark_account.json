@@ -1,0 +1,40 @@
+{
+  "interactions": [
+    {
+      "body": "{\"ErrorCode\":10,\"Message\":\"Request does not contain a valid Server token.\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.postmarkapp.com/server"
+    },
+    {
+      "body": "{\"TotalCount\":6,\"Servers\":[{\"ID\":1234567,\"Name\":\"northwind-transactional\",\"DeliveryType\":\"Live\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.postmarkapp.com/servers?count=1&offset=0"
+    },
+    {
+      "body": "{\"TotalCount\":3,\"Domains\":[{\"ID\":900001,\"Name\":\"northwind.example\",\"SPFVerified\":true,\"DKIMVerified\":true}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.postmarkapp.com/domains?count=1&offset=0"
+    },
+    {
+      "body": "{\"TotalCount\":4,\"SenderSignatures\":[{\"ID\":800001,\"Name\":\"Northwind Support\",\"EmailAddress\":\"support@northwind.example\",\"Confirmed\":true}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.postmarkapp.com/senders?count=1&offset=0"
+    }
+  ]
+}

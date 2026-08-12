@@ -1,0 +1,22 @@
+{
+  "interactions": [
+    {
+      "body": "{\"ErrorCode\":10,\"Message\":\"Request does not contain a valid Server token.\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.postmarkapp.com/server"
+    },
+    {
+      "body": "{\"ErrorCode\":10,\"Message\":\"Request does not contain a valid Account token.\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.postmarkapp.com/servers?count=1&offset=0"
+    }
+  ]
+}
