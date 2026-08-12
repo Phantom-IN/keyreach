@@ -174,6 +174,34 @@ def test_ai_ban_does_not_fire_on_a_path_that_merely_starts_the_same_way(
     assert [v for v in ai_ban.check_endpoints() if v.path.endswith(planted.name)] == []
 
 
+def test_ai_ban_is_case_sensitive_because_a_real_vendor_path_depends_on_it(
+    planted: Path,
+) -> None:
+    """The collision R1.6 found, pinned in both directions.
+
+    Twilio's message log is ``/Messages.json`` — capitalised, and a plain REST
+    resource with no model anywhere near it. The banned inference path is the
+    same word in lower case. So the case sensitivity of this check, which until
+    R1.6 was merely how it happened to be written, is now the only thing
+    separating a legitimate provider plugin from a failing build.
+
+    Both halves are asserted here so that "make the match case-insensitive",
+    which reads like a hardening improvement, fails loudly instead of quietly
+    breaking `keyreach/providers/twilio.py`.
+    """
+    banned = "/" + "messages"
+    planted.write_text(
+        f"TWILIO = 'https://api.example.invalid/2010-04-01{banned.title()}.json'\n"
+        f"MODEL = 'https://api.example.invalid/v1{banned}'\n",
+        encoding="utf-8",
+    )
+
+    violations = [v for v in ai_ban.check_endpoints() if v.path.endswith(planted.name)]
+
+    assert len(violations) == 1, violations
+    assert violations[0].line == 2
+
+
 def test_ai_ban_allows_a_read_only_capability_probe(planted: Path) -> None:
     """The rule that keeps R1.1 and R1.2 buildable.
 

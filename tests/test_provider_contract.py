@@ -63,7 +63,21 @@ PROVIDERS = list(REGISTRY.providers())
 #: Guards against the whole suite passing vacuously if discovery ever breaks.
 #: Every assertion below is parametrised, and an empty parameter list is a
 #: silent pass — the failure mode that makes a conformance suite worthless.
-EXPECTED_MINIMUM_PROVIDERS = 4
+#:
+#: Raised from 4 to 10 in R1.6, where it stopped being only a tripwire and
+#: became the release bar itself — see the two constants below.
+EXPECTED_MINIMUM_PROVIDERS = 10
+
+#: The v0.1 coverage measure, from `plan.md` §2 and roadmap **R1.6**: "≥10
+#: providers across ≥4 categories, including cloud, AI, payment, and comms".
+#:
+#: Asserted rather than counted by hand at release time. It was written down in
+#: three documents from R0.1 onwards and nothing checked it, which is exactly
+#: the shape of claim this repository has twice found to be false (`CLAUDE.md`
+#: hard rule 7). A provider deleted or a category typo'd now fails the build
+#: instead of quietly retiring a published promise.
+V01_MINIMUM_CATEGORIES = 4
+V01_REQUIRED_CATEGORIES = frozenset({"ai", "cloud", "comms", "payment"})
 
 
 def by_name(provider: Provider) -> str:
@@ -76,6 +90,24 @@ parametrised = pytest.mark.parametrize("provider", PROVIDERS, ids=by_name)
 def test_the_suite_is_not_running_against_an_empty_registry() -> None:
     """A conformance suite over nothing passes everything."""
     assert len(PROVIDERS) >= EXPECTED_MINIMUM_PROVIDERS
+
+
+def test_the_shipped_coverage_meets_the_v01_measure() -> None:
+    """R1.6's acceptance criterion, enforced instead of counted by hand.
+
+    ``README.md`` and ``plan.md`` both publish this number, and a released
+    project that misses its own stated target is a worse outcome than one that
+    ships late. Naming the four required categories matters as much as the
+    count: ten AI providers would satisfy an arithmetic check and none of the
+    argument behind it.
+    """
+    categories = {provider.category for provider in PROVIDERS}
+
+    assert len(PROVIDERS) >= EXPECTED_MINIMUM_PROVIDERS, sorted(
+        provider.name for provider in PROVIDERS
+    )
+    assert len(categories) >= V01_MINIMUM_CATEGORIES, sorted(categories)
+    assert categories >= V01_REQUIRED_CATEGORIES, sorted(categories)
 
 
 # ---------------------------------------------------------------------------
@@ -287,9 +319,15 @@ def test_risk_weights_are_declared_in_range(
 #:
 #: `now`, `protect` and `aggressive` were added in R1.3 for AWS, and R1.4's
 #: verdict is that all three are generic rather than AWS-specific: `protect` is
-#: needed by any composite credential (Twilio's is `AccountSid:AuthToken`, due in
-#: R2.2), `now` by any signed-request provider, and `aggressive` was required by
-#: `plan.md` §11 from the start. See `implementation_plan.md` §4.2.
+#: needed by any composite credential, `now` by any signed-request provider, and
+#: `aggressive` was required by `plan.md` §11 from the start. See
+#: `implementation_plan.md` §4.2.
+#:
+#: R1.4 justified `protect` by naming a provider that did not exist yet —
+#: Twilio's `AccountSid:AuthToken`. R1.6 shipped Twilio, Razorpay and Telegram,
+#: all three of which need it, and needed nothing else added here. A prediction
+#: that an interface member was generic, later checked against the providers it
+#: was predicted for.
 PROBE_CONTEXT_SURFACE = frozenset(
     {
         "aggressive",

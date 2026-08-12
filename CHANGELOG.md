@@ -12,6 +12,15 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.0] - 2026-08-12
+
+The first release. Ten providers across five categories, a CLI, and the three
+guarantees — deterministic, read-only, no AI/LLM — enforced by CI rather than
+asserted. Everything below landed across roadmap items **R0.1**–**R1.6**, each
+in its own pull request.
+
 ### Added
 
 - Base open-source repository structure (roadmap item **R0.1**): Apache-2.0
@@ -333,6 +342,45 @@ under `Unreleased` in the same pull request as any user-visible change.
   way rests on the operator's claim rather than on a rule, and a reader cannot
   otherwise tell the two apart.
 
+- **Six more providers (roadmap item **R1.6**), taking keyreach to 10 across 5
+  categories** — the v0.1 coverage measure, met:
+  - **`stripe`** (payment) — account, balance, charges, customers, payment
+    intents, payouts and subscriptions. The first provider whose verdict can be
+    **Critical from a single read**, because Stripe publishes the sentence that
+    justifies it: a secret key "has unrestricted permissions on all Stripe
+    APIs", while a restricted key has "permissions you control". Same probe,
+    same response, two prefixes, two verdicts. A `sk_test_` key is a weaker
+    finding than `sk_live_` for the same documented reason — sandbox payments
+    are not processed and sandbox objects are simulated.
+  - **`razorpay`** (payment) — payments, orders, customers, settlements, over a
+    colon-joined `key_id:key_secret`. Only the secret half is registered for
+    redaction, because Razorpay documents that "only the Key Id is visible on
+    the Dashboard"; masking the key id would delete the one fact telling a
+    recipient which key to revoke.
+  - **`slack`** (comms) — workspace, members, channels, files. Slack answers
+    `200 OK` with `{"ok": false, "error": "invalid_auth"}`, so the HTTP status
+    is not the verdict, and `missing_scope` is treated as a clean negative
+    rather than a failure.
+  - **`twilio`** (comms) — account and tier, balance, message log, call log,
+    phone numbers, over a colon-joined `AccountSid:AuthToken`.
+  - **`telegram`** (comms) — bot identity, webhook target, commands. Carries the
+    only capability in keyreach derived from a *response field* rather than from
+    a probe succeeding: `getMe` reporting `can_read_all_group_messages`, which
+    Telegram documents as privacy mode being disabled, means the bot receives
+    every message in every group it belongs to.
+  - **`github`** (devtools) — account, private repositories, organizations,
+    email addresses, gists. The first provider that reports a **write without
+    performing one**: GitHub documents `X-OAuth-Scopes` as listing a token's
+    grants, so `repo` yields `write` on repositories — while the same token's
+    organization capability stays `read`, because `repo` grants nothing there.
+- **The v0.1 coverage measure is asserted, not counted.**
+  `tests/test_provider_contract.py` now fails the build if the registry holds
+  fewer than ten providers, or fewer than four categories, or is missing any of
+  cloud / AI / payment / comms. The number had been published in three documents
+  since R0.1 with nothing checking it.
+- **Detection rules** for Razorpay key ids and key pairs, and for the Twilio
+  `AccountSid:AuthToken` pair, each citing the vendor page it was written from.
+
 ### Changed
 
 - **ruff's `TID` rules are now selected.** The `banned-api` block added in R0.2
@@ -456,6 +504,18 @@ under `Unreleased` in the same pull request as any user-visible change.
   both drift checks, and a wheel-install check — the gates that had been running
   on author and reviewer discipline since R0.2.
 
+- **`__version__` is `0.1.0`**, replacing the `0.1.0.dev0` placeholder that held
+  the PyPI name from R0.2 and deliberately resolved to nothing. Releasing is
+  tag-driven: `.github/workflows/publish.yml` refuses to publish when the git
+  tag does not match this string.
+- **`ai_ban`'s endpoint matching is documented as case-sensitive**, and pinned
+  in both directions by a planted test. Twilio's message resource is
+  `/Messages.json`; the banned inference path is the same word in lower case.
+  What had been an incidental property of how the check was written is now the
+  only thing separating a legitimate provider plugin from a failing build, so
+  "make the match case-insensitive" now fails loudly instead of quietly breaking
+  `keyreach/providers/twilio.py`.
+
 ### Deprecated
 
 - *Nothing yet.*
@@ -520,15 +580,21 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Security
 
-- *Nothing yet.*
+- No advisories. Recorded here because a security tool's first release should
+  say so explicitly: keyreach ships **no exploitation capability**, makes no
+  write, delete or spend call, masks keys in all output by default, and contains
+  no AI/LLM dependency or model call anywhere. Each of those is enforced by a
+  guardrail that has a test planting the violation it exists to catch, and all
+  of them run in CI and in `pre-commit`. See [`SECURITY.md`](SECURITY.md) for
+  the authorized-use policy and how to report a vulnerability in keyreach
+  itself.
 
 ---
 
-No releases yet. The first release, `v0.1.0`, is roadmap item **R1.6** and ships
-once keyreach covers ≥10 providers across ≥4 categories (cloud, AI, payment,
-comms). See [`ROADMAP.md`](ROADMAP.md).
+`v0.1.0` is the first release, and closes Phase 1. Phase 2 widens provider
+coverage and adds the declarative probe format, HTML reports, and the drift
+canary that watches for vendors changing the endpoints these plugins depend on.
+See [`ROADMAP.md`](ROADMAP.md).
 
-<!-- Link definitions are added here as releases are tagged, e.g.:
 [Unreleased]: https://github.com/Phantom-IN/keyreach/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Phantom-IN/keyreach/releases/tag/v0.1.0
--->

@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"ok\":false,\"error\":\"invalid_auth\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://slack.com/api/auth.test"
+    }
+  ],
+  "version": 1
+}

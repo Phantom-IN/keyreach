@@ -104,6 +104,12 @@ keyreach/
 │   │   ├── openai.py               # archetype 2  (no prior art; two key families)
 │   │   ├── anthropic.py            # archetype 2b (no prior art; two key families)
 │   │   ├── aws.py                  # archetype 3  (SigV4; blueprint: enumerate-iam, GPL — not copied)
+│   │   ├── stripe.py               # payment      (access level from a documented key prefix)
+│   │   ├── razorpay.py             # payment      (composite key_id:key_secret)
+│   │   ├── slack.py                # comms        (200 OK can mean failure; `ok` is the verdict)
+│   │   ├── twilio.py               # comms        (composite AccountSid:AuthToken, SID in the path)
+│   │   ├── telegram.py             # comms        (token in the path; one capability from a response field)
+│   │   ├── github.py               # devtools     (write proved from the X-OAuth-Scopes header)
 │   │   └── ...                     # breadth per plan.md §8
 │   ├── patterns/
 │   │   └── detection_rules.yml     # written from vendor docs; nothing copied (§5)
@@ -519,6 +525,44 @@ Exit codes: `0` success/info, `2` finding at/above `--fail-on` threshold, `1` op
 - Markdown report + `report.schema.json`.
 - `CONTRIBUTING.md` provider template + checklist.
 - Governance docs complete.
+
+### 13.1 Notes on the v0.1 release (landed in R1.6)
+
+**Shipped: ten providers across five categories.** `google`, `aws` (cloud);
+`openai`, `anthropic` (AI); `stripe`, `razorpay` (payment); `slack`, `twilio`,
+`telegram` (comms); `github` (devtools). The measure is asserted in
+`tests/test_provider_contract.py`, not counted at release time — it had been
+published in `README.md`, `plan.md` and `ROADMAP.md` since R0.1 with nothing
+checking it, and this repository has twice found an unchecked claim to be false.
+
+**"Detection seeded from secrets-patterns-db" above is superseded** by R0.5:
+that database is CC-BY-SA-4.0 and self-declares AGPL content, so nothing was
+copied and every rule is written from vendor documentation. Left in place rather
+than edited out, because the trail from plan to correction is the point.
+
+**Three findings from adding six providers at once**, all of which shaped the
+result:
+
+1. **A vendor sentence is the only thing that upgrades a read into a write.**
+   Stripe publishes that a secret key "has unrestricted permissions on all
+   Stripe APIs", so `sk_` capabilities are `admin`; Razorpay and Twilio very
+   probably issue unscoped credentials too, but neither documents it, so both
+   stop at `read` and say which claim they declined. That asymmetry looks like
+   an inconsistency in the output and is in fact the rule working — the same
+   rule that already produced opposite verdicts for OpenAI and Anthropic admin
+   keys in R1.2.
+2. **A capability need not come from a probe.** `telegram` records group-message
+   reach from `getMe`'s `can_read_all_group_messages` field, and `github`
+   derives access levels from the `X-OAuth-Scopes` response header. Both are
+   documented vendor statements read out of a response keyreach already had, so
+   neither costs a request — and `github`'s is matched **per resource**, because
+   `repo` grants write over repositories and nothing over organizations.
+   Applying one token-wide access level would over-report in exactly the way
+   §7.1 refuses.
+3. **The interface needed nothing.** Six providers, three of them composite
+   credentials, and no change to `keyreach/core/`. R1.4 justified `protect()` by
+   naming a provider that did not exist yet; Twilio, Razorpay and Telegram all
+   needed it and needed nothing more.
 
 ### Phase 2 — Depth
 - HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating.

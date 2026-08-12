@@ -1,0 +1,41 @@
+{
+  "interactions": [
+    {
+      "body": "{\"entity\":\"collection\",\"count\":1,\"items\":[{\"id\":\"cust_NorthwindA01\",\"name\":\"A Buyer\",\"email\":\"buyer@example.invalid\",\"contact\":\"+919000000000\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.razorpay.com/v1/customers?count=1"
+    },
+    {
+      "body": "{\"entity\":\"collection\",\"count\":1,\"items\":[{\"id\":\"order_NorthwindA01\",\"amount\":49900,\"currency\":\"INR\",\"status\":\"paid\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.razorpay.com/v1/orders?count=1"
+    },
+    {
+      "body": "{\"entity\":\"collection\",\"count\":1,\"items\":[{\"id\":\"pay_NorthwindA01\",\"amount\":49900,\"currency\":\"INR\",\"status\":\"captured\",\"email\":\"buyer@example.invalid\",\"contact\":\"+919000000000\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.razorpay.com/v1/payments?count=1"
+    },
+    {
+      "body": "{\"entity\":\"collection\",\"count\":0,\"items\":[]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.razorpay.com/v1/settlements?count=1"
+    }
+  ],
+  "version": 1
+}

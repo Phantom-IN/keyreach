@@ -149,6 +149,8 @@ The report is stable: re-running the same key against the same provider state re
 
 Prioritized by *leak frequency × blast radius*. Archetypes ship first (one cloud multi-service key, one AI key, one IAM-style key) to prove the model; breadth follows.
 
+**Shipped in v0.1 (roadmap R1.6): ten providers across five categories** — `google` and `aws` (cloud), `openai` and `anthropic` (AI), `stripe` and `razorpay` (payment), `slack`, `twilio` and `telegram` (communications), and `github` (dev platforms). The measure is asserted by `tests/test_provider_contract.py` rather than counted by hand. **Square is not planned** until it publishes an access-token format: §5.2 forbids writing a detection rule from anything but vendor documentation, and a guess dressed as a rule is worse than an unsupported provider. Discord is deferred for the same reason.
+
 - **Cloud / infra:** Google Cloud `AIza` keys (Maps/Places/Geocode/Roads/Gemini/YouTube/FCM), AWS `AKIA`/`ASIA`, Azure & Azure DevOps, DigitalOcean, Cloudflare, Vercel, Netlify, Railway, Fly.io, Render, Heroku, Scaleway, Linode/Vultr.
 - **AI / LLM (priority differentiator):** OpenAI, Anthropic, Google Gemini, Groq, Mistral, Cohere, Perplexity, HuggingFace, Replicate, ElevenLabs, Deepgram, Stability AI.
 - **Payment / financial:** Stripe (live/test/restricted), PayPal, Square, Razorpay, Paystack, Flutterwave, Coinbase, Plaid, Brex.
@@ -215,4 +217,4 @@ Adding a provider must be a small, self-contained, well-credited contribution: a
 
 - Final license: Apache-2.0 (recommended) vs MIT.
 - Implementation language (see `implementation_plan.md` for the recommendation and trade-offs) — does not affect this product plan.
-- Which exact 10–15 providers ship in v0.1 from the roadmap in §8.
+- ~~Which exact 10–15 providers ship in v0.1 from the roadmap in §8.~~ **Settled in R1.6** — the ten are listed in §8. Two candidates were dropped on the §5.2 rule rather than on priority: Square and Discord publish no key format, so no rule could be written for them without guessing.

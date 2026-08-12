@@ -1,0 +1,41 @@
+{
+  "interactions": [
+    {
+      "body": "{\"ok\":true,\"result\":{\"id\":8123456789,\"is_bot\":true,\"first_name\":\"Northwind Ops\",\"username\":\"northwind_ops_bot\",\"can_join_groups\":true,\"can_read_all_group_messages\":true,\"supports_inline_queries\":false}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.telegram.org/bot<key>/getMe"
+    },
+    {
+      "body": "{\"ok\":true,\"result\":[{\"command\":\"status\",\"description\":\"Show status\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.telegram.org/bot<key>/getMyCommands"
+    },
+    {
+      "body": "{\"ok\":true,\"result\":{\"description\":\"Internal operations bot\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.telegram.org/bot<key>/getMyDescription"
+    },
+    {
+      "body": "{\"ok\":true,\"result\":{\"url\":\"https://ops.northwind.example/telegram/updates\",\"has_custom_certificate\":false,\"pending_update_count\":0,\"max_connections\":40}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.telegram.org/bot<key>/getWebhookInfo"
+    }
+  ],
+  "version": 1
+}

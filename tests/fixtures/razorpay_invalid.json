@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":{\"code\":\"BAD_REQUEST_ERROR\",\"description\":\"Authentication failed\",\"source\":\"NA\",\"step\":\"NA\",\"reason\":\"NA\",\"metadata\":{}}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.razorpay.com/v1/payments?count=1"
+    }
+  ],
+  "version": 1
+}

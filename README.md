@@ -4,32 +4,30 @@
 > SaaS — and get a full capability map plus a disclosure-ready security report
 > with a computed severity, in one command.
 
-[![Status: early — building in public](https://img.shields.io/badge/status-early%20%C2%B7%20building%20in%20public-orange)](ROADMAP.md)
+[![PyPI](https://img.shields.io/pypi/v/keyreach)](https://pypi.org/project/keyreach/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![No AI/LLM](https://img.shields.io/badge/AI%2FLLM-none%20by%20design-brightgreen)](#core-principles)
 [![Read-only by default](https://img.shields.io/badge/probes-read--only-brightgreen)](SECURITY.md)
 [![CI](https://github.com/Phantom-IN/keyreach/actions/workflows/ci.yml/badge.svg)](https://github.com/Phantom-IN/keyreach/actions/workflows/ci.yml)
-<!-- A PyPI badge is added in roadmap item R1.6, once the package is published.
-     Coverage is enforced at 100% by CI (pyproject.toml, [tool.coverage.report]
+<!-- Coverage is enforced at 100% by CI (pyproject.toml, [tool.coverage.report]
      fail_under) rather than reported by a third-party badge service, which
      would mean sending build data to another host for a number CI already
      gates on. -->
 
-> **⚠️ Status: early — building in public**
+> **v0.1.0 — the first release.**
 >
-> **Four providers work; the CLI does not expose them yet.** The whole
-> pipeline — detect → validate → enumerate → score → report — is built, and
-> **Google `AIza`**, **OpenAI `sk-…`**, **Anthropic `sk-ant-…`** and **AWS
-> `AKIA`/`ASIA`** credentials are supported, each scored with a rationale. But
-> the CLI still answers only `--help` and `--version` — wiring the pipeline
-> behind it is **R1.5** — so today that capability is reachable from Python, not
-> from a terminal. Everything else below the fold describes the destination.
+> **Ten providers across five categories, usable from a terminal.** The whole
+> pipeline — detect → validate → enumerate → score → report — is built and
+> covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
+> **payment** (`stripe`, `razorpay`), **communications** (`slack`, `twilio`,
+> `telegram`), and **dev platforms** (`github`). Each key is scored from the
+> capabilities keyreach actually confirmed, with the rationale attached.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
-> pull request, so the whole build is auditable in the open. Follow along in
-> [`ROADMAP.md`](ROADMAP.md): **R0.1**–**R0.9** (Phase 0) and **R1.1**–**R1.4**
-> are done. Next is **R1.5**, the CLI that makes all of it usable from a
-> terminal.
+> pull request, so the whole build is auditable in the open. Phase 0
+> (**R0.1**–**R0.9**) and Phase 1 (**R1.1**–**R1.6**) are done; Phase 2 adds
+> breadth and depth. Follow along in [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -123,25 +121,25 @@ see [`implementation_plan.md`](implementation_plan.md) §2.
 
 ## Install
 
-The `keyreach` name is reserved on PyPI, but **there is no installable release
-yet** — only a `0.1.0.dev0` placeholder. `pip install keyreach` resolves nothing
-on purpose: pip skips pre-releases by default, so nobody installs a tool that
-cannot do anything. The first real release is
-[R1.6](ROADMAP.md#phase-1--archetype-providers--mvp-v01).
+Python 3.11+.
 
 ```console
-# Not available yet — planned for v0.1.0:
-pipx install keyreach
+pipx install keyreach          # recommended: isolated, on your PATH
+pip install keyreach           # or into an existing environment
 ```
 
-To run the current scaffold from source (Python 3.11+):
+From source:
 
 ```console
 git clone https://github.com/Phantom-IN/keyreach.git
 cd keyreach
-pipx install -e .        # or: pip install -e '.[dev]'
+pipx install -e .              # or: pip install -e '.[dev]'
 keyreach --help
 ```
+
+keyreach depends on `httpx`, `pydantic`, `typer`, `rich`, `Jinja2` and `PyYAML`,
+and on nothing else. There is no AI/LLM SDK in any dependency group, runtime or
+dev, and a CI check fails the build if one appears.
 
 ## Usage
 
@@ -172,10 +170,19 @@ keyreach KEY --fail-on high       # exit 2 if band >= high (CI gating)
 keyreach KEY --quiet              # no banner, no warnings
 ```
 
-**AWS takes both halves.** `keyreach 'AKIA...:<secret access key>'`, or
-`'ASIA...:<secret>:<session token>'` for temporary credentials. A bare `AKIA...`
-is still recognised and reported — keyreach just tells you which half is
-missing instead of calling the credential dead.
+**Some credentials are two halves, and keyreach takes them colon-joined.** AWS,
+Twilio and Razorpay all authenticate with a pair, so paste the pair:
+
+```console
+keyreach 'AKIA...:<secret access key>'                  # AWS
+keyreach 'ASIA...:<secret>:<session token>'             # AWS, temporary
+keyreach 'AC<32 hex>:<auth token>'                      # Twilio
+keyreach 'rzp_live_...:<key secret>'                    # Razorpay
+```
+
+Half a credential is still recognised and still reported — keyreach tells you
+which half is missing rather than calling a live credential dead, and it makes
+no request it cannot authenticate.
 
 **stdout is the report; stderr is everything else.** The banner, warnings and
 errors go to stderr, so `keyreach KEY --json | jq` works and
@@ -196,6 +203,73 @@ typo in a CI config can never be mistaken for a Critical key.
 HTML output (`--report html`) arrives in
 [R2.9](ROADMAP.md#phase-2--breadth--depth).
 
+## What the output looks like
+
+Abridged `--report md` for a GitHub token — the full report also carries a
+reproduction command and a documentation link for **every** capability, plus
+remediation steps. This one is generated from a committed test fixture, so
+nothing below came from a real account.
+
+````markdown
+# Exposed github API key reaches GitHub Repositories and 4 other services
+
+**Severity: CRITICAL** — Anyone holding this key can change data or move money.
+Treat this as an active compromise: rotate now, then audit for use.
+
+| Field | Value |
+| --- | --- |
+| Provider | `github` (devtools) |
+| Key | `ghp_*********************************AAA` |
+| Status | valid |
+| Account | northwind-ops |
+| scopes | read:org, repo, user |
+
+## Why this severity
+
+- Write or admin access to a service holding private data or able to spend:
+  GitHub Repositories (write) — Can list the account's private repositories,
+  which is the source code the account was relying on nobody being able to
+  read. The token holds repo, which GitHub documents as granting more than read
+  over this resource. No write was attempted.
+- Reaches 5 distinct services, so the exposure is the project rather than a
+  single API.
+
+## Capabilities
+
+| Service | Access | Data | Cost |
+| --- | --- | --- | --- |
+| GitHub Account | write | no | no |
+| GitHub Email Addresses | write | yes | no |
+| GitHub Gists | read | yes | no |
+| GitHub Organizations | read | no | no |
+| GitHub Repositories | write | yes | no |
+
+## Evidence
+
+### GitHub Repositories — write
+
+```text
+GET https://api.github.com/user/repos?per_page=1&visibility=private
+  -> 200, private repositories: 1 listed
+```
+
+Reproduce (read-only):
+
+```console
+curl -s -H 'Authorization: Bearer <key>' \
+  'https://api.github.com/user/repos?per_page=1&visibility=private'
+```
+````
+
+Three things in there are the product rather than the formatting. The **severity
+is derived**, not assigned by provider name — `write` on private repositories
+plus private data is what produced Critical, and the rationale says so in terms
+a triager can check. The **evidence counts, never quotes**: it proves the key
+listed a private repository without putting the repository's name in a bug
+bounty report. And the **`write` was never performed** — it comes from the
+`X-OAuth-Scopes` header GitHub documents, which is why the same token's
+organization capability stays a read.
+
 ## Provider coverage
 
 Prioritized by *leak frequency × blast radius*, across cloud/infra, AI/LLM,
@@ -204,29 +278,44 @@ monitoring, auth/identity, and a generic bearer/JWT inspector. The full target
 list is [`plan.md`](plan.md) §8; the shipping order is
 [`ROADMAP.md`](ROADMAP.md).
 
-**v0.1 target:** ≥10 providers across ≥4 categories, including cloud, AI,
-payment, and comms.
+**v0.1 ships 10 providers across 5 categories** — the target was ≥10 across ≥4,
+including cloud, AI, payment and comms. It is asserted by a test rather than
+counted by hand (`tests/test_provider_contract.py`), so a deleted provider or a
+typo'd category fails the build.
 
-**Shipped so far:** `google` (cloud), `openai` (ai), `anthropic` (ai), `aws`
-(cloud) — 4 providers across 2 categories.
+| Provider | Category | Credential | What a live key is shown to reach |
+| --- | --- | --- | --- |
+| `google` | cloud | `AIza…` | Maps, Places, Geocoding, Roads; Gemini *reachability* |
+| `aws` | cloud | `AKIA…:secret`, `ASIA…:secret:token` | caller identity, account/root detection, IAM and read-only service probes |
+| `openai` | ai | `sk-…`, `sk-proj-…`, `sk-svcacct-…`, `sk-admin-…` | models, files, vector stores, fine-tunes; org projects, members and spend for admin keys |
+| `anthropic` | ai | `sk-ant-…`, `sk-ant-admin…` | models, files; organization, members, API keys and cost for admin keys |
+| `stripe` | payment | `sk_live_…`, `sk_test_…`, `rk_…` | account, balance, charges, customers, payment intents, payouts, subscriptions |
+| `razorpay` | payment | `rzp_live_…:secret` | payments, orders, customers, settlements |
+| `slack` | comms | `xoxb-…`, `xoxp-…` | workspace, members, channels, files |
+| `twilio` | comms | `AC…:auth token` | account and tier, balance, message log, call log, phone numbers |
+| `telegram` | comms | `<bot id>:<secret>` | bot identity, webhook target, commands; group-message reach when privacy mode is off |
+| `github` | devtools | `ghp_…`, `gho_…`, `github_pat_…` | account, private repositories, organizations, email addresses, gists |
 
-**AWS takes two halves.** Every other provider authenticates with one string;
-AWS signs each request with an access key ID *and* a secret access key, so
-keyreach accepts them joined by a colon — `AKIA…:<secret>`, or
-`ASIA…:<secret>:<session token>` for temporary credentials. A bare `AKIA…` is
-still recognised and reported; it just cannot be probed, and keyreach says which
-half is missing instead of calling the credential dead. AWS enumeration is
-deliberately quiet by default: six read-only calls about the credential itself.
-A wider cross-service sweep exists behind an explicit opt-in
-(`--aggressive`, R1.5), because a sweep looks like reconnaissance to whoever is
-watching the account.
+**Severity is computed, and the differences are the point.** A `sk_live_` Stripe
+key rates Critical and a `sk_test_` one does not, because Stripe documents
+sandbox payments as not processed. A GitHub token holding `repo` is reported as
+**write** access to private source code — read out of the `X-OAuth-Scopes`
+header GitHub documents, not from a push keyreach made — while the same token's
+organization capability stays a read, because `repo` grants nothing there.
 
-For AI keys specifically, note what keyreach will *not* tell you: it never calls
-a model, so it cannot confirm that an exposed key can run inference or spend
-money, and it does not claim otherwise. Both vendors scope keys per endpoint, so
-listing models does not imply generating with them. keyreach reports what it
-confirmed — reachability, uploaded files, fine-tunes, organization access — and
-says which claims it did not test. See [`plan.md`](plan.md) §1.
+**What keyreach declines to claim is as deliberate as what it reports.** It
+never calls a model, so it cannot confirm that an AI key can run inference or
+spend, and does not pretend to. It never sends an SMS, so a Twilio credential is
+reported for the message log it can read rather than the toll fraud it could
+probably commit. Where a vendor *documents* an access model — Stripe's
+"unrestricted permissions on all Stripe APIs" for `sk_`, AWS's root user,
+Anthropic's unscoped Console admin keys — keyreach reports the stronger verdict
+and cites the sentence. Everywhere else it under-reports and says so. See
+[`plan.md`](plan.md) §1.
+
+Enumeration is quiet by default. The wider AWS cross-service sweep is behind
+`--aggressive`, because a sweep looks like reconnaissance to whoever is watching
+the account.
 
 ## Documentation
 

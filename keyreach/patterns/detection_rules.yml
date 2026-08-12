@@ -155,13 +155,31 @@ rules:
     confidence: 0.99
     source: https://docs.stripe.com/keys#limit-access
 
+  - id: razorpay-key-id
+    provider: razorpay
+    description: Razorpay API key ID
+    pattern: '^rzp_(live|test)_[A-Za-z0-9]{10,}$'
+    confidence: 0.99
+    source: https://razorpay.com/docs/payments/dashboard/account-settings/api-keys/
+
+  - id: razorpay-key-pair
+    provider: razorpay
+    description: Razorpay API key ID and secret
+    # Razorpay authenticates with Basic auth over `key_id:key_secret`, so the
+    # key ID alone cannot be probed. keyreach accepts the pair colon-joined, as
+    # it does for AWS and Twilio; a colon appears in neither half, so the split
+    # is unambiguous and the anchored key-ID rule above cannot also match this.
+    pattern: '^rzp_(live|test)_[A-Za-z0-9]{10,}:[A-Za-z0-9]{20,}$'
+    confidence: 0.99
+    source: https://razorpay.com/docs/api/authentication/
+
   # ── Communications ────────────────────────────────────────────────────────
   - id: slack-token
     provider: slack
     description: Slack API token
     pattern: '^xox[baprs]-[0-9A-Za-z-]{10,}$'
     confidence: 0.99
-    source: https://api.slack.com/authentication/token-types
+    source: https://docs.slack.dev/authentication/tokens
 
   - id: twilio-account-sid
     provider: twilio
@@ -176,6 +194,17 @@ rules:
     pattern: '^SK[0-9a-f]{32}$'
     confidence: 0.95
     source: https://www.twilio.com/docs/iam/api-keys
+
+  - id: twilio-credential-pair
+    provider: twilio
+    description: Twilio account SID and auth token
+    # Twilio authenticates with Basic auth over `AccountSid:AuthToken`, and the
+    # account SID is also part of every request path, so neither half alone can
+    # be probed. Both are hexadecimal, so the colon split is unambiguous and the
+    # anchored bare-SID rule above cannot also match this.
+    pattern: '^AC[0-9a-f]{32}:[0-9a-f]{32}$'
+    confidence: 0.99
+    source: https://www.twilio.com/docs/usage/requests-to-twilio
 
   - id: telegram-bot-token
     provider: telegram

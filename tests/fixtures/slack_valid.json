@@ -1,0 +1,50 @@
+{
+  "interactions": [
+    {
+      "body": "{\"ok\":true,\"url\":\"https://northwind.slack.com/\",\"team\":\"Northwind\",\"user\":\"keyreach_probe\",\"team_id\":\"T0NORTHWIND\",\"user_id\":\"U0NORTHWIND\",\"bot_id\":\"B0NORTHWIND\",\"is_enterprise_install\":false}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://slack.com/api/auth.test"
+    },
+    {
+      "body": "{\"ok\":true,\"channels\":[{\"id\":\"C0NORTHWIND\",\"name\":\"general\",\"is_private\":false}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://slack.com/api/conversations.list?limit=1"
+    },
+    {
+      "body": "{\"ok\":false,\"error\":\"missing_scope\",\"needed\":\"files:read\",\"provided\":\"channels:read,team:read,users:read\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://slack.com/api/files.list?count=1"
+    },
+    {
+      "body": "{\"ok\":true,\"team\":{\"id\":\"T0NORTHWIND\",\"name\":\"Northwind\",\"domain\":\"northwind\",\"email_domain\":\"northwind.example\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://slack.com/api/team.info"
+    },
+    {
+      "body": "{\"ok\":true,\"members\":[{\"id\":\"U0NORTHWIND\",\"name\":\"ada\",\"real_name\":\"Ada Lovelace\",\"profile\":{\"email\":\"ada@northwind.example\"}}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://slack.com/api/users.list?limit=1"
+    }
+  ],
+  "version": 1
+}
