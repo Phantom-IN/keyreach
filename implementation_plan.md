@@ -110,6 +110,8 @@ keyreach/
 │   │   ├── twilio.py               # comms        (composite AccountSid:AuthToken, SID in the path)
 │   │   ├── telegram.py             # comms        (token in the path; one capability from a response field)
 │   │   ├── github.py               # devtools     (write proved from the X-OAuth-Scopes header)
+│   │   ├── paystack.py             # payment      (shares Stripe's sk_live_ prefix)
+│   │   ├── paypal.py               # payment      (undetectable; OAuth token over read_only_post)
 │   │   └── ...                     # breadth per plan.md §8
 │   ├── patterns/
 │   │   └── detection_rules.yml     # written from vendor docs; nothing copied (§5)
@@ -292,6 +294,33 @@ What R1.4 built instead is `tests/test_provider_contract.py`: the contract asser
 Both are the argument for having a checkpoint at all: neither was visible in review, and both fell out of counting.
 
 ---
+
+### 4.3 Notes on the interface (landed in R2.1)
+
+Two members were added to the contract, the first change to `keyreach/core/`
+since R1.3. Both were forced by one provider and both are generic.
+
+**`Provider.detectable`.** The detection layer assumed every credential has a
+published shape. OAuth 2.0 client credentials do not: PayPal, Flutterwave v4 and
+Coinbase CDP are all opaque strings with no vendor-published prefix, length or
+charset. A provider may now declare `detectable = False`, which keeps it out of
+detection entirely — it can never produce a false positive — and leaves
+`--provider <name>` as the route, already recorded in `Report.notes` as an
+operator assertion. `tests/test_provider_contract.py` enforces that a provider
+is reachable by *one* of the two routes, so this cannot become a way to skip
+writing a rule.
+
+**`read_only_post` responses are cached.** See §6.1; the change belongs to the
+client, but the reason belongs here: `validate` and `enumerate` are separate
+calls, and a provider that must exchange credentials for a token needs one in
+each. Nothing in the `Provider` contract lets a plugin carry derived state
+between the two stages, and nothing should — so the client answers the second
+exchange from cache instead.
+
+**What did not change.** Two providers, one of them an entirely new
+authentication archetype, and the probe tables, the `enumerate` signature and
+the report assembly were untouched. R1.4's verdict — that the interface was
+*incomplete* rather than wrong — holds for a third time.
 
 ## 5. Detection layer
 

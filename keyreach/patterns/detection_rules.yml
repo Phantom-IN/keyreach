@@ -155,6 +155,19 @@ rules:
     confidence: 0.99
     source: https://docs.stripe.com/keys#limit-access
 
+  - id: paystack-secret-key
+    provider: paystack
+    description: Paystack secret key
+    # Deliberately identical to `stripe-secret-key` above. Both vendors document
+    # the same `sk_live_`/`sk_test_` prefix and neither publishes a length or
+    # charset that separates them, so both rules fire and the engine probes both
+    # candidates — the ambiguity resolution `implementation_plan.md` §5 always
+    # specified, exercised for the first time in R2.1. Narrowing either pattern
+    # to "fix" the overlap would be inventing a fact the vendor has not stated.
+    pattern: '^sk_(live|test)_[0-9A-Za-z]{24,}$'
+    confidence: 0.99
+    source: https://paystack.com/docs/api/authentication/
+
   - id: razorpay-key-id
     provider: razorpay
     description: Razorpay API key ID

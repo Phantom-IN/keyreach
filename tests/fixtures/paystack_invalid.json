@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"status\":false,\"message\":\"Invalid key\",\"meta\":{\"nextStep\":\"Ensure that you provide the correct key\"},\"type\":\"validation_error\",\"code\":\"invalid_Key\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.paystack.co/balance"
+    }
+  ],
+  "version": 1
+}

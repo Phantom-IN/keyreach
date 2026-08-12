@@ -1,0 +1,23 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":\"invalid_client\",\"error_description\":\"Client Authentication failed\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 401,
+      "url": "https://api-m.paypal.com/v1/oauth2/token"
+    },
+    {
+      "body": "{\"error\":\"invalid_client\",\"error_description\":\"Client Authentication failed\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 401,
+      "url": "https://api-m.sandbox.paypal.com/v1/oauth2/token"
+    }
+  ],
+  "version": 1
+}

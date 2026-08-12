@@ -80,6 +80,8 @@ keyreach stands on existing work. This section records what exists, what we reus
   - That `README.md` also states *"Trufflehog data is licensed under the AGPL"*, and the rule set carries no per-rule provenance, so AGPL-derived entries cannot be identified and excluded. Copying TruffleHog is forbidden outright (§5.1).
 
   keyreach therefore writes its detection patterns from **each provider's own public API documentation**, the same treatment §5.1 already mandates for AGPL prior art. A key's prefix and length are published facts about a format, not expressive work. Every rule records the vendor documentation URL it came from.
+> **Structural finding (R2.1): a growing class of credential cannot be detected at all.** OAuth 2.0 client credentials — PayPal, Flutterwave v4, Coinbase CDP — are opaque strings with no vendor-published prefix, length or charset. There is nothing to write a rule *from*, and a rule matching "long opaque string, colon, long opaque string" would claim a large fraction of every base64 blob a scanner emits, which is a false-positive machine rather than a detection rule. keyreach's answer is `Provider.detectable = False`: the plugin is never a detection candidate, and the operator reaches it with `--provider <name>`, which the report records as an assertion rather than a verdict. The payment category is migrating in this direction, so this is expected to become more common rather than less. §8 records which providers are affected; **R2.7** (generic bearer/JWT inspector) is the other half of the answer.
+
 - **gitleaks** — MIT-licensed scanner with a well-curated ruleset. **MIT** — reusable with notice; currently used as a behavioural cross-check only, with nothing copied.
 - **detect-secrets** (Yelp) — entropy-based detection plugins. Permissive (verify) — the entropy fallback for generic tokens is learned from its *approach* and re-implemented; no code reused.
 
@@ -148,6 +150,8 @@ The report is stable: re-running the same key against the same provider state re
 ## 8. Provider coverage roadmap (all key classes)
 
 Prioritized by *leak frequency × blast radius*. Archetypes ship first (one cloud multi-service key, one AI key, one IAM-style key) to prove the model; breadth follows.
+
+**Shipped as of R2.1: twelve providers across five categories.** `paypal` and `paystack` joined in R2.1; **Coinbase and Flutterwave were dropped** because neither publishes a credential format a rule could be written from (see §5.2 and `ROADMAP.md` R2.1), as was Square in R1.6.
 
 **Shipped in v0.1 (roadmap R1.6): ten providers across five categories** — `google` and `aws` (cloud), `openai` and `anthropic` (AI), `stripe` and `razorpay` (payment), `slack`, `twilio` and `telegram` (communications), and `github` (dev platforms). The measure is asserted by `tests/test_provider_contract.py` rather than counted by hand. **Square is not planned** until it publishes an access-token format: §5.2 forbids writing a detection rule from anything but vendor documentation, and a guess dressed as a rule is worse than an unsupported provider. Discord is deferred for the same reason.
 

@@ -471,10 +471,28 @@ class ProbeClient:
         #: one run must produce the same answer — ``Cassette.load`` rejects a
         #: recording that says otherwise.
         #:
-        #: **Only idempotent methods.** A ``read_only_post`` probe is a read by
-        #: argument and review, not by HTTP semantics, and this cache will not
-        #: assume otherwise.
-        self._responses: dict[tuple[str, str], ProbeResponse] = {}
+        #: **Also ``read_only_post`` probes, since R2.1**, which reverses what
+        #: this comment used to say. The old rule — "a ``read_only_post`` probe
+        #: is a read by argument and review, not by HTTP semantics, so this
+        #: cache will not assume otherwise" — was cautious in the wrong
+        #: direction, and the first provider to actually use the flag showed it.
+        #: PayPal cannot be probed at all without exchanging its client
+        #: credentials for a bearer token over POST, and that exchange is needed
+        #: once in ``validate`` and again in ``enumerate``. Excluding it from the
+        #: cache reintroduced, for exactly one provider, the double-request
+        #: defect R1.4 was created to remove.
+        #:
+        #: The reversal is sound because ``read_only_post=True`` is not a hint:
+        #: it is the provider asserting the call is a read, in a form the
+        #: ``read_only`` guardrail forces to be argued in review. An assertion
+        #: strong enough to permit the request at all is strong enough to answer
+        #: it from cache.
+        #:
+        #: The key gained the request body to make that safe. Two POSTs to one
+        #: URL with different bodies are different requests, and keying on the
+        #: URL alone would have served the first one's answer to the second —
+        #: a footgun no GET could ever have hit, since a GET carries no body.
+        self._responses: dict[tuple[str, str, str], ProbeResponse] = {}
 
         #: Requests that actually reached the network or the cassette, as
         #: opposed to being served from the cache above. `plan.md` §11 asks for
@@ -592,9 +610,14 @@ class ProbeClient:
         target = str(httpx.URL(url, params=dict(params)) if params else httpx.URL(url))
         redacted_url = self.redactor.redact(target)
 
-        # Idempotent requests are answered once per run. See `_responses`.
-        cacheable = upper in IDEMPOTENT_METHODS
-        if cacheable and (cached := self._responses.get((upper, redacted_url))):
+        # Answered once per run. Every request that reaches this line is a read:
+        # `check_method` above admits only the idempotent methods and a POST the
+        # provider has explicitly annotated `read_only_post=True`, and refuses
+        # everything else outright. So there is no "is this cacheable" question
+        # left to ask here — which is why R2.1 deleted the flag that used to ask
+        # it. If `check_method` is ever widened, this is the line to revisit.
+        cache_key = (upper, redacted_url, self.redactor.redact(content or ""))
+        if cached := self._responses.get(cache_key):
             return cached
 
         if self.mode is RecordMode.REPLAY:
@@ -618,8 +641,7 @@ class ProbeClient:
         # replayed test measures the same probe count a real run would make.
         self.requests_made += 1
 
-        if cacheable:
-            self._responses[(upper, redacted_url)] = probe_response
+        self._responses[cache_key] = probe_response
 
         return probe_response
 

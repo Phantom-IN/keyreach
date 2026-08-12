@@ -1,0 +1,50 @@
+{
+  "interactions": [
+    {
+      "body": "{\"status\":true,\"message\":\"Balances retrieved\",\"data\":[{\"currency\":\"NGN\",\"balance\":41500000}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.paystack.co/balance"
+    },
+    {
+      "body": "{\"status\":true,\"message\":\"Customers retrieved\",\"data\":[{\"id\":90123456,\"customer_code\":\"CUS_northwind01\",\"email\":\"buyer@example.invalid\",\"first_name\":\"A\",\"last_name\":\"Buyer\",\"phone\":\"+2348000000000\"}],\"meta\":{\"total\":214,\"perPage\":1}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.paystack.co/customer?perPage=1"
+    },
+    {
+      "body": "{\"status\":true,\"message\":\"Settlements retrieved\",\"data\":[{\"id\":5512,\"domain\":\"live\",\"total_amount\":38000000}],\"meta\":{\"total\":12,\"perPage\":1}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.paystack.co/settlement?perPage=1"
+    },
+    {
+      "body": "{\"status\":true,\"message\":\"Subaccounts retrieved\",\"data\":[],\"meta\":{\"total\":0,\"perPage\":1}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.paystack.co/subaccount?perPage=1"
+    },
+    {
+      "body": "{\"status\":true,\"message\":\"Transactions retrieved\",\"data\":[{\"id\":77123456,\"status\":\"success\",\"reference\":\"nw-000412\",\"amount\":4990000,\"currency\":\"NGN\",\"customer\":{\"email\":\"buyer@example.invalid\"}}],\"meta\":{\"total\":1904,\"perPage\":1}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.paystack.co/transaction?perPage=1"
+    }
+  ],
+  "version": 1
+}

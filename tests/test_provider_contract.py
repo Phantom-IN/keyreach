@@ -201,13 +201,19 @@ def test_a_credited_provider_says_so_in_its_own_source(provider: Provider) -> No
 # `detect` — pure, strict, and agreeing with the shipped rule set
 # ---------------------------------------------------------------------------
 
+#: Values no provider may ever claim. Prose, numbers and a URL — the things a
+#: scanner hands keyreach alongside the real findings.
+NON_KEY_SAMPLES = ("", "hello world", "1234", "https://example.invalid", "not-a-key")
+
+#: Credential-shaped values. Some provider legitimately claims some of these;
+#: the point is that `detect` stays in range and stays pure across them.
+DETECT_SAMPLES = ("x" * 64, "sk-" + "x" * 40, "AIza" + "0" * 35)
+
 
 @parametrised
 def test_detect_is_pure(provider: Provider) -> None:
     """Detection ordering decides what gets probed, so it must not vary."""
-    samples = ["", "not-a-key", "x" * 64]
-
-    for sample in samples:
+    for sample in (*NON_KEY_SAMPLES, *DETECT_SAMPLES):
         assert len({provider.detect(sample) for _ in range(5)}) == 1
 
 
@@ -219,27 +225,55 @@ def test_detect_claims_nothing_for_obvious_non_keys(provider: Provider) -> None:
     hedge, because the registry treats any positive confidence as a candidate
     worth spending authentication traffic on.
     """
-    for sample in ("", "hello world", "1234", "https://example.invalid"):
+    for sample in NON_KEY_SAMPLES:
         assert provider.detect(sample) == 0.0, sample
 
 
 @parametrised
 def test_detect_returns_a_confidence_in_range(provider: Provider) -> None:
-    for sample in ("", "sk-" + "x" * 40, "AIza" + "0" * 35):
+    for sample in (*NON_KEY_SAMPLES, *DETECT_SAMPLES):
         assert 0.0 <= provider.detect(sample) <= 1.0
 
 
 @parametrised
-def test_every_provider_has_a_detection_rule(provider: Provider) -> None:
+def test_every_provider_is_reachable(provider: Provider) -> None:
     """A plugin nothing routes to can never run.
 
     The rule set may legitimately run *ahead* of the plugins — recognising a key
     keyreach cannot yet enumerate is still useful — but the reverse is a plugin
     that is installed and unreachable.
+
+    Two ways to be reachable, since R2.1. Either a detection rule names the
+    provider, or the provider declares ``detectable = False`` because its
+    vendor publishes no credential shape to write a rule from, in which case
+    ``--provider`` is the documented route and the report records that the
+    operator asserted it. What is *not* allowed is a plugin that is neither.
     """
     named = {rule.provider for rule in default_detector.rules()}
 
-    assert provider.name in named
+    assert provider.name in named or not provider.detectable, (
+        f"{provider.name} has no detection rule and has not declared "
+        "detectable = False, so nothing can ever route a key to it."
+    )
+
+
+@parametrised
+def test_an_undetectable_provider_claims_nothing_for_any_key(
+    provider: Provider,
+) -> None:
+    """``detectable = False`` must mean it, in both places.
+
+    A provider that opts out of detection but still returns a positive
+    confidence from ``detect()`` would be ranked as a candidate by
+    ``ProviderRegistry.rank`` and probed anyway — the opt-out would be a comment
+    rather than a behaviour. Checked against the same samples the purity tests
+    use, plus a credential-shaped one.
+    """
+    if provider.detectable:
+        return
+
+    for sample in (*NON_KEY_SAMPLES, *DETECT_SAMPLES):
+        assert provider.detect(sample) == 0.0, sample
 
 
 # ---------------------------------------------------------------------------

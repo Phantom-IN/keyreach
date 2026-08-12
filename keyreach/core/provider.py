@@ -73,6 +73,27 @@ class Provider(ABC):
     #: attribution is a hard rule, not a courtesy (plan.md §5).
     credit: str | None = None
 
+    #: Can this provider's credential be recognised by rule at all?
+    #:
+    #: True for every provider through v0.1, and the assumption the detection
+    #: layer was built on: a credential has a published, distinctive shape.
+    #: **R2.1 found that assumption does not hold for OAuth client
+    #: credentials.** A PayPal client id and secret are opaque strings with no
+    #: vendor-published prefix, length or charset — nothing a rule could match
+    #: without claiming every base64-ish string on the internet, which is a
+    #: false-positive machine rather than a detection rule (`plan.md` §5.2).
+    #:
+    #: Setting this False means the plugin is never a *detection* candidate and
+    #: therefore can never produce a false positive. It stays reachable through
+    #: ``--provider <name>``, which already records in ``Report.notes`` that the
+    #: operator asserted the provider rather than a rule recognising it (R1.5).
+    #:
+    #: This is deliberately not a way to skip writing a detection rule. Set it
+    #: only when the vendor publishes nothing to write one *from*, and say so in
+    #: the plugin's module docstring — `tests/test_provider_contract.py` requires
+    #: every provider to be reachable one way or the other.
+    detectable: bool = True
+
     @abstractmethod
     def detect(self, key: str) -> float:
         """Confidence between 0.0 and 1.0 that ``key`` belongs to this provider.

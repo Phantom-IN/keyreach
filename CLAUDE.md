@@ -65,7 +65,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider. Ten as of v0.1: `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py` (payment); `slack.py`, `twilio.py`, `telegram.py` (comms); `github.py` (devtools). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, which is the evidence. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
+- `keyreach/providers/*` — one file (or YAML) per provider. Twelve as of R2.1 (`paypal`, `paystack` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py` (payment); `slack.py`, `twilio.py`, `telegram.py` (comms); `github.py` (devtools). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, which is the evidence. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
 - `keyreach/report/render.py` — terminal / JSON / Markdown renderers; `templates/`; `report.schema.json`.
@@ -91,6 +91,26 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Three things R2.1 found
+
+- **A provider with no publishable credential format sets `detectable = False`.**
+  It is never a detection candidate, and `--provider <name>` is how a user
+  reaches it — the report already records that as the operator's assertion. Use
+  it only when the vendor publishes nothing to write a rule *from*, and say so
+  in the module docstring; `tests/test_provider_contract.py` requires every
+  provider to be reachable one way or the other. This is not a shortcut past
+  writing a detection rule.
+- **`read_only_post` responses are cached per run, keyed on the request body.**
+  A provider that must POST to authenticate (PayPal's token exchange) gets one
+  request, not one per pipeline stage. If you add a `read_only_post` probe, make
+  sure two calls with the same URL and body really are the same request.
+- **Two vendors can document the same prefix.** Stripe and Paystack both use
+  `sk_live_`/`sk_test_`. Do not narrow either rule to "fix" it — that invents a
+  fact the vendor has not stated. Both fire, the engine probes both, and the one
+  that authenticates wins, at a cost of one wasted request. Say so in the
+  rejection note, so a user who sees "X rejected this key" does not conclude the
+  key is dead.
 
 ### Two things R1.6 found, which the next provider will meet again
 
