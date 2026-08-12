@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"reason\":\"Invalid client_id or client_secret\",\"error\":\"invalid_client\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 400,
+      "url": "https://zoom.us/oauth/token"
+    }
+  ],
+  "version": 1
+}

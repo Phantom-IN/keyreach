@@ -17,11 +17,12 @@
 
 > **v0.1.0 — the first release.**
 >
-> **Twelve providers across five categories, usable from a terminal.** The whole
+> **Fourteen providers across five categories, usable from a terminal.** The whole
 > pipeline — detect → validate → enumerate → score → report — is built and
 > covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
 > **payment** (`stripe`, `razorpay`, `paystack`, `paypal`), **communications**
-> (`slack`, `twilio`, `telegram`), and **dev platforms** (`github`). Each key is
+> (`slack`, `twilio`, `telegram`, `discord`, `zoom`), and **dev platforms**
+> (`github`). Each key is
 > scored from the capabilities keyreach actually confirmed, with the rationale
 > attached.
 >
@@ -180,6 +181,7 @@ keyreach 'ASIA...:<secret>:<session token>'             # AWS, temporary
 keyreach 'AC<32 hex>:<auth token>'                      # Twilio
 keyreach 'rzp_live_...:<key secret>'                    # Razorpay
 keyreach 'CLIENT_ID:CLIENT_SECRET' --provider paypal    # PayPal
+keyreach 'ACCOUNT_ID:CLIENT_ID:CLIENT_SECRET' --provider zoom   # Zoom
 ```
 
 Half a credential is still recognised and still reported — keyreach tells you
@@ -280,9 +282,9 @@ monitoring, auth/identity, and a generic bearer/JWT inspector. The full target
 list is [`plan.md`](plan.md) §8; the shipping order is
 [`ROADMAP.md`](ROADMAP.md).
 
-**12 providers across 5 categories.** v0.1 shipped 10 — the target was ≥10
-across ≥4, including cloud, AI, payment and comms — and R2.1 added two more. The
-count is asserted by a test rather than counted by hand
+**14 providers across 5 categories.** v0.1 shipped 10 — the target was ≥10
+across ≥4, including cloud, AI, payment and comms — and R2.1 and R2.2 added two
+each. The count is asserted by a test rather than counted by hand
 (`tests/test_provider_contract.py`), so a deleted provider or a typo'd category
 fails the build.
 
@@ -299,6 +301,8 @@ fails the build.
 | `slack` | comms | `xoxb-…`, `xoxp-…` | workspace, members, channels, files |
 | `twilio` | comms | `AC…:auth token` | account and tier, balance, message log, call log, phone numbers |
 | `telegram` | comms | `<bot id>:<secret>` | bot identity, webhook target, commands; group-message reach when privacy mode is off |
+| `discord` | comms | bot token *(needs `--provider discord`)* | application, bot identity, servers; message-content and member reach from the privileged-intent flags |
+| `zoom` | comms | `account_id:client_id:client_secret` *(needs `--provider zoom`)* | users, cloud recordings, meetings, groups — with write read from the granted scopes |
 | `github` | devtools | `ghp_…`, `gho_…`, `github_pat_…` | account, private repositories, organizations, email addresses, gists |
 
 **Severity is computed, and the differences are the point.** A `sk_live_` Stripe
@@ -320,16 +324,18 @@ and cites the sentence. Everywhere else it under-reports and says so. See
 
 **Two things about detection are worth knowing.**
 
-*Some credentials cannot be detected at all.* PayPal, like a growing number of
-payment APIs, authenticates with OAuth client credentials — opaque strings with
-no published prefix, length or charset. keyreach will not ship a rule guessed
-from that, because a pattern matching "long opaque string, colon, long opaque
-string" would claim a large share of every base64 blob a scanner emits. So name
-it yourself, and the report records that you did rather than pretending a rule
-recognised it:
+*Some credentials cannot be detected at all.* PayPal, Discord and Zoom all
+authenticate with credentials that are opaque strings — no published prefix,
+length or charset. keyreach will not ship a rule guessed from that, because a
+pattern matching "long opaque string, colon, long opaque string" would claim a
+large share of every base64 blob a scanner emits, and Discord's community
+three-segment pattern would claim every JWT. So name it yourself, and the report
+records that you did rather than pretending a rule recognised it:
 
 ```console
 keyreach 'CLIENT_ID:CLIENT_SECRET' --provider paypal
+keyreach 'BOT_TOKEN' --provider discord
+keyreach 'ACCOUNT_ID:CLIENT_ID:CLIENT_SECRET' --provider zoom
 ```
 
 *Some prefixes belong to two vendors.* Stripe and Paystack both document

@@ -14,6 +14,24 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **`discord` and `zoom` providers (roadmap item **R2.2**)**, taking comms
+  coverage to five providers and keyreach to fourteen:
+  - **`discord`** — application, bot identity and server list, plus two
+    capabilities read from the application's documented `flags` field:
+    `GATEWAY_MESSAGE_CONTENT` (`1 << 18`) means the bot receives the text of
+    messages across every server it is in, and `GATEWAY_GUILD_MEMBERS`
+    (`1 << 14`) means it receives member events. Neither is claimed when the
+    flag is absent, and neither reads a message.
+  - **`zoom`** — account users, cloud recordings, groups, identity and
+    meetings, from a three-part Server-to-Server OAuth credential
+    (`account_id:client_id:client_secret`).
+- **Access levels derived from Zoom's scope grammar.** Zoom documents granular
+  scopes as `resource:operation:action:role`, so keyreach reads the operation
+  segment rather than matching a checked-in list of scope names that would be
+  stale within a release. The resource segment decides which capability a scope
+  elevates, so a credential that can write users is not thereby claimed to write
+  recordings.
+
 - **`paypal` and `paystack` providers (roadmap item **R2.1**)**, taking payment
   coverage to five providers and keyreach to twelve:
   - **`paystack`** — balance, customers, settlements, subaccounts and
@@ -37,6 +55,15 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Changed
 
+- **Both R2.2 providers are `detectable = False`**, which generalises the R2.1
+  finding beyond payment: Discord publishes no bot-token format and Zoom
+  publishes no format for any of its three parts. Discord had been deferred out
+  of R1.6 for exactly this reason, and shipped here without a guessed rule.
+- **PubNub is deferred rather than dropped.** Neither its documentation nor its
+  edge API was reachable from the environment this work was done in, so nothing
+  about its key formats or endpoints could be verified from a primary source.
+  Unlike Coinbase and Flutterwave, this is a limitation of the attempt rather
+  than a finding about the vendor.
 - **`read_only_post` responses now join the per-run response cache**, with the
   request body added to the cache key. This reverses a rule R1.4 introduced
   ("a `read_only_post` probe is a read by argument and review, not by HTTP
