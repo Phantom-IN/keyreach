@@ -1,0 +1,58 @@
+{
+  "interactions": [
+    {
+      "body": "{\"errors\":[{\"field\":null,\"message\":\"access forbidden\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.sendgrid.com/v3/scopes"
+    },
+    {
+      "body": "{\"type\":\"pro\",\"reputation\":97.5}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.sendgrid.com/v3/user/account"
+    },
+    {
+      "body": "{\"errors\":[{\"field\":null,\"message\":\"access forbidden\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.sendgrid.com/v3/api_keys?limit=1"
+    },
+    {
+      "body": "{\"errors\":[{\"field\":null,\"message\":\"access forbidden\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.sendgrid.com/v3/user/profile"
+    },
+    {
+      "body": "{\"errors\":[{\"field\":null,\"message\":\"access forbidden\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.sendgrid.com/v3/suppression/bounces?limit=1"
+    },
+    {
+      "body": "{\"errors\":[{\"field\":null,\"message\":\"access forbidden\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://api.sendgrid.com/v3/templates?generations=dynamic&page_size=1"
+    }
+  ]
+}

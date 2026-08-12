@@ -17,12 +17,13 @@
 
 > **v0.1.0 — the first release.**
 >
-> **Fourteen providers across five categories, usable from a terminal.** The whole
+> **Nineteen providers across six categories, usable from a terminal.** The whole
 > pipeline — detect → validate → enumerate → score → report — is built and
 > covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
 > **payment** (`stripe`, `razorpay`, `paystack`, `paypal`), **communications**
-> (`slack`, `twilio`, `telegram`, `discord`, `zoom`), and **dev platforms**
-> (`github`). Each key is
+> (`slack`, `twilio`, `telegram`, `discord`, `zoom`), **email/marketing**
+> (`sendgrid`, `mailgun`, `postmark`, `resend`, `mailchimp`), and **dev
+> platforms** (`github`). Each key is
 > scored from the capabilities keyreach actually confirmed, with the rationale
 > attached.
 >
@@ -282,11 +283,11 @@ monitoring, auth/identity, and a generic bearer/JWT inspector. The full target
 list is [`plan.md`](plan.md) §8; the shipping order is
 [`ROADMAP.md`](ROADMAP.md).
 
-**14 providers across 5 categories.** v0.1 shipped 10 — the target was ≥10
-across ≥4, including cloud, AI, payment and comms — and R2.1 and R2.2 added two
-each. The count is asserted by a test rather than counted by hand
-(`tests/test_provider_contract.py`), so a deleted provider or a typo'd category
-fails the build.
+**19 providers across 6 categories.** v0.1 shipped 10 — the target was ≥10
+across ≥4, including cloud, AI, payment and comms — R2.1 and R2.2 added two
+each, and R2.3 opened the email category with five. The count is asserted by a
+test rather than counted by hand (`tests/test_provider_contract.py`), so a
+deleted provider or a typo'd category fails the build.
 
 | Provider | Category | Credential | What a live key is shown to reach |
 | --- | --- | --- | --- |
@@ -303,6 +304,11 @@ fails the build.
 | `telegram` | comms | `<bot id>:<secret>` | bot identity, webhook target, commands; group-message reach when privacy mode is off |
 | `discord` | comms | bot token *(needs `--provider discord`)* | application, bot identity, servers; message-content and member reach from the privileged-intent flags |
 | `zoom` | comms | `account_id:client_id:client_secret` *(needs `--provider zoom`)* | users, cloud recordings, meetings, groups — with write read from the granted scopes |
+| `sendgrid` | email | `SG.…` | account, profile, templates, suppressions, API keys — with write and send read from the scopes SendGrid publishes for the key |
+| `mailgun` | email | account API key *(needs `--provider mailgun`)* | domains, mailing lists, inbound routes, API keys |
+| `postmark` | email | server **or** account token *(needs `--provider postmark`)* | server config and bounces for a server token; every server, domain and sender signature for an account token |
+| `resend` | email | `re_…` | API keys, audiences, broadcasts, domains — or, for a sending-only key, the send capability alone |
+| `mailchimp` | email | `<hex>-<dc>` | account, audiences, campaigns, reports, automations — with access read from the role Mailchimp returns |
 | `github` | devtools | `ghp_…`, `gho_…`, `github_pat_…` | account, private repositories, organizations, email addresses, gists |
 
 **Severity is computed, and the differences are the point.** A `sk_live_` Stripe
@@ -336,7 +342,20 @@ records that you did rather than pretending a rule recognised it:
 keyreach 'CLIENT_ID:CLIENT_SECRET' --provider paypal
 keyreach 'BOT_TOKEN' --provider discord
 keyreach 'ACCOUNT_ID:CLIENT_ID:CLIENT_SECRET' --provider zoom
+keyreach 'API_KEY' --provider mailgun
+keyreach 'SERVER_OR_ACCOUNT_TOKEN' --provider postmark
 ```
+
+*Mailgun is the first provider keyreach could once detect and no longer can.* It
+shipped a `key-…` rule from R0.5, sourced to Mailgun's authentication page; that
+page now documents no key format at all, and neither does any other page Mailgun
+publishes. A rule nobody can re-verify is worse than no rule, so it was
+withdrawn — see [`ROADMAP.md`](ROADMAP.md) R2.3.
+
+*Postmark's two token types look identical*, so keyreach does not ask you which
+you have. It tries both headers, and Postmark's own refusal names the one it
+wanted — a server token reaches one server's mail, an account token reaches
+every server on the account and can create more.
 
 *Some prefixes belong to two vendors.* Stripe and Paystack both document
 `sk_live_` and `sk_test_`. keyreach probes both and reports whichever one

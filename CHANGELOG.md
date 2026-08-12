@@ -14,6 +14,38 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **Five email/marketing providers (roadmap item **R2.3**)** — `sendgrid`,
+  `mailgun`, `postmark`, `resend` and `mailchimp` — opening the `email`
+  category and taking keyreach to **nineteen providers across six categories**.
+  The first item since R1.6 to ship every provider it named.
+  - **`sendgrid`** — account, profile, templates, suppressions and API keys.
+    SendGrid publishes a read-only endpoint returning the calling key's own
+    scopes, so one `GET` proves the key is live *and* enumerates what it may do.
+  - **`mailgun`** — domains, mailing lists, inbound routes and API keys.
+  - **`postmark`** — server configuration, message streams and bounces for a
+    server token; every server, domain and sender signature for an account
+    token.
+  - **`resend`** — API keys, audiences, broadcasts and domains.
+  - **`mailchimp`** — account, audiences, campaigns, reports and automations, on
+    the host the key's own data-centre suffix names.
+- **A send capability for every provider that has one, derived and never
+  performed.** Proving a key can send email means sending email, which spends
+  the account's allowance and puts a message in a stranger's inbox — so each of
+  these rests on a different vendor statement instead: SendGrid's `mail.send`
+  scope, Resend's `restricted_api_key` refusal ("This API key is restricted to
+  only send emails"), Mailchimp's role model, and the header Postmark documents
+  its send endpoint as requiring. keyreach can now report that a key mails a
+  company's audience from its own verified domain, with nothing sent.
+- **Access levels from Mailchimp's documented role model.** Mailchimp states
+  that "the role of the user who generated the API key determines access to each
+  endpoint", and the API root returns that role. An unrecognised role produces
+  `AccessLevel.UNKNOWN` rather than defaulting to read — a future Mailchimp user
+  level must not arrive as "harmless".
+- **Postmark's token kind is discovered rather than declared.** Its server and
+  account tokens have different blast radii, identical shapes and no published
+  format, so keyreach tries both headers and reads the answer out of Postmark's
+  own refusal, which names the type it wanted.
+
 - **`discord` and `zoom` providers (roadmap item **R2.2**)**, taking comms
   coverage to five providers and keyreach to fourteen:
   - **`discord`** — application, bot identity and server list, plus two
@@ -54,6 +86,22 @@ under `Unreleased` in the same pull request as any user-visible change.
   see **Fixed** below.
 
 ### Changed
+
+- **The `mailgun` detection rule was withdrawn** and `mailgun` now ships
+  `detectable = False`, reached with `--provider mailgun`. keyreach carried
+  `^key-[0-9a-f]{32}$` from R0.5, sourced to Mailgun's authentication page; that
+  page now documents no key format at all, and neither does any other page
+  Mailgun publishes. The rule still matched legacy keys, but nothing could
+  re-verify it, which is the one property `detection_rules.yml` promises. A
+  legacy-shaped key is still reported by the entropy fallback as a secret of
+  unknown provenance. This is the first rule keyreach has had to withdraw
+  because a vendor stopped publishing a format, and it is the drift roadmap
+  **R2.10** exists to catch.
+- **The `sendgrid` detection rule no longer pins two lengths SendGrid never
+  published.** It required 22- and 43-character segments — correct for every key
+  seen in the wild and absent from every SendGrid document. It now matches the
+  shape SendGrid publishes in its create-API-key response, at confidence 0.95
+  rather than a 0.99 the vendor never justified.
 
 - **Both R2.2 providers are `detectable = False`**, which generalises the R2.1
   finding beyond payment: Discord publishes no bot-token format and Zoom

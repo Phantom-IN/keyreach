@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    {
+      "body": "{\"errors\":[{\"field\":null,\"message\":\"unauthorized\"}]}",
+      "headers": {
+        "content-type": "application/json",
+        "www-authenticate": "Bearer realm=\"sendgrid\""
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.sendgrid.com/v3/scopes"
+    }
+  ]
+}

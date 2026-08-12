@@ -1,0 +1,40 @@
+{
+  "interactions": [
+    {
+      "body": "{\"ID\":1234567,\"Name\":\"northwind-transactional\",\"ApiTokens\":[\"<key>\",\"<key>\"],\"Color\":\"blue\",\"DeliveryType\":\"Live\",\"ServerLink\":\"https://postmarkapp.com/servers/1234567/streams\",\"TrackOpens\":true,\"TrackLinks\":\"HtmlAndText\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.postmarkapp.com/server"
+    },
+    {
+      "body": "{\"ErrorCode\":10,\"Message\":\"Request does not contain a valid Account token.\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.postmarkapp.com/servers?count=1&offset=0"
+    },
+    {
+      "body": "{\"MessageStreams\":[{\"ID\":\"outbound\",\"ServerID\":1234567,\"Name\":\"Transactional Stream\",\"MessageStreamType\":\"Transactional\"}],\"TotalCount\":2}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.postmarkapp.com/message-streams"
+    },
+    {
+      "body": "{\"TotalCount\":37,\"Bounces\":[{\"ID\":90000001,\"Type\":\"HardBounce\",\"Email\":\"buyer@example.invalid\",\"Subject\":\"Your receipt\",\"Inactive\":true}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.postmarkapp.com/bounces?count=1&offset=0"
+    }
+  ]
+}

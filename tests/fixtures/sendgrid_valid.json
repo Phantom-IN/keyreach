@@ -1,0 +1,58 @@
+{
+  "interactions": [
+    {
+      "body": "{\"scopes\":[\"api_keys.create\",\"api_keys.delete\",\"api_keys.read\",\"api_keys.update\",\"mail.send\",\"suppression.create\",\"suppression.delete\",\"suppression.read\",\"templates.create\",\"templates.read\",\"templates.update\",\"user.account.read\",\"user.profile.read\",\"user.profile.update\"]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.sendgrid.com/v3/scopes"
+    },
+    {
+      "body": "{\"type\":\"pro\",\"reputation\":97.5}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.sendgrid.com/v3/user/account"
+    },
+    {
+      "body": "{\"result\":[{\"api_key_id\":\"AbCdEfGhIj\",\"name\":\"northwind-production\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.sendgrid.com/v3/api_keys?limit=1"
+    },
+    {
+      "body": "{\"first_name\":\"A\",\"last_name\":\"Sender\",\"company\":\"Northwind Traders\",\"city\":\"Leeds\",\"country\":\"GB\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.sendgrid.com/v3/user/profile"
+    },
+    {
+      "body": "{\"result\":[]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.sendgrid.com/v3/suppression/bounces?limit=1"
+    },
+    {
+      "body": "{\"result\":[{\"id\":\"d-0000000000000000000000000000000a\",\"name\":\"Password reset\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.sendgrid.com/v3/templates?generations=dynamic&page_size=1"
+    }
+  ]
+}

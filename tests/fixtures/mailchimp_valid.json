@@ -1,0 +1,49 @@
+{
+  "interactions": [
+    {
+      "body": "{\"account_id\":\"0000000000000000000000000\",\"login_id\":\"00000000\",\"account_name\":\"Northwind Traders\",\"email\":\"marketing@northwind.example\",\"role\":\"admin\",\"member_since\":\"2019-04-02T09:31:00+00:00\",\"pricing_plan_type\":\"monthly\",\"total_subscribers\":48213}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://us14.api.mailchimp.com/3.0/"
+    },
+    {
+      "body": "{\"lists\":[{\"id\":\"0000000a00\",\"name\":\"Newsletter\",\"stats\":{\"member_count\":48213}}],\"total_items\":3}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://us14.api.mailchimp.com/3.0/lists?count=1"
+    },
+    {
+      "body": "{\"automations\":[],\"total_items\":0}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://us14.api.mailchimp.com/3.0/automations?count=1"
+    },
+    {
+      "body": "{\"campaigns\":[{\"id\":\"0000000b00\",\"type\":\"regular\",\"status\":\"sent\",\"settings\":{\"subject_line\":\"Spring catalogue\"}}],\"total_items\":112}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://us14.api.mailchimp.com/3.0/campaigns?count=1"
+    },
+    {
+      "body": "{\"reports\":[{\"id\":\"0000000b00\",\"emails_sent\":48120,\"opens\":{\"unique_opens\":19044}}],\"total_items\":112}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://us14.api.mailchimp.com/3.0/reports?count=1"
+    }
+  ]
+}

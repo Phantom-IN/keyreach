@@ -1,0 +1,41 @@
+{
+  "interactions": [
+    {
+      "body": "{\"statusCode\":429,\"message\":\"Too many requests. Please limit the number of requests per second.\",\"name\":\"rate_limit_exceeded\"}",
+      "headers": {
+        "content-type": "application/json",
+        "retry-after": "1"
+      },
+      "method": "GET",
+      "status_code": 429,
+      "url": "https://api.resend.com/api-keys"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"00000000-0000-4000-8000-00000000000b\",\"name\":\"Newsletter\",\"created_at\":\"2026-02-01T00:00:00.000Z\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.resend.com/audiences"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.resend.com/broadcasts"
+    },
+    {
+      "body": "{\"object\":\"list\",\"data\":[{\"id\":\"00000000-0000-4000-8000-00000000000c\",\"name\":\"northwind.example\",\"status\":\"verified\",\"region\":\"eu-west-1\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.resend.com/domains"
+    }
+  ]
+}

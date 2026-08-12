@@ -593,6 +593,43 @@ result:
    naming a provider that did not exist yet; Twilio, Razorpay and Telegram all
    needed it and needed nothing more.
 
+### 13.2 Detection rules are not write-once (roadmap R2.3)
+
+§5 treats detection as a pure, static rule set: a pattern, a confidence, and the
+vendor URL it came from. R2.3 found the missing half of that design. A rule's
+correctness depends on a page keyreach does not control, and **that page can
+stop supporting the rule without the rule becoming wrong.**
+
+Mailgun's rule — shipped in R0.5, sourced to its authentication page — still
+matched every legacy key. But the page now documents only `curl --user
+'api:YOUR_API_KEY'`, and no other page Mailgun publishes gives a prefix, a
+length or a charset. So the rule had become *unverifiable* rather than
+incorrect, and unverifiable is the one thing the `source:` field exists to
+prevent. It was withdrawn; `mailgun` sets `detectable = False` and is reached
+with `--provider`. The same pass found SendGrid's rule pinning two segment
+lengths that appear in no SendGrid document, and relaxed them to the published
+shape.
+
+Three consequences for the design:
+
+1. **Re-verification is part of maintaining a rule, not a one-time cost at
+   authoring.** `tests/test_provider_mailgun.py` pins the withdrawal so the rule
+   cannot be restored from memory, but no test can open a vendor page. That is
+   **R2.10**'s job, and R2.3 is the evidence that the canary needs to watch the
+   detection rules and not only the probe endpoints.
+2. **`detectable = False` has two distinct causes** that should not be
+   conflated in a report or in a plugin docstring: the vendor never published a
+   format (PayPal, Discord, Zoom, Postmark), or keyreach withdrew one it had
+   (Mailgun). The second is drift and is worth surfacing; the first is not.
+3. **Withdrawal is not silence.** A legacy Mailgun key still matches the entropy
+   fallback and is reported as a secret of unknown provenance. Losing the
+   attribution is a real cost; losing the finding would have been a larger one.
+
+**And the interface needed nothing, again.** Five providers — two undetectable,
+one deriving its host from the key itself, one discovering which of two
+credential *types* it holds — and no change to `keyreach/core/`. The count of
+consecutive items that have not touched it is now three.
+
 ### Phase 2 — Depth
 - HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating.
 

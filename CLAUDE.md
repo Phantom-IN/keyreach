@@ -65,7 +65,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider. Fourteen as of R2.2 (`discord`, `zoom` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py` (payment); `slack.py`, `twilio.py`, `telegram.py` (comms); `github.py` (devtools). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, which is the evidence. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
+- `keyreach/providers/*` — one file (or YAML) per provider. Nineteen as of R2.3 (`sendgrid`, `mailgun`, `postmark`, `resend`, `mailchimp` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py` (devtools). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, and R2.3 added five more — including two undetectable ones and a host derived per key — again without touching it. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
 - `keyreach/report/render.py` — terminal / JSON / Markdown renderers; `templates/`; `report.schema.json`.
@@ -91,6 +91,33 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Three things R2.3 found
+
+- **A detection rule can stop being verifiable, and then it must go.**
+  keyreach shipped a Mailgun rule from R0.5 whose source page no longer
+  documents any key format. The rule still matched real keys; it had not become
+  wrong. But nobody could re-verify it, which is the single thing
+  `detection_rules.yml` promises, so it was **withdrawn** and `mailgun` set
+  `detectable = False`. Before adding *or keeping* a rule, open its `source:`
+  URL and check the page still says what the rule claims. If it does not, the
+  rule goes and the provider is reached with `--provider`. Do not re-source a
+  rule to a page that merely mentions the vendor.
+- **Say what the API says, not what the docs say, when they differ.** Resend
+  documents `403` for an invalid key and returns `400`; it documents `401` for a
+  key that is *live and restricted to sending*. The ordinary reading of 401
+  would retire a working credential. Branch on the vendor's error **name** where
+  there is one — that is a contract — and treat the status as corroboration.
+  This is the fourth item running where the defect surfaced by exercising the
+  real API rather than by reading about it.
+- **`ai_ban` will eventually cost a real probe, and the answer is to pay it.**
+  Postmark's outbound-mail search sits under the same lowercase path as an
+  inference endpoint, and `ai_ban` matches sub-resources on purpose so that
+  Anthropic's message-batches path is caught. Nothing in a line of source
+  separates the two — only the host does, and the check bans paths rather than
+  hosts deliberately. The probe was dropped and a different endpoint carries the
+  finding. Do not compose the URL from fragments to slip past the check: that is
+  exactly the hole R1.2 found by planting `f"{API}/chat/completions"`.
 
 ### Three things R2.1 found
 
