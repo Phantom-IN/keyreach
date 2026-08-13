@@ -371,3 +371,41 @@ rules:
     pattern: '^(?:[A-Za-z0-9][A-Za-z0-9._-]*:)?dckr_(?:pat|oat)_[A-Za-z0-9_-]{20,}$'
     confidence: 0.99
     source: https://docs.docker.com/reference/api/hub/latest/
+
+  # ── Databases / data infra ────────────────────────────────────────────────
+  - id: pinecone-api-key
+    provider: pinecone
+    description: Pinecone API key
+    # `pcsk_abc123` is exampled in Pinecone's CLI command reference
+    # (`pc config set-api-key pcsk_abc123`). Pinecone's authentication page and
+    # its key-management guide both show only `YOUR_API_KEY`, so the CLI
+    # reference is the one place the prefix appears — checked by reading the
+    # page rather than by trusting a search result, after R2.4 found a search
+    # engine confidently inventing an npm token format that page did not carry.
+    pattern: '^pcsk_[A-Za-z0-9_-]{20,}$'
+    confidence: 0.99
+    source: https://docs.pinecone.io/reference/cli/command-reference
+
+  - id: supabase-secret-key
+    provider: supabase
+    description: Supabase secret key
+    # Supabase documents `sb_secret_…` as the current server-side key and says
+    # it has "full access to your project's data, bypassing Row Level
+    # Security". Kept separate from the publishable rule below because the two
+    # are opposite findings and should never share a description.
+    #
+    # The key carries no project reference, so this plugin needs
+    # `<project ref>:<key>`; a bare key is recognised, reported and not probed.
+    pattern: '^(?:[a-z]{20}:)?sb_secret_[A-Za-z0-9_-]{20,}$'
+    confidence: 0.99
+    source: https://supabase.com/docs/guides/api/api-keys
+
+  - id: supabase-publishable-key
+    provider: supabase
+    description: Supabase publishable key
+    # Documented as "safe to expose online: web page, mobile or desktop app,
+    # GitHub actions, CLIs, source code". Detected so a report can say exactly
+    # that, which is more useful than silence when one turns up in a scan.
+    pattern: '^(?:[a-z]{20}:)?sb_publishable_[A-Za-z0-9_-]{20,}$'
+    confidence: 0.99
+    source: https://supabase.com/docs/guides/api/api-keys

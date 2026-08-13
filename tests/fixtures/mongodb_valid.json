@@ -1,0 +1,31 @@
+{
+  "interactions": [
+    {
+      "body": "{\"access_token\":\"<key>\",\"expires_in\":3600,\"token_type\":\"Bearer\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 200,
+      "url": "https://cloud.mongodb.com/api/oauth/token"
+    },
+    {
+      "body": "{\"results\":[{\"id\":\"000000000000000000000001\",\"name\":\"Northwind Traders\",\"isDeleted\":false}],\"totalCount\":1}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://cloud.mongodb.com/api/atlas/v2/orgs?itemsPerPage=1"
+    },
+    {
+      "body": "{\"results\":[{\"id\":\"000000000000000000000002\",\"name\":\"production\",\"orgId\":\"000000000000000000000001\",\"clusterCount\":3}],\"totalCount\":4}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://cloud.mongodb.com/api/atlas/v2/groups?itemsPerPage=1"
+    }
+  ]
+}

@@ -65,7 +65,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider. Twenty-three as of R2.4 (`gitlab`, `bitbucket`, `npm`, `dockerhub` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.py`, `dockerhub.py` (devtools). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, and R2.4 four — four consecutive items, none of which needed an interface change. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
+- `keyreach/providers/*` — one file (or YAML) per provider. Twenty-seven as of R2.5 (`mongodb`, `supabase`, `redis`, `pinecone` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.py`, `dockerhub.py` (devtools); `mongodb.py`, `supabase.py`, `redis.py`, `pinecone.py` (database). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, R2.4 four and R2.5 four — five consecutive items, none of which needed an interface change. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
   - **`pypi` is a detection rule with no plugin, on purpose.** PyPI's only token-accepting endpoint is a package upload, so no plugin can exist without performing a write. Do not add one. See `plan.md` §5.2 and `tests/test_detect.py::test_pypi_is_detected_and_deliberately_has_no_plugin`.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
@@ -92,6 +92,28 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Three things R2.5 found
+
+- **Check the vendor treats the string as authorisation before writing a
+  provider at all.** Firebase publishes that its API key "only identifies your
+  Firebase project and app" and that "none of the Firebase-related APIs use an
+  API key as authorization". A string that authorises nothing has no capability
+  map and no honest severity, so keyreach ships no `firebase` provider. This is
+  a third failure mode next to undetectable (R2.3) and un-enumerable (R2.4);
+  `plan.md` §5.2 keeps all three apart.
+- **Read the roadmap name narrowly and say what you actually covered.** "Redis"
+  cannot mean a Redis server: that credential is spoken over RESP on port 6379,
+  and keyreach's whole I/O layer is HTTP. The plugin covers Redis Cloud's
+  control plane and its docstring says so, rather than letting the provider name
+  imply a database probe that never happens.
+- **A credential may carry its own routing, and decoding it is not a probe.**
+  A Supabase legacy key is a JWT whose `ref` claim names the project host and
+  whose `role` claim names what it can do. Decoding is pure, offline and
+  deterministic — one base64url decode, no signature check, because keyreach is
+  reading a claim out of a credential its holder already has rather than
+  trusting a token. Do **not** turn that into a detection rule: a regex over
+  three base64 segments claims every JWT ever pasted at keyreach.
 
 ### Three things R2.4 found
 

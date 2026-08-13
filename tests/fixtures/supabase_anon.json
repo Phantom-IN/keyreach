@@ -1,0 +1,31 @@
+{
+  "interactions": [
+    {
+      "body": "{\"external\":{\"email\":true,\"google\":true},\"disable_signup\":false,\"mailer_autoconfirm\":false}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://abcdefghijklmnopqrst.supabase.co/auth/v1/settings"
+    },
+    {
+      "body": "[{\"id\":\"invoices\",\"name\":\"invoices\",\"public\":false,\"created_at\":\"2026-01-02T00:00:00Z\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://abcdefghijklmnopqrst.supabase.co/storage/v1/bucket"
+    },
+    {
+      "body": "{\"swagger\":\"2.0\",\"info\":{\"title\":\"standard public schema\"},\"definitions\":{\"orders\":{},\"customers\":{}}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://abcdefghijklmnopqrst.supabase.co/rest/v1/"
+    }
+  ]
+}

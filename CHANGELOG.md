@@ -14,6 +14,32 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **Four database and data-infrastructure providers (roadmap item **R2.5**)** —
+  `mongodb`, `supabase`, `redis` and `pinecone` — opening the `database`
+  category and taking keyreach to **twenty-seven providers across seven
+  categories**.
+  - **`mongodb`** — Atlas organizations and projects, which together are the
+    list of every cluster a service account could go on to reach.
+  - **`supabase`** — auth settings, storage buckets, the exposed table schema,
+    and the end-user list for a key that bypasses Row Level Security.
+  - **`redis`** — Redis Cloud subscriptions and the cloud provider accounts they
+    deploy into.
+  - **`pinecone`** — indexes, collections, backups and assistants.
+- **An `ADMIN` verdict derived from a sentence about data rather than about API
+  scope.** Supabase documents a secret key as having "full access to your
+  project's data, bypassing Row Level Security", and RLS is the entire access
+  model of a Supabase project — so the key is administrative access to every
+  row, established from the vendor's words with nothing written and no row read.
+- **Supabase legacy keys are parsed rather than detected.** An `anon` or
+  `service_role` key is a JWT whose `ref` claim names the project host and whose
+  `role` claim names what it can do, so `--provider supabase` is enough and the
+  host is derived with no request. Decoding is pure, offline and deterministic,
+  with no signature check: keyreach reads a claim out of a credential its holder
+  already has rather than trusting a token.
+- **A fourth `read_only_post`**, after PayPal (R2.1), Zoom (R2.2) and Docker Hub
+  (R2.4): MongoDB Atlas's OAuth exchange, which creates no cluster and spends
+  nothing.
+
 - **Four dev-platform providers (roadmap item **R2.4**)** — `gitlab`,
   `bitbucket`, `npm` and `dockerhub` — taking dev platforms to five and keyreach
   to **twenty-three providers across six categories**.
@@ -109,6 +135,19 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Changed
 
+- **No `firebase` provider ships, and that is a decision rather than a gap.**
+  Google documents that "API keys for Firebase services do not need to be
+  treated as secrets" and that "none of the Firebase-related APIs use an API key
+  as authorization for calling the API". A string that authorises nothing has no
+  capability map and no honest severity. The same `AIza…` format *does*
+  authorise Google Cloud APIs, which the `google` provider already probes, so
+  shipping a Firebase provider would contradict the vendor and duplicate an
+  existing one. Recorded in `plan.md` §5.2 as a third failure mode alongside
+  undetectable (R2.3) and un-enumerable (R2.4).
+- **"Redis" means Redis Cloud's control plane.** A Redis *server* credential is
+  a password spoken over RESP on port 6379, which is not HTTP and cannot reach
+  `ProbeContext` at all. The plugin covers `api.redislabs.com` and its docstring
+  says so rather than letting the provider name imply a database probe.
 - **The `npm` detection rule was withdrawn** and `npm` now ships
   `detectable = False`, reached with `--provider npm`. This is the second
   withdrawal in two roadmap items, on the same ground as Mailgun's in R2.3: npm

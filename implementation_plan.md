@@ -672,6 +672,45 @@ providers, including a second composite credential parsed from the *right*, a
 third `read_only_post`, and a plugin whose probe table is chosen by the
 credential's prefix.
 
+### 13.4 Three ways a provider can fail to exist (roadmap R2.5)
+
+§4 assumes that a provider either has a plugin or does not yet. R2.3, R2.4 and
+R2.5 each found a distinct reason one cannot, and keeping them apart matters
+because the remedies differ:
+
+| Failure | Example | What is missing | Remedy |
+| --- | --- | --- | --- |
+| **Undetectable** | Mailgun, npm, Bitbucket | a published credential format | `detectable = False`, reached with `--provider` |
+| **Un-enumerable** | PyPI | any authenticated *read* | a rule with no plugin |
+| **Not a credential** | Firebase | authorisation itself | no rule and no plugin |
+
+The third is the one R2.5 added and the one most likely to be got wrong,
+because a Firebase key *looks* exactly like a Google Cloud key — it is the same
+`AIza…` format — and one of them authorises billable APIs while the other,
+per Google's own documentation, "only identifies your Firebase project and app".
+Shipping a `firebase` provider would have produced a severity for a string that
+carries no permissions, and would have duplicated `providers/google.py`, which
+already probes what an `AIza…` key genuinely reaches. `plan.md` §5.2 carries all
+three as corollaries.
+
+**A fourth shape, and this one *is* buildable: the credential that routes
+itself.** A Supabase legacy key is a JWT carrying `ref` (the project) and `role`
+(what it may do), so `parse_credential` derives the API host from the credential
+with no request. That is new — every previous provider had a fixed host, or
+took one alongside the key (Mailchimp's data-centre suffix comes closest). It
+needed no interface change either: decoding is pure and offline, which is the
+same property `detect` is already required to have.
+
+**The line it must not cross.** Reading a claim out of a credential the operator
+already holds is not the same as trusting a token, so there is no signature
+check — and it must not become a *detection rule*. A regex over three base64
+segments claims every JWT ever pasted at keyreach, which is the argument that
+kept Discord's community token pattern out in R2.2. So Supabase is detectable
+for its current formats and undetectable for its legacy ones, which is a state
+no provider had occupied before.
+
+**The interface needed nothing, for the fifth item running.**
+
 ### Phase 2 — Depth
 - HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating.
 

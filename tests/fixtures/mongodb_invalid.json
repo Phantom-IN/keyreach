@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":\"invalid_client\",\"error_description\":\"Invalid credentials provided\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 401,
+      "url": "https://cloud.mongodb.com/api/oauth/token"
+    }
+  ]
+}

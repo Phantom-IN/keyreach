@@ -1,0 +1,31 @@
+{
+  "interactions": [
+    {
+      "body": "{\"account\":{\"id\":900001,\"name\":\"Northwind Traders\",\"createdTimestamp\":\"2024-06-02T09:00:00Z\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.redislabs.com/v1/"
+    },
+    {
+      "body": "{\"cloudAccounts\":[{\"id\":1,\"name\":\"Redis Labs Internal Resources\",\"provider\":\"AWS\",\"status\":\"active\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.redislabs.com/v1/cloud-accounts"
+    },
+    {
+      "body": "{\"subscriptions\":[{\"id\":220011,\"name\":\"production\",\"status\":\"active\",\"numberOfDatabases\":4,\"cloudDetails\":[{\"provider\":\"AWS\",\"regions\":[{\"region\":\"eu-west-1\"}]}]}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.redislabs.com/v1/subscriptions"
+    }
+  ]
+}

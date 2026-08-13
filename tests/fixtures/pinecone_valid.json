@@ -1,0 +1,40 @@
+{
+  "interactions": [
+    {
+      "body": "{\"assistants\":[{\"name\":\"support-copilot\",\"status\":\"Ready\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.pinecone.io/assistant/assistants"
+    },
+    {
+      "body": "{\"data\":[]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.pinecone.io/backups"
+    },
+    {
+      "body": "{\"collections\":[{\"name\":\"warehouse-snapshot\",\"status\":\"Ready\",\"dimension\":1536}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.pinecone.io/collections"
+    },
+    {
+      "body": "{\"indexes\":[{\"name\":\"northwind-docs\",\"dimension\":1536,\"metric\":\"cosine\",\"host\":\"northwind-docs-0000000.svc.aped-0000-a00a.pinecone.io\",\"spec\":{\"serverless\":{\"cloud\":\"aws\",\"region\":\"us-east-1\"}}}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.pinecone.io/indexes"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"message\":\"Invalid API key\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://abcdefghijklmnopqrst.supabase.co/auth/v1/settings"
+    }
+  ]
+}
