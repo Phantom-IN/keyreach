@@ -1,0 +1,22 @@
+{
+  "interactions": [
+    {
+      "body": "{\"data\":{\"requestContext\":{\"userId\":12345,\"apiKey\":\"<key>\"}}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 200,
+      "url": "https://api.newrelic.com/graphql"
+    },
+    {
+      "body": "{\"applications\":[{\"id\":1,\"name\":\"checkout-service\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.newrelic.com/v2/applications.json"
+    }
+  ]
+}

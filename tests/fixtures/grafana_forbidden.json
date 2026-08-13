@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"code\":\"Forbidden\",\"message\":\"Token does not have permission accesspolicies:read\",\"requestId\":\"a1b2c3d4-0000-0000-0000-000000000000\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 403,
+      "url": "https://www.grafana.com/api/v1/accesspolicies?region=us"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"errors\":[\"Unauthorized\"]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.datadoghq.com/api/v2/validate"
+    }
+  ]
+}

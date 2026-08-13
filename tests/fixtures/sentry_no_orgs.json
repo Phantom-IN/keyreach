@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "[]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sentry.io/api/0/organizations/"
+    }
+  ]
+}

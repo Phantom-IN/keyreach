@@ -17,16 +17,17 @@
 
 > **v0.1.0 — the first release.**
 >
-> **Twenty-seven providers across seven categories, usable from a terminal.**
+> **Thirty-one providers across eight categories, usable from a terminal.**
 > The whole pipeline — detect → validate → enumerate → score → report — is built
 > and covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
 > **payment** (`stripe`, `razorpay`, `paystack`, `paypal`), **communications**
 > (`slack`, `twilio`, `telegram`, `discord`, `zoom`), **email/marketing**
-> (`sendgrid`, `mailgun`, `postmark`, `resend`, `mailchimp`), and **dev
-> platforms** (`github`, `gitlab`, `bitbucket`, `npm`, `dockerhub`), and
-> **databases/data infra** (`mongodb`, `supabase`, `redis`, `pinecone`). Each key is
-> scored from the capabilities keyreach actually confirmed, with the rationale
-> attached.
+> (`sendgrid`, `mailgun`, `postmark`, `resend`, `mailchimp`), **dev
+> platforms** (`github`, `gitlab`, `bitbucket`, `npm`, `dockerhub`),
+> **databases/data infra** (`mongodb`, `supabase`, `redis`, `pinecone`), and
+> **monitoring/observability** (`datadog`, `sentry`, `newrelic`, `grafana`).
+> Each key is scored from the capabilities keyreach actually confirmed, with
+> the rationale attached.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Phase 0
@@ -284,12 +285,13 @@ monitoring, auth/identity, and a generic bearer/JWT inspector. The full target
 list is [`plan.md`](plan.md) §8; the shipping order is
 [`ROADMAP.md`](ROADMAP.md).
 
-**27 providers across 7 categories.** v0.1 shipped 10 — the target was ≥10
+**31 providers across 8 categories.** v0.1 shipped 10 — the target was ≥10
 across ≥4, including cloud, AI, payment and comms — R2.1 and R2.2 added two
 each, R2.3 opened the email category with five, R2.4 took dev platforms to five,
-and R2.5 opened databases with four. The count is asserted by a test rather than
-counted by hand (`tests/test_provider_contract.py`), so a deleted provider or a
-typo'd category fails the build.
+R2.5 opened databases with four, and R2.6 opened monitoring/observability with
+four. The count is asserted by a test rather than counted by hand
+(`tests/test_provider_contract.py`), so a deleted provider or a typo'd category
+fails the build.
 
 | Provider | Category | Credential | What a live key is shown to reach |
 | --- | --- | --- | --- |
@@ -320,6 +322,10 @@ typo'd category fails the build.
 | `supabase` | database | `<ref>:sb_secret_…` / `sb_publishable_…`, or a legacy JWT | auth settings, storage buckets, the exposed table schema, and the end-user list for a key that bypasses Row Level Security |
 | `redis` | database | `<account key>:<secret key>` *(needs `--provider redis`)* | Redis Cloud subscriptions and the cloud accounts they deploy into |
 | `pinecone` | database | `pcsk_…` | indexes, collections, backups and assistants — the shape of what the account has embedded |
+| `datadog` | monitoring | `API_KEY:APP_KEY` *(needs `--provider datadog`)* | dashboards, monitors, users, roles — a bare API key alone still validates |
+| `sentry` | monitoring | auth token *(needs `--provider sentry`)* | organizations, projects, members, teams — with write and admin read from the org's own `access` field |
+| `newrelic` | monitoring | `NRAK-…` | account identity via NerdGraph, APM applications via REST v2 |
+| `grafana` | monitoring | `glc_…` | the organization's Grafana Cloud access policies and every token issued under them |
 
 **Severity is computed, and the differences are the point.** A `sk_live_` Stripe
 key rates Critical and a `sk_test_` one does not, because Stripe documents
@@ -358,6 +364,8 @@ keyreach 'EMAIL:API_TOKEN' --provider bitbucket
 keyreach 'ACCESS_TOKEN' --provider npm
 keyreach 'CLIENT_ID:CLIENT_SECRET' --provider mongodb
 keyreach 'ACCOUNT_KEY:SECRET_KEY' --provider redis
+keyreach 'API_KEY:APP_KEY' --provider datadog
+keyreach 'AUTH_TOKEN' --provider sentry
 ```
 
 *Supabase legacy keys name their own project.* An `anon` or `service_role` key
@@ -383,6 +391,27 @@ and the rule is sound, but PyPI publishes exactly one endpoint that accepts an
 API token — a package upload. keyreach will not perform a write to establish a
 capability, so it reports the vendor, the severity and the rotation guide, and
 stops there.
+
+*Sentry's DSN gets nothing at all — not even a detection rule.* Sentry's own
+docs say a DSN "only allow[s] submission of new events... they do not allow
+read access to any information", the same write-only shape as a New Relic
+License key or a PyPI token. Unlike PyPI, no rule was written for it: doing so
+would hand a live, working DSN to the `sentry` auth-token plugin, which would
+report it "invalid" for not being one — worse than the silence it gets instead.
+
+*New Relic ships one key of at least four.* Only the `NRAK-` User key is
+detected and probed. License keys are the exact shape of a SHA-1 hash (New
+Relic documents them only as "a 40-character hexadecimal string"), so no rule
+was written; they are also un-enumerable, the same way PyPI's token is —
+confirming one is live means sending real telemetry, which keyreach will not do.
+
+*Grafana means Grafana Cloud's access policy tokens, not a self-hosted
+instance.* A self-managed Grafana's service-account tokens (`glsa_…`)
+authenticate against whatever host the operator chose, which the token itself
+never names — a harder version of GitLab's self-managed gap, since GitLab at
+least has `gitlab.com` as a real default to fall back on. Grafana has no
+analogous default, so only Cloud's organization-level `glc_…` tokens, reachable
+at a fixed host, are covered.
 
 *Postmark's two token types look identical*, so keyreach does not ask you which
 you have. It tries both headers, and Postmark's own refusal names the one it

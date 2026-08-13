@@ -14,6 +14,41 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **Four monitoring/observability providers (roadmap item **R2.6**)** —
+  `datadog`, `sentry`, `newrelic` and `grafana` — opening the `monitoring`
+  category and taking keyreach to **thirty-one providers across eight
+  categories**.
+  - **`datadog`** — dashboards, monitors, users and RBAC roles. The first
+    composite credential where each half is independently meaningful: Datadog's
+    own docs split "write needs an API key" from "read needs both", so a bare
+    API key validates on its own rather than being recognised and left unprobed.
+  - **`sentry`** — organizations, projects, members and teams, with write and
+    admin access read from the `access` array Sentry returns on every
+    organization object — the same call that proves liveness, since Sentry
+    publishes no dedicated "read my own scopes" endpoint.
+  - **`newrelic`** — account identity via NerdGraph (a GraphQL read, sent as the
+    fifth `read_only_post`) and APM applications via REST v2. Only the `NRAK-`
+    User key ships; License keys are the exact shape of a SHA-1 hash and are
+    also un-enumerable without sending real telemetry, so no rule was written
+    and no plugin covers them.
+  - **`grafana`** — Grafana Cloud's organization-level access policies and every
+    token issued under them. Narrowed to Grafana Cloud only: a self-hosted
+    instance's `glsa_` tokens have no fixed host to probe, a harder version of
+    GitLab's self-managed gap.
+- **Sentry's DSN gets no detection rule and no plugin.** Sentry documents a DSN
+  as write-only — "they do not allow read access to any information" — the same
+  shape as a New Relic License key or a PyPI token. Unlike PyPI, no rule was
+  written: it would hand a live, correctly-functioning DSN to the `sentry`
+  auth-token plugin, which would report it "invalid" for not being one.
+- **Two live-API corrections found by probing rather than reading.** Datadog's
+  OpenAPI spec documents only `403` for `/api/v2/validate`; the live API also
+  answers `401`. New Relic's REST v2 prose calls its header `Api-Key`; the live
+  API silently ignores that and reads `X-Api-Key` instead.
+- **A fifth `read_only_post`**, after PayPal (R2.1), Zoom (R2.2), Docker Hub
+  (R2.4) and MongoDB Atlas (R2.5): New Relic's NerdGraph query. Unlike the
+  first four, nothing here is an authentication exchange — NerdGraph is
+  GraphQL, so even a pure read has no GET form at all.
+
 - **Four database and data-infrastructure providers (roadmap item **R2.5**)** —
   `mongodb`, `supabase`, `redis` and `pinecone` — opening the `database`
   category and taking keyreach to **twenty-seven providers across seven
