@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"code\":\"InvalidCredentials\",\"message\":\"Token could not be parsed\",\"requestId\":\"de8fd7d3-6fa4-4690-928a-b3ca86fa2901\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://www.grafana.com/api/v1/accesspolicies?region=us"
+    }
+  ]
+}

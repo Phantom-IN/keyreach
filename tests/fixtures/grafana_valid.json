@@ -1,0 +1,22 @@
+{
+  "interactions": [
+    {
+      "body": "{\"items\":[{\"id\":\"c45485b6-8321-4cf2-bcec-12006df755ff\",\"orgId\":\"1\",\"name\":\"stack-readers\",\"displayName\":\"Stack Readers\",\"scopes\":[\"metrics:read\",\"logs:read\",\"accesspolicies:read\"],\"realms\":[{\"type\":\"stack\",\"identifier\":\"123\"}],\"status\":\"active\"}],\"metadata\":{\"pagination\":{\"pageSize\":500}}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://www.grafana.com/api/v1/accesspolicies?region=us"
+    },
+    {
+      "body": "{\"items\":[{\"id\":\"c45485b6-8321-4cf2-bcec-12006df755ff\",\"accessPolicyId\":\"c45485b6-8321-4cf2-bcec-12006df755ff\",\"name\":\"agent-token\",\"displayName\":\"Agent Token\"}],\"metadata\":{\"pagination\":{\"pageSize\":500}}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://www.grafana.com/api/v1/tokens?region=us"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"errors\":[{\"message\":\"authentication required\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "POST",
+      "status_code": 401,
+      "url": "https://api.newrelic.com/graphql"
+    }
+  ]
+}

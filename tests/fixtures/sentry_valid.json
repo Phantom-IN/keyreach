@@ -1,0 +1,40 @@
+{
+  "interactions": [
+    {
+      "body": "[{\"id\":\"1\",\"slug\":\"acme\",\"access\":[\"org:read\",\"member:read\"],\"status\":{\"id\":\"active\",\"name\":\"active\"}}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sentry.io/api/0/organizations/"
+    },
+    {
+      "body": "[{\"id\":\"10\",\"slug\":\"backend\",\"name\":\"Backend\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sentry.io/api/0/organizations/acme/projects/"
+    },
+    {
+      "body": "[{\"id\":\"5\",\"email\":\"dev@example.com\",\"name\":\"Dev One\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sentry.io/api/0/organizations/acme/members/"
+    },
+    {
+      "body": "[{\"id\":\"3\",\"slug\":\"backend-team\",\"name\":\"Backend Team\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://sentry.io/api/0/organizations/acme/teams/"
+    }
+  ]
+}

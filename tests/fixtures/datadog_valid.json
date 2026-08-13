@@ -1,0 +1,49 @@
+{
+  "interactions": [
+    {
+      "body": "{\"data\":{\"attributes\":{\"api_key_id\":\"a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6\",\"api_key_scopes\":[\"dashboards_read\",\"monitors_read\"],\"valid\":true},\"id\":\"550e8400-e29b-41d4-a716-446655440000\",\"type\":\"validate_v2\"}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.datadoghq.com/api/v2/validate"
+    },
+    {
+      "body": "{\"dashboards\":[{\"id\":\"abc-123-def\",\"title\":\"Production Overview\"}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.datadoghq.com/api/v1/dashboard"
+    },
+    {
+      "body": "[{\"id\":123,\"name\":\"High CPU on web fleet\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.datadoghq.com/api/v1/monitor"
+    },
+    {
+      "body": "{\"data\":[{\"attributes\":{\"email\":\"ops@example.com\",\"handle\":\"ops\",\"name\":\"Ops\",\"status\":\"Active\"},\"id\":\"00000000-0000-0000-0000-000000000001\",\"type\":\"users\"}],\"included\":[],\"meta\":{}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.datadoghq.com/api/v2/users"
+    },
+    {
+      "body": "{\"data\":[{\"attributes\":{\"name\":\"Datadog Admin Role\"},\"id\":\"00000000-0000-0000-0000-000000000002\",\"type\":\"roles\"}],\"meta\":{\"page\":{\"total_count\":1,\"total_filtered_count\":1}}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.datadoghq.com/api/v2/roles"
+    }
+  ]
+}

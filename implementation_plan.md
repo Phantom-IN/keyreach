@@ -711,6 +711,81 @@ no provider had occupied before.
 
 **The interface needed nothing, for the fifth item running.**
 
+### 13.5 A composite credential where each half stands alone (roadmap R2.6)
+
+Every composite credential through R2.5 — PayPal, Zoom, MongoDB Atlas — is
+useless in pieces: none of them authenticates anything until every part is
+exchanged together for one OAuth token. Datadog breaks that pattern. Its own
+docs split the two halves by *what they are needed for* rather than by
+authentication mechanics: "Requests that write data require reporting access
+and require an API key. Requests that read data require full access and also
+require an application key." So `parse_credential` accepts a bare API key —
+`Credential(api_key, app_key="")` — and `validate` proves it live on its own
+via `GET /api/v2/validate`, which the OpenAPI spec marks
+`x-permission: {operator: OPEN, permissions: []}`. `enumerate` still needs
+both, so a bare API key validates and enumerates to nothing, which is
+different from PayPal's or Docker Hub's bare halves: those are "recognised,
+reported, and not probed" because they cannot authenticate at all, while
+Datadog's bare half genuinely can.
+
+**A vendor's own scope-name grammar can be read straight off the response that
+proves liveness, with no dedicated introspection call.** Sentry has no
+`/auth/`-style endpoint anywhere in its published OpenAPI spec
+(`github.com/getsentry/sentry-api-schema`). What it has instead is an `access`
+field on every object `GET /api/0/organizations/` returns — the scopes this
+token holds for that org — so the same request that proves the token is live
+also answers "what can it do", parsed with the confirmed `resource:action`
+grammar (`org:read`, `member:admin`, ...) the same way Zoom's
+`resource:operation:action:role` scopes are parsed. Grafana Cloud's access
+policy tokens land in the same *shape* of gap from the opposite direction:
+the only fixed-host endpoint (`/v1/accesspolicies`) needs
+`accesspolicies:read`, a scope most tokens minted for their ordinary purpose
+(writing metrics or logs) will not carry, and Grafana documents no
+scope-free "whoami" call at all. Two providers this item, not one, ship a
+validation note that names the ambiguity — "may mean the token is invalid, or
+that it is live but was never granted X" — rather than picking a side.
+
+**GraphQL makes `read_only_post` a cleaner argument than any of the four before
+it.** New Relic's NerdGraph has no GET form for any query — POST is the only
+transport GraphQL defines — so `{ requestContext { userId apiKey } }`, a pure
+read with no mutation anywhere in it, is still sent as `POST`. PayPal, Zoom,
+Docker Hub and MongoDB Atlas all needed `read_only_post` because the *only*
+way to authenticate was a POST; this one needs it because the *only* way to
+read anything at all is a POST, full stop. The query itself is deliberately
+the one example New Relic's own NerdGraph introduction page shows verbatim —
+nothing richer (`actor { accounts { ... } }`, entity search) was assembled
+from field names seen only in third-party tooling this session could not
+confirm against `docs.newrelic.com`.
+
+**Running the real APIs corrected two things reading them did not.** Datadog's
+OpenAPI spec lists only `403` for `/api/v2/validate`; probing it with an
+invalid key returns `401 {"errors":["Unauthorized"]}` as well — a status the
+spec omits outright. New Relic's REST v2 prose names its auth header
+`Api-Key`; probing `GET /v2/applications.json` with exactly that header
+returns `401 {"error":{"title":"No API key specified"}}` — New Relic silently
+drops it. The header the live API actually reads is `X-Api-Key`, confirmed by
+the same probe returning a *different* rejection
+(`{"error":{"title":"Invalid API Key",...}}`) once corrected. Sixth item
+running where measuring beat reading, after Postmark/Resend (R2.3), Bitbucket
+(R2.4) and MongoDB Atlas (R2.5).
+
+**Only one of the four named providers ships everything the vendor issues, and
+saying why is most of the item.** New Relic issues at least four key
+families; only the `NRAK-` User key is detected and probed. License keys are
+documented as "a 40-character hexadecimal string" — no prefix, the exact
+shape of a SHA-1 hash — so no detection rule was written at all, a stricter
+outcome than an *undetectable* provider (Zoom, Discord), which at least has
+no false-positive risk to weigh because there is nothing to match against.
+License keys are also un-enumerable the same way a PyPI token is: the only
+documented "is it live" signal means submitting real telemetry. Grafana
+narrows from "any Grafana" to "Grafana Cloud's organization-level access
+policy tokens" for a structural reason harder than Redis's RESP-vs-HTTP split
+in R2.5 — a self-hosted instance's `glsa_` tokens authenticate against a host
+Grafana never publishes and the token never names, and unlike GitLab's
+self-managed gap there is no `gitlab.com`-equivalent default to fall back on.
+
+**The interface needed nothing, for the sixth item running.**
+
 ### Phase 2 — Depth
 - HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating.
 

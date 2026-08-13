@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"detail\":\"Invalid token\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://sentry.io/api/0/organizations/"
+    }
+  ]
+}

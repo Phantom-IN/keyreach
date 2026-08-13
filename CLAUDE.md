@@ -65,7 +65,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider. Twenty-seven as of R2.5 (`mongodb`, `supabase`, `redis`, `pinecone` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.py`, `dockerhub.py` (devtools); `mongodb.py`, `supabase.py`, `redis.py`, `pinecone.py` (database). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, R2.4 four and R2.5 four — five consecutive items, none of which needed an interface change. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
+- `keyreach/providers/*` — one file (or YAML) per provider. Thirty-one as of R2.6 (`datadog`, `sentry`, `newrelic`, `grafana` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.py`, `dockerhub.py` (devtools); `mongodb.py`, `supabase.py`, `redis.py`, `pinecone.py` (database); `datadog.py`, `sentry.py`, `newrelic.py`, `grafana.py` (monitoring). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, R2.4 four, R2.5 four and R2.6 four — six consecutive items, none of which needed an interface change. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
   - **`pypi` is a detection rule with no plugin, on purpose.** PyPI's only token-accepting endpoint is a package upload, so no plugin can exist without performing a write. Do not add one. See `plan.md` §5.2 and `tests/test_detect.py::test_pypi_is_detected_and_deliberately_has_no_plugin`.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
@@ -92,6 +92,31 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Three things R2.6 found
+
+- **A composite credential's two halves are not always useless apart.** Every
+  prior composite (PayPal, Zoom, MongoDB Atlas) exchanges its parts together
+  for one OAuth token; a lone half authenticates nothing. Datadog's own docs
+  split "write needs an API key" from "read needs both", so a bare API key
+  genuinely validates on its own via `GET /api/v2/validate`. Do not assume the
+  next composite credential is useless in pieces just because the last three
+  were — check what the vendor's own docs say each half is *for*.
+- **`read_only_post` earns its cleanest justification yet from GraphQL.**
+  PayPal, Zoom, Docker Hub and MongoDB Atlas all needed it because the *only*
+  way to authenticate was a POST. New Relic's NerdGraph needs it because the
+  *only* way to read anything at all is a POST — GraphQL has no GET form for
+  a query. Send exactly the query New Relic's own docs show verbatim
+  (`{ requestContext { userId apiKey } }`); do not assemble a richer one from
+  field names seen only in third-party tooling.
+- **The "detection rule, no plugin" pattern PyPI established does not
+  generalise to every write-only credential.** Sentry's DSN is exactly as
+  write-only as PyPI's token and just as distinctively shaped, but it gets
+  **neither** a rule nor a plugin: `keyreach/providers/sentry.py` already
+  exists for Sentry's auth tokens, so a DSN detection rule would hand that
+  plugin a live, working credential it would then report "invalid" for not
+  being an auth token. Before reusing PyPI's pattern, check whether the same
+  provider name is already claimed by a better credential.
 
 ### Three things R2.5 found
 

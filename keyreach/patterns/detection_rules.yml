@@ -409,3 +409,31 @@ rules:
     pattern: '^(?:[a-z]{20}:)?sb_publishable_[A-Za-z0-9_-]{20,}$'
     confidence: 0.99
     source: https://supabase.com/docs/guides/api/api-keys
+
+  # ── Monitoring / observability ────────────────────────────────────────────
+  - id: newrelic-user-key
+    provider: newrelic
+    description: New Relic User key
+    # Confirmed from New Relic's own REST-API-keys retirement notice: "If your
+    # API key starts with NRAK, no update is required" — a primary-source
+    # statement of the prefix, even though it is not the dedicated key-format
+    # page. No exact length is published, so the pattern floors at 20 rather
+    # than inventing a count, the same treatment Pinecone's and Docker Hub's
+    # rules give an unconfirmed length.
+    #
+    # License keys (40-char hex, no prefix), Query keys and Browser keys are
+    # deliberately not matched here — see keyreach/providers/newrelic.py.
+    pattern: '^NRAK-[A-Za-z0-9]{20,}$'
+    confidence: 0.95
+    source: https://docs.newrelic.com/whats-new/2025/01/whats-new-03-01-rest-api-keys-eol/
+
+  - id: grafana-cloud-access-policy-token
+    provider: grafana
+    description: Grafana Cloud access policy token
+    # `glc_eyJrIjoi...` is exampled in Grafana Cloud's access-policies guide.
+    # Self-hosted Grafana service account tokens (`glsa_...`) are not matched:
+    # they have no fixed host to probe, so detecting them would recognise a
+    # credential this plugin cannot reach — see the module docstring.
+    pattern: '^glc_[A-Za-z0-9_=-]{20,}$'
+    confidence: 0.95
+    source: https://grafana.com/docs/grafana-cloud/account-management/authentication-and-permissions/access-policies/
