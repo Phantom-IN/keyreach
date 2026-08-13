@@ -630,6 +630,48 @@ one deriving its host from the key itself, one discovering which of two
 credential *types* it holds — and no change to `keyreach/core/`. The count of
 consecutive items that have not touched it is now three.
 
+### 13.3 Re-verification found three rules in three different states (roadmap R2.4)
+
+R2.3 established that a shipped rule can stop being verifiable. R2.4 opened by
+applying that to the three devtools rules keyreach already had, before writing a
+line of new code, and the result is the argument for making it routine:
+
+| Rule | State | Action |
+| --- | --- | --- |
+| `pypi-api-token` | source still says it | kept, unchanged |
+| `gitlab-pat` | correct, **cited to the wrong page** | `source` corrected |
+| `npm-access-token` | **unsupportable anywhere** | withdrawn |
+
+Three rules, three outcomes. The middle one is the new category: GitLab's
+personal-access-token guide no longer names a prefix, but GitLab's token-prefix
+table does, so the rule was right and only its citation was wrong. That is
+cheaper than a withdrawal and just as invisible without someone opening the URL
+— and a `source` field that does not support its rule is worth exactly nothing,
+since re-verification is the only thing it is for.
+
+**This is the specification for R2.10's canary, written from evidence.** It has
+to check three things, not one:
+
+1. that each rule's `source` still resolves, and still contains the format the
+   rule claims;
+2. that each probe endpoint still exists — the `404`-versus-`401` distinction
+   this repository already uses by hand;
+3. that no probe has quietly become *deprecated*, which Atlassian's
+   specification marks explicitly and which R2.4 used to drop three otherwise
+   working Bitbucket endpoints.
+
+**A second axis, also from R2.4: detection and enumeration fail
+independently.** PyPI's format is documented and its rule is sound, and there is
+no authenticated read anywhere in its API, so no plugin can exist without
+performing a write. `pypi` therefore ships as a rule with no plugin — a state
+`tests/test_provider_contract.py` has permitted since R1.4 and nothing had
+exercised. `plan.md` §5.2 records both axes.
+
+**And the interface needed nothing, for the fourth item running.** Four
+providers, including a second composite credential parsed from the *right*, a
+third `read_only_post`, and a plugin whose probe table is chosen by the
+credential's prefix.
+
 ### Phase 2 — Depth
 - HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating.
 

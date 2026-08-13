@@ -1,0 +1,31 @@
+{
+  "interactions": [
+    {
+      "body": "{\"type\":\"user\",\"display_name\":\"A Maintainer\",\"nickname\":\"a-maintainer\",\"account_id\":\"000000:00000000-0000-4000-8000-00000000000a\",\"uuid\":\"{00000000-0000-4000-8000-00000000000b}\",\"account_status\":\"active\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.bitbucket.org/2.0/user"
+    },
+    {
+      "body": "{\"pagelen\":1,\"size\":2,\"page\":1,\"values\":[{\"type\":\"email\",\"email\":\"a.maintainer@northwind.example\",\"is_primary\":true,\"is_confirmed\":true}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.bitbucket.org/2.0/user/emails?pagelen=1"
+    },
+    {
+      "body": "{\"pagelen\":1,\"size\":3,\"page\":1,\"values\":[{\"type\":\"workspace_membership\",\"permission\":\"owner\",\"workspace\":{\"slug\":\"northwind\",\"name\":\"Northwind Traders\"}}]}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://api.bitbucket.org/2.0/user/workspaces?pagelen=1"
+    }
+  ]
+}

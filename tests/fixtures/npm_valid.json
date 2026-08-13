@@ -1,0 +1,22 @@
+{
+  "interactions": [
+    {
+      "body": "{\"objects\":[{\"name\":\"ci-publish\",\"key\":\"0000000000000000000000000000000000000000\",\"token\":\"npm_aBcD\",\"readonly\":false,\"bypass_2fa\":false,\"cidr_whitelist\":null,\"revoked\":false,\"created\":\"2026-02-01T00:00:00.000Z\",\"permissions\":\"read-write\"}],\"total\":4,\"urls\":{}}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://registry.npmjs.org/-/npm/v1/tokens"
+    },
+    {
+      "body": "[{\"name\":\"@northwind/warehouse-client\",\"version\":\"3.2.0\",\"stage_id\":\"00000000-0000-4000-8000-00000000000a\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://registry.npmjs.org/-/stage"
+    }
+  ]
+}

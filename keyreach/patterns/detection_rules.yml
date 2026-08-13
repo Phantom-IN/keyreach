@@ -304,21 +304,70 @@ rules:
 
   - id: gitlab-pat
     provider: gitlab
-    description: GitLab personal access token
+    description: GitLab access token
+    # `glpat-` is documented on GitLab's token-prefix table, which is where the
+    # `source` now points. R2.4 re-verified the page this rule had cited since
+    # R0.5 — the personal-access-token guide — and found it no longer names any
+    # prefix; it says only that tokens "inherit the default prefix setting".
+    # The rule is correct and its citation was not, which is the cheaper half of
+    # what R2.3 found at Mailgun.
+    #
+    # The same prefix covers personal, project and group access tokens. Nothing
+    # published separates them, and the engine does not need to: GitLab's
+    # `/personal_access_tokens/self` answers for all three.
+    #
+    # Note the limit GitLab states outright: this prefix is the *default*, and a
+    # self-managed administrator can change it for personal access tokens. A
+    # customised instance is therefore undetectable and needs `--provider`.
     pattern: '^glpat-[A-Za-z0-9_-]{20,}$'
     confidence: 0.99
-    source: https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html
+    source: https://docs.gitlab.com/security/tokens/
 
-  - id: npm-access-token
-    provider: npm
-    description: npm access token
-    pattern: '^npm_[A-Za-z0-9]{36}$'
-    confidence: 0.99
-    source: https://docs.npmjs.com/about-access-tokens
+  # NO `npm` RULE — WITHDRAWN IN R2.4, ON THE SAME GROUND AS MAILGUN IN R2.3.
+  #
+  # This file carried `^npm_[A-Za-z0-9]{36}$` from R0.5, sourced to npm's
+  # "About access tokens" page. Re-verifying that page in R2.4 found it
+  # describes a token only as "a hexadecimal string that you can use to
+  # authenticate" — no prefix, and a charset the rule contradicts. npm's CLI
+  # reference and its CI/CD guide both deliberately avoid printing a token
+  # value at all ("Do **not** put a token in this file"), so there is nowhere
+  # left in npm's own documentation to source a format from.
+  #
+  # That page also records that legacy tokens were removed in November 2025 and
+  # only granular access tokens remain, so the format the rule was written
+  # against is a format npm no longer issues.
+  #
+  # `keyreach/providers/npm.py` sets `detectable = False` and is reached with
+  # `--provider npm`. Second withdrawal in two items; see `plan.md` §5.2.
 
   - id: pypi-api-token
     provider: pypi
     description: PyPI API token
+    # Verified again in R2.4: pypi.org/help still says "Set your password to
+    # the token value, including the `pypi-` prefix".
+    #
+    # **This rule deliberately has no plugin behind it.** PyPI documents nine
+    # APIs and exactly one takes an API token — `POST upload.pypi.org/legacy/`,
+    # which publishes a package. There is no authenticated read, so keyreach
+    # cannot validate or enumerate a PyPI token without performing a write, and
+    # it will not. Detection is still worth having on its own: the report names
+    # the vendor and the rotation guide. See `plan.md` §5.2 and ROADMAP R2.4.
     pattern: '^pypi-[A-Za-z0-9_-]{50,}$'
     confidence: 0.99
     source: https://pypi.org/help/#apitoken
+
+  - id: dockerhub-access-token
+    provider: dockerhub
+    description: Docker Hub access token
+    # Both prefixes come from Docker's own OpenAPI specification, which is the
+    # only place Docker publishes them: the auth request's `secret` field is
+    # exampled as `dckr_pat_124509ugsdjga93`, and the organization-token
+    # response's `token` field as `dckr_oat_7awgM4jG5SQvxcvmNzhKj8PQjxo`.
+    # Docker's prose access-token pages show neither.
+    #
+    # Matched with an optional `<identifier>:` prefix because Docker's token
+    # exchange requires both halves — a bare token is recognised, reported, and
+    # explicitly not probed, the same treatment a bare AWS access key id gets.
+    pattern: '^(?:[A-Za-z0-9][A-Za-z0-9._-]*:)?dckr_(?:pat|oat)_[A-Za-z0-9_-]{20,}$'
+    confidence: 0.99
+    source: https://docs.docker.com/reference/api/hub/latest/

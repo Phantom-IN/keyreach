@@ -1,0 +1,40 @@
+{
+  "interactions": [
+    {
+      "body": "{\"id\":9900001,\"name\":\"ci-deploy\",\"revoked\":false,\"created_at\":\"2026-01-14T09:12:00.000Z\",\"scopes\":[\"read_api\",\"read_repository\",\"read_user\"],\"user_id\":410022,\"last_used_at\":\"2026-08-11T18:04:00.000Z\",\"active\":true,\"expires_at\":\"2027-01-14\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://gitlab.com/api/v4/personal_access_tokens/self"
+    },
+    {
+      "body": "{\"id\":410022,\"username\":\"northwind-ci\",\"name\":\"Northwind CI\",\"state\":\"active\",\"web_url\":\"https://gitlab.com/northwind-ci\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://gitlab.com/api/v4/user"
+    },
+    {
+      "body": "[{\"id\":77001,\"name\":\"Northwind\",\"path\":\"northwind\",\"visibility\":\"private\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://gitlab.com/api/v4/groups?per_page=1"
+    },
+    {
+      "body": "[{\"id\":880012,\"name\":\"warehouse-api\",\"path_with_namespace\":\"northwind/warehouse-api\",\"visibility\":\"private\"}]",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://gitlab.com/api/v4/projects?membership=true&per_page=1"
+    }
+  ]
+}
