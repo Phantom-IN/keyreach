@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "<html>\n<head><title>401 Authorization Required</title></head>\n<body>\n<center><h1>401 Authorization Required</h1></center>\n<hr><center>nginx</center>\n</body>\n</html>\n",
+      "headers": {
+        "content-type": "text/html"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://api.redislabs.com/v1/subscriptions"
+    }
+  ]
+}

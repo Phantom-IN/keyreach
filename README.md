@@ -17,13 +17,14 @@
 
 > **v0.1.0 — the first release.**
 >
-> **Twenty-three providers across six categories, usable from a terminal.** The
-> whole pipeline — detect → validate → enumerate → score → report — is built and
-> covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
+> **Twenty-seven providers across seven categories, usable from a terminal.**
+> The whole pipeline — detect → validate → enumerate → score → report — is built
+> and covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
 > **payment** (`stripe`, `razorpay`, `paystack`, `paypal`), **communications**
 > (`slack`, `twilio`, `telegram`, `discord`, `zoom`), **email/marketing**
 > (`sendgrid`, `mailgun`, `postmark`, `resend`, `mailchimp`), and **dev
-> platforms** (`github`, `gitlab`, `bitbucket`, `npm`, `dockerhub`). Each key is
+> platforms** (`github`, `gitlab`, `bitbucket`, `npm`, `dockerhub`), and
+> **databases/data infra** (`mongodb`, `supabase`, `redis`, `pinecone`). Each key is
 > scored from the capabilities keyreach actually confirmed, with the rationale
 > attached.
 >
@@ -283,12 +284,12 @@ monitoring, auth/identity, and a generic bearer/JWT inspector. The full target
 list is [`plan.md`](plan.md) §8; the shipping order is
 [`ROADMAP.md`](ROADMAP.md).
 
-**23 providers across 6 categories.** v0.1 shipped 10 — the target was ≥10
+**27 providers across 7 categories.** v0.1 shipped 10 — the target was ≥10
 across ≥4, including cloud, AI, payment and comms — R2.1 and R2.2 added two
-each, R2.3 opened the email category with five, and R2.4 took dev platforms to
-five. The count is asserted by a test rather than counted by hand
-(`tests/test_provider_contract.py`), so a deleted provider or a typo'd category
-fails the build.
+each, R2.3 opened the email category with five, R2.4 took dev platforms to five,
+and R2.5 opened databases with four. The count is asserted by a test rather than
+counted by hand (`tests/test_provider_contract.py`), so a deleted provider or a
+typo'd category fails the build.
 
 | Provider | Category | Credential | What a live key is shown to reach |
 | --- | --- | --- | --- |
@@ -315,6 +316,10 @@ fails the build.
 | `bitbucket` | devtools | `<email>:<api token>` *(needs `--provider bitbucket`)* | account, email addresses, workspaces |
 | `npm` | devtools | access token *(needs `--provider npm`)* | every token on the account, staged package versions |
 | `dockerhub` | devtools | `<identifier>:dckr_pat_…` / `dckr_oat_…` | repositories including private ones; org members, settings and tokens for an organization token |
+| `mongodb` | database | `<client id>:<client secret>` *(needs `--provider mongodb`)* | Atlas organizations and projects — the list of every cluster the credential could reach |
+| `supabase` | database | `<ref>:sb_secret_…` / `sb_publishable_…`, or a legacy JWT | auth settings, storage buckets, the exposed table schema, and the end-user list for a key that bypasses Row Level Security |
+| `redis` | database | `<account key>:<secret key>` *(needs `--provider redis`)* | Redis Cloud subscriptions and the cloud accounts they deploy into |
+| `pinecone` | database | `pcsk_…` | indexes, collections, backups and assistants — the shape of what the account has embedded |
 
 **Severity is computed, and the differences are the point.** A `sk_live_` Stripe
 key rates Critical and a `sk_test_` one does not, because Stripe documents
@@ -351,7 +356,13 @@ keyreach 'API_KEY' --provider mailgun
 keyreach 'SERVER_OR_ACCOUNT_TOKEN' --provider postmark
 keyreach 'EMAIL:API_TOKEN' --provider bitbucket
 keyreach 'ACCESS_TOKEN' --provider npm
+keyreach 'CLIENT_ID:CLIENT_SECRET' --provider mongodb
+keyreach 'ACCOUNT_KEY:SECRET_KEY' --provider redis
 ```
+
+*Supabase legacy keys name their own project.* An `anon` or `service_role` key
+is a JWT carrying the project reference, so `--provider supabase` is enough. A
+current `sb_secret_…` key is opaque and needs `<project ref>:<key>`.
 
 *Mailgun and npm are providers keyreach could once detect and no longer can.*
 Both shipped a rule from R0.5, and both vendors have since stopped documenting
@@ -360,6 +371,12 @@ page each describe how to send a token and never what one looks like. A rule
 nobody can re-verify is worse than no rule, so both were withdrawn; see
 [`ROADMAP.md`](ROADMAP.md) R2.3 and R2.4. A withdrawn rule is not silence: the
 entropy fallback still reports the value as a secret of unknown provenance.
+
+*Firebase is deliberately absent.* Google documents that a Firebase API key
+"only identifies your Firebase project and app" and that "none of the
+Firebase-related APIs use an API key as authorization". A string that authorises
+nothing has no capability map, and the same `AIza…` format *does* authorise
+Google Cloud APIs — which the `google` provider already probes.
 
 *PyPI is recognised and deliberately not probed.* Its token format is documented
 and the rule is sound, but PyPI publishes exactly one endpoint that accepts an
