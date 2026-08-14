@@ -14,6 +14,35 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **A generic bearer/JWT inspector (roadmap item **R2.7**)** — `generic` —
+  opening the `generic` category and taking keyreach to **thirty-two
+  providers across nine categories**. The first provider built around no
+  single vendor.
+  - **Decodes any JWT's header and payload**, offline and with no signature
+    check — the same treatment `supabase.py` gives a legacy Supabase key's
+    claims. This is deliberately the pattern R2.2 and R2.5 kept out of
+    Discord's and Supabase's own detection rules: a vendor-specific rule
+    matching every JWT is a false-positive machine, but a provider that names
+    no vendor cannot misattribute one, so it is exactly where that pattern
+    belongs. `detect()` requires the header and payload to decode as real
+    JSON, and `detection_rules.yml` gained its first rule sourced to a
+    standard (RFC 7515) rather than a vendor documentation page.
+  - **A well-formed, unverified JWT reports `valid=False`**, on the same
+    precedent `aws.py` set for a bare access key ID: nothing was confirmed
+    against a live server, so `valid=True` would claim more than happened.
+    The decoded claims still populate `Identity` — an unverified fact the
+    credential itself asserts is worth reporting, clearly labelled as such.
+  - **Timestamps are formatted, not compared.** `exp`/`iat`/`nbf` render as
+    ISO-8601 from the number the token carries; keyreach never computes
+    whether a token is expired, since that would need the clock read
+    `CLAUDE.md` reserves for AWS SigV4 request signing alone.
+  - **A user-directed generic bearer probe, via `TOKEN@URL`** rather than a
+    new CLI flag — `@` instead of `:` because a URL's own colon after its
+    scheme would make colon-splitting ambiguous. Only `GET` is ever sent to
+    the operator-named endpoint, and the one possible capability is
+    `AccessLevel.UNKNOWN`, since keyreach genuinely cannot say what an
+    unnamed endpoint grants beyond accepting the token.
+
 - **Four monitoring/observability providers (roadmap item **R2.6**)** —
   `datadog`, `sentry`, `newrelic` and `grafana` — opening the `monitoring`
   category and taking keyreach to **thirty-one providers across eight

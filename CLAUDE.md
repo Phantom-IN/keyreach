@@ -65,7 +65,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider. Thirty-one as of R2.6 (`datadog`, `sentry`, `newrelic`, `grafana` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.py`, `dockerhub.py` (devtools); `mongodb.py`, `supabase.py`, `redis.py`, `pinecone.py` (database); `datadog.py`, `sentry.py`, `newrelic.py`, `grafana.py` (monitoring). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, R2.4 four, R2.5 four and R2.6 four — six consecutive items, none of which needed an interface change. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
+- `keyreach/providers/*` — one file (or YAML) per provider. Thirty-two as of R2.7 (`generic` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.py`, `dockerhub.py` (devtools); `mongodb.py`, `supabase.py`, `redis.py`, `pinecone.py` (database); `datadog.py`, `sentry.py`, `newrelic.py`, `grafana.py` (monitoring); `generic.py` (generic — the first provider built around no single vendor). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, R2.4 four, R2.5 four, R2.6 four and R2.7 one — seven consecutive items, none of which needed an interface change. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
   - **`pypi` is a detection rule with no plugin, on purpose.** PyPI's only token-accepting endpoint is a package upload, so no plugin can exist without performing a write. Do not add one. See `plan.md` §5.2 and `tests/test_detect.py::test_pypi_is_detected_and_deliberately_has_no_plugin`.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
@@ -92,6 +92,35 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Three things R2.7 found
+
+- **"No vendor-specific rule should claim every JWT" was never an argument
+  that JWTs are undetectable.** R2.2 and R2.5 excluded three-segment base64
+  strings from Discord's and Supabase's own rules because a vendor-specific
+  rule matching every JWT misattributes it. A provider that names no vendor
+  cannot misattribute anything, so it is exactly where that pattern belongs —
+  `generic.py` claims it, with `detect()` requiring the header and payload to
+  actually decode as JSON, not just look the right shape. Do not read a past
+  exclusion as "this shape can never be detected"; read it for *why* it was
+  excluded, and check whether the new provider is in the situation that
+  reasoning was about.
+- **A well-formed, unverified credential is `valid=False`, not `valid=True`
+  with a caveat.** `generic.py` can decode a JWT's real claims with no
+  network call at all, but reports `valid=False` when no target URL was
+  given, on the same precedent `aws.py` set for a bare access key ID: nothing
+  was confirmed against a live server, so `valid=True` would claim more than
+  happened. `Identity` is still populated from the decoded claims — an
+  unverified fact the credential itself asserts is worth reporting, clearly
+  labelled as unverified, rather than withheld.
+- **A clock read is a clock read even when it looks like formatting.**
+  `generic.py` renders a JWT's `exp`/`iat`/`nbf` claims as ISO-8601 strings
+  from the number the token carries — `datetime.fromtimestamp(claim, tz=utc)`
+  on a *given* number, never `datetime.now()`. It does not compute "is this
+  expired", because that needs the current moment, which `CLAUDE.md` reserves
+  for AWS SigV4 request signing alone. Converting a number a caller already
+  has is not the same operation as asking what time it is now — keep that
+  line precise the next time a plugin needs to render anything time-shaped.
 
 ### Three things R2.6 found
 

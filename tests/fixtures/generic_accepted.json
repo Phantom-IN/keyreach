@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"status\":\"ok\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 200,
+      "url": "https://internal.example.com/whoami"
+    }
+  ]
+}

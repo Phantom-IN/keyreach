@@ -786,6 +786,75 @@ self-managed gap there is no `gitlab.com`-equivalent default to fall back on.
 
 **The interface needed nothing, for the sixth item running.**
 
+### 13.6 A provider that names no vendor (roadmap R2.7)
+
+Every provider through R2.6 is built around one issuer's documented format
+and endpoints — even the undetectable ones (PayPal, Zoom, Sentry) still
+authenticate against a fixed, vendor-owned host. `generic` is the first that
+is not: it exists specifically for a bearer token keyreach cannot attribute
+to anyone, which is most of what a scanner turns up once the named vendors
+are covered.
+
+**"A vendor-specific rule should not claim every JWT" generalises into "a
+rule that claims no vendor may."** R2.2 and R2.5 both excluded three-segment
+base64 strings from Discord's and Supabase's own detection rules, on
+identical reasoning: matching that shape would misattribute every JWT on the
+internet to one issuer. The reasoning is about *misattribution*, and a
+provider with no vendor to misattribute to is immune to it by construction.
+`generic.py`'s `detect()` is also stricter than a shape check —
+`decode()` requires the header and payload to parse as real JSON, not just
+look like base64 — and `detection_rules.yml` gained its first rule sourced to
+a standard (RFC 7515) rather than a vendor documentation page, since JWT's
+compact serialization *is* one. `tests/test_detect.py`'s existing 0.8
+confidence floor for a shipped structural rule applies here exactly as it
+does to a vendor prefix; 0.85 was chosen for the same reason Pinecone's and
+Docker Hub's unconfirmed-length rules sit at 0.99 rather than lower — real
+structural evidence, not a guess, even though the *issuer* is unknown.
+
+**A well-formed, unverified JWT is `valid=False`, extending a precedent
+`aws.py` set rather than inventing a new one.** `keyreach/providers/aws.py`
+answers a bare `AKIA…` with no secret half `valid=False` and a note
+explaining nothing could be checked — not because the string is fake, but
+because nothing was verified against a live server. Decoding a JWT with no
+target URL is the same situation: real claims were read, nothing was
+confirmed live, so `valid=True` would claim more than happened. `Identity` is
+still populated from the decoded claims regardless, which is new — no prior
+`valid=False` path in this codebase has attached identity, because no prior
+provider had self-describing claims to attach. The precedent this sets:
+`ValidationResult.identity` documents "an unverified fact the credential
+itself asserts" as a legitimate reason to populate it even when nothing was
+verified, distinct from its original design as "what a live call disclosed".
+
+**Reading a claim off a JWT is not a capability, and drawing that line
+mattered for what `enumerate` returns.** A `Capability` is "one confirmed
+thing a key can reach" (`core/models.py`); a JWT's own claims describe the
+credential, not something it reaches, so they populate `Identity` and never
+appear in the capability map. That leaves this plugin's only possible
+capability entirely dependent on the operator: a `TOKEN@URL` credential where
+the URL answers `2xx`. Its access level is `AccessLevel.UNKNOWN` — the
+codebase's existing rule that undetermined access "is still counted for
+breadth and risk weight" and "always adds a rationale line saying the band
+may understate real impact" (`core/scoring.py`) turns out to fit an
+operator-named endpoint exactly as well as it fits a scope keyreach could not
+resolve.
+
+**No new CLI flag — `TOKEN@URL` is a credential shape, not a new argument.**
+The roadmap's "user-directed generic bearer probe" could have been built as
+`--url`, threading a second value through `Provider.enumerate`'s signature
+for every plugin. `@` avoids that: it is unambiguous against a URL (whose own
+colon, right after the scheme, is exactly why colon-composite credentials
+were not an option here) and needs nothing from `keyreach/core/` — the
+credential is still one string, same as every provider since R0.4. Only
+`GET` is ever sent; the read-only guard refuses `POST` outright regardless of
+the target, which matters because an operator could point this at literally
+any host, including one `ai_ban`'s static source-code scan has no visibility
+into at runtime. `ai_ban` still does its job — it keeps an inference
+endpoint's literal path out of this file's own source — but the reason a
+`GET` to one is harmless is structural: every inference endpoint documented
+elsewhere in this codebase requires `POST`.
+
+**The interface needed nothing, for the seventh item running.**
+
 ### Phase 2 — Depth
 - HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating.
 
