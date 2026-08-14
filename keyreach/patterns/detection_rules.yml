@@ -437,3 +437,23 @@ rules:
     pattern: '^glc_[A-Za-z0-9_=-]{20,}$'
     confidence: 0.95
     source: https://grafana.com/docs/grafana-cloud/account-management/authentication-and-permissions/access-policies/
+
+  # ── Generic ────────────────────────────────────────────────────────────────
+  - id: generic-jwt
+    provider: generic
+    description: JSON Web Token (structure, not any one issuer)
+    # The one rule in this file sourced to a standard rather than a vendor:
+    # RFC 7515's compact serialization is three dot-separated base64url
+    # segments. Confidence is lower than a vendor-prefix rule (0.95+) because
+    # this identifies a *shape*, never an issuer — `keyreach/providers/
+    # generic.py`'s own `detect()` additionally requires both segments to
+    # decode to real JSON before claiming it, which is what keeps this above
+    # `tests/test_detect.py`'s 0.8 confidence floor for a shipped structural
+    # rule. Every other provider that could be handed a JWT (Discord,
+    # Supabase) deliberately excludes this exact pattern from its own rule,
+    # because a vendor-specific rule matching every JWT is a false-positive
+    # machine; a provider that names no vendor is exactly the place that
+    # pattern belongs.
+    pattern: '^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}(?:@\S+)?$'
+    confidence: 0.85
+    source: https://www.rfc-editor.org/rfc/rfc7515

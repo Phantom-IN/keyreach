@@ -1,0 +1,13 @@
+{
+  "interactions": [
+    {
+      "body": "{\"error\":\"unauthorized\"}",
+      "headers": {
+        "content-type": "application/json"
+      },
+      "method": "GET",
+      "status_code": 401,
+      "url": "https://internal.example.com/whoami"
+    }
+  ]
+}

@@ -17,17 +17,18 @@
 
 > **v0.1.0 — the first release.**
 >
-> **Thirty-one providers across eight categories, usable from a terminal.**
+> **Thirty-two providers across nine categories, usable from a terminal.**
 > The whole pipeline — detect → validate → enumerate → score → report — is built
 > and covered: **cloud** (`google`, `aws`), **AI** (`openai`, `anthropic`),
 > **payment** (`stripe`, `razorpay`, `paystack`, `paypal`), **communications**
 > (`slack`, `twilio`, `telegram`, `discord`, `zoom`), **email/marketing**
 > (`sendgrid`, `mailgun`, `postmark`, `resend`, `mailchimp`), **dev
 > platforms** (`github`, `gitlab`, `bitbucket`, `npm`, `dockerhub`),
-> **databases/data infra** (`mongodb`, `supabase`, `redis`, `pinecone`), and
-> **monitoring/observability** (`datadog`, `sentry`, `newrelic`, `grafana`).
-> Each key is scored from the capabilities keyreach actually confirmed, with
-> the rationale attached.
+> **databases/data infra** (`mongodb`, `supabase`, `redis`, `pinecone`),
+> **monitoring/observability** (`datadog`, `sentry`, `newrelic`, `grafana`),
+> and **generic** (`generic` — a JWT/bearer-token inspector built around no
+> single vendor). Each key is scored from the capabilities keyreach actually
+> confirmed, with the rationale attached.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Phase 0
@@ -285,13 +286,13 @@ monitoring, auth/identity, and a generic bearer/JWT inspector. The full target
 list is [`plan.md`](plan.md) §8; the shipping order is
 [`ROADMAP.md`](ROADMAP.md).
 
-**31 providers across 8 categories.** v0.1 shipped 10 — the target was ≥10
+**32 providers across 9 categories.** v0.1 shipped 10 — the target was ≥10
 across ≥4, including cloud, AI, payment and comms — R2.1 and R2.2 added two
 each, R2.3 opened the email category with five, R2.4 took dev platforms to five,
-R2.5 opened databases with four, and R2.6 opened monitoring/observability with
-four. The count is asserted by a test rather than counted by hand
-(`tests/test_provider_contract.py`), so a deleted provider or a typo'd category
-fails the build.
+R2.5 opened databases with four, R2.6 opened monitoring/observability with
+four, and R2.7 opened `generic` with one. The count is asserted by a test
+rather than counted by hand (`tests/test_provider_contract.py`), so a deleted
+provider or a typo'd category fails the build.
 
 | Provider | Category | Credential | What a live key is shown to reach |
 | --- | --- | --- | --- |
@@ -326,6 +327,7 @@ fails the build.
 | `sentry` | monitoring | auth token *(needs `--provider sentry`)* | organizations, projects, members, teams — with write and admin read from the org's own `access` field |
 | `newrelic` | monitoring | `NRAK-…` | account identity via NerdGraph, APM applications via REST v2 |
 | `grafana` | monitoring | `glc_…` | the organization's Grafana Cloud access policies and every token issued under them |
+| `generic` | generic | any JWT, or `TOKEN@https://…` for an arbitrary bearer token | decoded JWT claims (no signature check); whether an operator-named endpoint accepts the token |
 
 **Severity is computed, and the differences are the point.** A `sk_live_` Stripe
 key rates Critical and a `sk_test_` one does not, because Stripe documents
@@ -412,6 +414,21 @@ never names — a harder version of GitLab's self-managed gap, since GitLab at
 least has `gitlab.com` as a real default to fall back on. Grafana has no
 analogous default, so only Cloud's organization-level `glc_…` tokens, reachable
 at a fixed host, are covered.
+
+*A JWT is finally detected, on purpose, by a provider that names no vendor.*
+Discord's community token pattern and Supabase's legacy keys are both JWTs,
+and both were deliberately kept out of their own provider's detection: a
+rule matching three base64 segments would claim every JWT ever pasted at
+keyreach. `generic` is where that pattern belongs instead — it never claims a
+vendor, so it cannot misattribute one. It decodes the claims with no
+signature check and reports the credential `valid=False` when no target URL
+was given, the same treatment `aws` gives a bare access key ID: real facts
+were read, nothing was confirmed live.
+
+```console
+keyreach 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEyMyJ9.<signature>'
+keyreach 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEyMyJ9.<signature>@https://internal.example.com/whoami'
+```
 
 *Postmark's two token types look identical*, so keyreach does not ask you which
 you have. It tries both headers, and Postmark's own refusal names the one it
