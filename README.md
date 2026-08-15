@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Phantom-IN/keyreach/main/assets/banner.svg"
+       alt="keyreach — paste a leaked API key, get a full capability map and a disclosure-ready severity report"
+       width="100%">
+</p>
+
 # keyreach
 
 > Paste any leaked API key — cloud, AI, payment, comms, dev-tool, database, or
@@ -10,6 +16,9 @@
 [![No AI/LLM](https://img.shields.io/badge/AI%2FLLM-none%20by%20design-brightgreen)](#core-principles)
 [![Read-only by default](https://img.shields.io/badge/probes-read--only-brightgreen)](SECURITY.md)
 [![CI](https://github.com/Phantom-IN/keyreach/actions/workflows/ci.yml/badge.svg)](https://github.com/Phantom-IN/keyreach/actions/workflows/ci.yml)
+[![GitHub stars](https://img.shields.io/github/stars/Phantom-IN/keyreach?style=flat&color=yellow)](https://github.com/Phantom-IN/keyreach/stargazers)
+[![Open issues](https://img.shields.io/github/issues/Phantom-IN/keyreach)](https://github.com/Phantom-IN/keyreach/issues)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CONTRIBUTING.md)
 <!-- Coverage is enforced at 100% by CI (pyproject.toml, [tool.coverage.report]
      fail_under) rather than reported by a third-party badge service, which
      would mean sending build data to another host for a number CI already
