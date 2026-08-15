@@ -42,6 +42,7 @@ import pytest
 
 from keyreach.core.detect import default_detector
 from keyreach.core.http import ProbeClient, ProbeContext
+from keyreach.core.probes import YamlProvider
 from keyreach.core.provider import Provider
 from keyreach.core.registry import (
     PROVIDERS_PACKAGE,
@@ -85,6 +86,24 @@ def by_name(provider: Provider) -> str:
 
 
 parametrised = pytest.mark.parametrize("provider", PROVIDERS, ids=by_name)
+
+
+def _provenance(provider: Provider) -> tuple[str, Path]:
+    """A provider's own explanation of itself, and the file it lives in.
+
+    A Python plugin's reasoning lives in its module docstring (`CLAUDE.md`,
+    "How to add a provider"); a YAML plugin's (roadmap R2.8) lives in its
+    `description` field. Both are the plugin's own account of itself, not
+    the runner's, so every test below that used to read
+    `inspect.getmodule(...).__doc__` reads through this instead.
+    """
+    if isinstance(provider, YamlProvider):
+        return provider.spec.description, provider.source_path
+
+    module = inspect.getmodule(type(provider))
+    assert module is not None
+    assert module.__doc__ is not None
+    return module.__doc__, Path(inspect.getfile(type(provider)))
 
 
 def test_the_suite_is_not_running_against_an_empty_registry() -> None:
@@ -151,11 +170,9 @@ def test_the_module_explains_itself(provider: Provider) -> None:
     A provider is a set of claims about somebody else's API. Without the
     argument for each one, a reviewer can check the code but not the decision.
     """
-    module = inspect.getmodule(type(provider))
+    text, _ = _provenance(provider)
 
-    assert module is not None
-    assert module.__doc__
-    assert "roadmap" in module.__doc__.lower()
+    assert "roadmap" in text.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -190,11 +207,9 @@ def test_a_credited_provider_says_so_in_its_own_source(provider: Provider) -> No
     if provider.credit is None:
         return
 
-    module = inspect.getmodule(type(provider))
-    assert module is not None
-    assert module.__doc__ is not None
+    text, _ = _provenance(provider)
 
-    assert provider.credit in module.__doc__
+    assert provider.credit in text
 
 
 # ---------------------------------------------------------------------------
@@ -282,8 +297,17 @@ def test_an_undetectable_provider_claims_nothing_for_any_key(
 
 
 def probe_tables() -> Iterator[tuple[str, tuple[object, ...]]]:
-    """Every provider module that declares a `PROBES` table, with its name."""
+    """Every provider's probe table, with its name.
+
+    A YAML provider's probes (roadmap R2.8) come straight from its spec
+    rather than a module-level `PROBES` constant — `ProbeEndpoint` already has
+    the `service`/`source`/`risk_weight` attributes every test below reads.
+    """
     for provider in PROVIDERS:
+        if isinstance(provider, YamlProvider):
+            yield provider.name, tuple(provider.spec.probes)
+            continue
+
         module = inspect.getmodule(type(provider))
         probes = getattr(module, "PROBES", None)
         if probes is not None:
@@ -430,10 +454,9 @@ def test_no_plugin_repeats_the_claim_r1_4_disproved(provider: Provider) -> None:
     reason no plugin can take credit for. The wording is banned rather than
     corrected in place, so the next plugin cannot reintroduce the reasoning.
     """
-    module = inspect.getmodule(type(provider))
-    assert module is not None
+    _, path = _provenance(provider)
 
-    source = Path(inspect.getfile(type(provider))).read_text(encoding="utf-8")
+    source = path.read_text(encoding="utf-8")
     offending = [
         line
         for line in source.splitlines()

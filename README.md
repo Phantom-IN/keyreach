@@ -292,7 +292,10 @@ each, R2.3 opened the email category with five, R2.4 took dev platforms to five,
 R2.5 opened databases with four, R2.6 opened monitoring/observability with
 four, and R2.7 opened `generic` with one. The count is asserted by a test
 rather than counted by hand (`tests/test_provider_contract.py`), so a deleted
-provider or a typo'd category fails the build.
+provider or a typo'd category fails the build. R2.8 added no new provider but
+changed how two of them are built: `npm` and `pinecone` now ship as
+declarative `.yml` files rather than hand-written Python, played back by
+`keyreach/core/probes.py` — see [Contributing](#contributing) below.
 
 | Provider | Category | Credential | What a live key is shown to reach |
 | --- | --- | --- | --- |
@@ -462,7 +465,9 @@ the account.
 Contributions are very welcome — especially new provider plugins. The target is
 that adding a provider is a small, self-contained, ~30-minute contribution:
 recognize the key, one cheap read-only validity check, a set of read-only
-probes, and metadata.
+probes, and metadata. A provider that authenticates with a static header, has
+no identity call and needs no chained request can often be a `.yml` file
+instead of Python — see `keyreach/providers/npm.yml` for a worked example.
 
 Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), then the provider checklist in
 [`CLAUDE.md`](CLAUDE.md). Every roadmap item is tracked as an issue and lands via

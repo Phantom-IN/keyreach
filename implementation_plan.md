@@ -408,6 +408,10 @@ Every band boundary is covered by a table-driven test (`tests/test_scoring.py`) 
 
 ## 8. Declarative probe format (optional but preferred)
 
+**Landed in roadmap R2.8** — see §13.7 for what the shipped format kept from
+this sketch, what it added (a declarative liveness state machine), and why
+`npm` and `pinecone` were the first two providers migrated.
+
 To lower contribution cost and keep probes auditable, simple providers can be expressed as YAML rather than Python, executed by `core/probes.py`:
 
 ```yaml
@@ -854,6 +858,80 @@ endpoint's literal path out of this file's own source — but the reason a
 elsewhere in this codebase requires `POST`.
 
 **The interface needed nothing, for the seventh item running.**
+
+### 13.7 The declarative probe runner, cashed in (roadmap R2.8)
+
+§8 named this format in R0.1 and R1.4 named it again as the interface's
+genuine shared abstraction, predicted rather than observed: at the time R1.4
+was written, only four providers existed, and the claim was that a fifth,
+sixth and seventh would confirm the shape without needing a `keyreach/core/`
+change to get there. R2.1 through R2.7 did exactly that. R2.8 is where the
+prediction gets built rather than merely stay true.
+
+**`keyreach/core/probes.py` is the runner; `ProviderSpec` (in the same
+module) is the schema.** A provider becomes a `.yml` file with metadata, a
+`detect` pattern, an `auth` header template, a `liveness` state machine and a
+`probes` table — the same fields `_Probe`/`PROBES` conventions already
+standardised across every hand-written plugin (`tests/test_provider_contract.py`
+enforced that convention starting R1.4), now validated by pydantic instead of
+read as prose. `YamlProvider` plays a `ProviderSpec` back through the same
+three-method `Provider` contract every Python plugin implements — nothing
+downstream (the engine, the CLI, the report builder) can tell which format
+produced the `Provider` instance it received.
+
+**The liveness state machine is where "declarative" earns its meaning,
+because it was found to be data rather than logic.** Every provider through
+R2.7 that authenticates with a static header (not AWS's request signing, not
+PayPal's OAuth exchange) branches on its liveness probe's status code the
+same four ways: 2xx means live; a vendor-specific "credential rejected"
+status set means dead; a vendor-specific "authenticated but this endpoint
+refused" status set means live with a caveat; a vendor-specific rate-limit
+status set means live, try again with `--delay`. npm and Pinecone, read side
+by side, showed this exactly — same four branches, same structure, only the
+status codes in each bucket and the note text differing. `_LivenessSpec`
+declares that shape once; `YamlProvider.validate()` is the interpreter that
+plays it back for any provider's specific buckets and wording.
+
+**The format's boundary is enforced by what it cannot express, not by a
+comment.** There is no field for identity extraction, no field for a second
+request chained off the first, no field for POST. A provider needing any of
+those — Telegram's `getMe` parsing, Supabase's JWT decode, PayPal's token
+exchange, New Relic's GraphQL-only read — has no way to express it in
+`ProviderSpec` at all and stays a Python plugin. This is the same choice
+`tests/test_provider_contract.py`'s own docstring made in R1.4 about a shared
+base class: "the parts that differ are exactly the parts that matter", so the
+runner only generalises the part that does not.
+
+**npm and Pinecone were the migration targets because both already fit the
+shape exactly**, not because they needed rewriting for another reason: single
+static auth header, no identity endpoint documented by either vendor, and a
+liveness check that reuses one of the capability probes rather than issuing a
+second request — the discipline R1.4's response cache made mandatory for
+every provider. Their behaviour is unchanged; `tests/test_provider_npm.py`
+and `tests/test_provider_pinecone.py` still run the same committed cassettes
+through the same assertions, now against `keyreach/providers/npm.yml` and
+`pinecone.yml` instead of `npm.py` and `pinecone.py`.
+
+**`ProviderRegistry` gained a second discovery path, and the contract suite
+had to stop assuming a plugin has exactly one Python module.** `_load()` now
+scans `.yml`/`.yaml` files beside the `.py` modules, using the same
+sorted-order and underscore-skip conventions, and merges both into one
+`name`-sorted registry with one duplicate-name check spanning formats.
+`tests/test_provider_contract.py` used to read a plugin's own reasoning and
+source text via `inspect.getmodule(type(provider))` and
+`inspect.getfile(type(provider))` — both meaningless for `YamlProvider`,
+since every YAML-loaded provider shares one Python class. A `_provenance()`
+helper now returns a YAML provider's `spec.description` and `source_path`
+instead, and every test that used to introspect a module reads through it —
+same assertions, two shapes underneath.
+
+**No `keyreach/core/` change was forced by a provider this time — the
+opposite is true.** R1.3's three `ProbeContext` members were AWS forcing an
+interface it did not yet have. This item's `keyreach/core/` change
+(`probes.py`, plus the discovery path in `registry.py`) is the one R1.4
+scheduled in advance, sized and shaped by seven providers' worth of evidence
+about where hand-written plugins actually converge, rather than by any single
+provider's need.
 
 ### Phase 2 — Depth
 - HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating.

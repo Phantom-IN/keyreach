@@ -1,4 +1,5 @@
-"""Pinecone provider tests (roadmap R2.5).
+"""Pinecone provider tests (roadmap R2.5; migrated to the declarative probe
+runner in roadmap R2.8).
 
 Two things carry the weight here.
 
@@ -15,6 +16,13 @@ envelope at all — verified against the live API and recorded verbatim in the
 fixture. ``test_a_plain_text_rejection_is_quoted_and_an_html_page_is_not``
 covers both halves: the message reaches the note, and a proxy's error page does
 not get mistaken for one.
+
+**On the migration.** R2.8 rewrote this plugin from a hand-written `enumerate`
+to `keyreach/providers/pinecone.yml`, played back by
+`keyreach.core.probes.YamlProvider`. `tests/test_probes.py` covers the
+runner's own parsing and matching logic in isolation; this module only proves
+Pinecone's own spec produces the same behaviour the old Python module did,
+against the same committed cassettes.
 """
 
 from __future__ import annotations
@@ -30,24 +38,23 @@ from keyreach.core.detect import default_detector
 from keyreach.core.engine import Engine, EngineResult
 from keyreach.core.http import Cassette, ProbeResponse, RecordMode
 from keyreach.core.models import AccessLevel, Capability, ValidationResult
+from keyreach.core.probes import YamlProvider, _message_of, _summary
 from keyreach.core.registry import ProviderRegistry, validate_provider
-from keyreach.providers.pinecone import (
-    API,
-    API_VERSION,
-    CONFIDENCE,
-    PROBES,
-    PineconeProvider,
-    _summary,
-    message_of,
-    validation_probe,
-)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 RULES = Path(__file__).parent.parent / "keyreach" / "patterns" / "detection_rules.yml"
+SPEC_PATH = Path(__file__).parent.parent / "keyreach" / "providers" / "pinecone.yml"
+API = "https://api.pinecone.io"
+API_VERSION = "2025-10"
+CONFIDENCE = 0.99
 
 #: Composed from parts, never written as one literal
 #: (`tools/guardrails/no_secrets.py`).
 KEY = "pcsk" + "_" + "N0rthw1ndP1neconeKey0000"
+
+
+def provider() -> YamlProvider:
+    return ProviderRegistry("keyreach.providers").get("pinecone")  # type: ignore[return-value]
 
 
 def run(fixture: str, key: str = KEY) -> EngineResult:
@@ -90,22 +97,28 @@ def response(
 
 
 def test_metadata_satisfies_the_registry() -> None:
-    validate_provider(PineconeProvider(), origin="keyreach.providers.pinecone")
+    validate_provider(provider(), origin="keyreach.providers.pinecone")
 
 
 def test_the_registry_discovers_it() -> None:
     registry = ProviderRegistry("keyreach.providers")
 
-    assert "pinecone" in [provider.name for provider in registry.providers()]
+    assert "pinecone" in [item.name for item in registry.providers()]
+
+
+def test_it_is_loaded_from_the_declarative_runner() -> None:
+    """R2.8: Pinecone is one of the first two providers played back from YAML."""
+    assert isinstance(provider(), YamlProvider)
+    assert provider().source_path == SPEC_PATH
 
 
 def test_it_is_a_database_provider() -> None:
     """R2.5 opens the `database` category, which `core/registry.py` allows."""
-    assert PineconeProvider().category == "database"
+    assert provider().category == "database"
 
 
 def test_it_claims_no_prior_art() -> None:
-    assert PineconeProvider().credit is None
+    assert provider().credit is None
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +127,7 @@ def test_it_claims_no_prior_art() -> None:
 
 
 def test_it_claims_a_documented_key() -> None:
-    assert PineconeProvider().detect(KEY) == CONFIDENCE
+    assert provider().detect(KEY) == CONFIDENCE
 
 
 @pytest.mark.parametrize(
@@ -122,7 +135,7 @@ def test_it_claims_a_documented_key() -> None:
     ["", "not-a-key", "pcsk_short", "sk-" + "a" * 40, "pc_" + "a" * 30],
 )
 def test_it_claims_nothing_else(sample: str) -> None:
-    assert PineconeProvider().detect(sample) == 0.0
+    assert provider().detect(sample) == 0.0
 
 
 def test_the_shipped_rule_and_the_plugin_agree() -> None:
@@ -156,13 +169,17 @@ def test_the_detector_routes_the_key_to_pinecone() -> None:
 
 
 def test_every_probe_is_under_the_documented_api_base() -> None:
-    for probe in PROBES:
+    for probe in provider().spec.probes:
         assert probe.url.startswith(API)
 
 
 def test_validation_uses_the_endpoint_pinecones_own_example_calls() -> None:
-    assert validation_probe() in PROBES
-    assert validation_probe().url == f"{API}/indexes"
+    spec = provider().spec
+
+    assert spec.liveness.probe == "Pinecone Indexes"
+    assert next(p for p in spec.probes if p.service == "Pinecone Indexes").url == (
+        f"{API}/indexes"
+    )
 
 
 def test_every_request_pins_the_api_version() -> None:
@@ -225,21 +242,28 @@ def test_a_plain_text_rejection_is_quoted_and_an_html_page_is_not() -> None:
     A plugin that only parsed JSON would drop the one useful sentence; a plugin
     that quoted any body would put a proxy's HTML in the report.
     """
-    assert message_of(response(401, "Invalid API key")) == "Invalid API key"
-    assert message_of(response(502, "<html>\n<body>bad gateway</body>\n</html>")) == ""
-    assert message_of(response(502, "x" * 500)) == ""
+    spec = provider().spec
+
+    assert _message_of(spec, response(401, "Invalid API key")) == "Invalid API key"
     assert (
-        message_of(
+        _message_of(spec, response(502, "<html>\n<body>bad gateway</body>\n</html>"))
+        == ""
+    )
+    assert _message_of(spec, response(502, "x" * 500)) == ""
+    assert (
+        _message_of(
+            spec,
             response(
                 400,
                 '{"error":{"message":"index not found"}}',
                 content_type="application/json",
-            )
+            ),
         )
         == "index not found"
     )
-    # An `error` object whose `message` is not a string is not a message either.
-    assert message_of(response(400, '{"error":{"message":42}}')) == (
+    # An `error.message` that is not a string is not a message either — it
+    # falls back to the raw (short, single-line) body instead.
+    assert _message_of(spec, response(400, '{"error":{"message":42}}')) == (
         '{"error":{"message":42}}'
     )
 
@@ -290,7 +314,7 @@ def validate_against(status: int, body: str) -> ValidationResult:
             del url, params, headers
             return response(status, body)
 
-    return asyncio.run(PineconeProvider().validate(KEY, _Stub()))  # type: ignore[arg-type]
+    return asyncio.run(provider().validate(KEY, _Stub()))  # type: ignore[arg-type]
 
 
 def test_a_rate_limited_request_still_means_the_key_reached_pinecone() -> None:
@@ -320,4 +344,7 @@ def test_an_uninterpretable_response_says_so_rather_than_guessing() -> None:
 def test_the_evidence_summary_carries_a_count_and_nothing_else(
     body: str, expected: str
 ) -> None:
-    assert expected in _summary(validation_probe(), response(200, body))
+    spec = provider().spec
+    probe = next(p for p in spec.probes if p.service == spec.liveness.probe)
+
+    assert expected in _summary(probe, response(200, body))

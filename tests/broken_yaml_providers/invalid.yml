@@ -1,0 +1,6 @@
+# Missing docs_url, rotation_guide_url, auth, liveness and probes — this must
+# never validate. `tests/test_registry.py::test_an_invalid_yaml_spec_is_rejected_with_its_own_name`
+# asserts loading this package names this file in the error.
+name: broken
+category: generic
+description: A spec file missing every field a provider needs beyond a name.

@@ -1,9 +1,14 @@
 """Deterministic discovery and loading of provider plugins.
 
-Providers are found by scanning the modules in :data:`PROVIDERS_PACKAGE` for
-concrete :class:`~keyreach.core.provider.Provider` subclasses
-(``implementation_plan.md`` §3, §4). Discovery is the first place nondeterminism
-would creep into a run, so two rules hold throughout:
+Providers are found two ways in :data:`PROVIDERS_PACKAGE`: scanning its modules
+for concrete :class:`~keyreach.core.provider.Provider` subclasses, and — since
+roadmap **R2.8** — scanning it for declarative spec files, each loaded into a
+:class:`~keyreach.core.probes.YamlProvider` by
+:func:`~keyreach.core.probes.load_yaml_provider` (``implementation_plan.md``
+§3, §4, §8). Both land in the same registry, sorted together by name; nothing
+downstream of discovery can tell which format a given provider came from.
+Discovery is the first place nondeterminism would creep into a run, so three
+rules hold throughout:
 
 * **Module iteration is sorted before import.** ``pkgutil`` walks a package in
   filesystem order, which varies by platform and by checkout. Sorting first
@@ -13,6 +18,9 @@ would creep into a run, so two rules hold throughout:
   by ``name``; detection candidates sort by descending confidence then ``name``,
   matching ``implementation_plan.md`` §5, so equally-confident providers never
   swap places between runs.
+* **Spec files follow the same underscore convention `.py` modules do.** A
+  leading underscore marks a shared fragment rather than a plugin, so it is
+  skipped rather than loaded and validated.
 
 Metadata is validated at registration rather than at first use. A plugin with a
 missing ``name`` or an unknown ``category`` is a packaging mistake, and it should
@@ -25,9 +33,11 @@ from __future__ import annotations
 import importlib
 import inspect
 import pkgutil
+from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Final, NamedTuple
 
+from keyreach.core.probes import SPEC_SUFFIXES, ProbeSpecError, load_yaml_provider
 from keyreach.core.provider import Provider
 
 if TYPE_CHECKING:
@@ -182,26 +192,43 @@ class ProviderRegistry:
         for module in self._iter_modules():
             for provider_class in self._provider_classes(module):
                 provider = provider_class()
-                validate_provider(
-                    provider, f"{module.__name__}.{provider_class.__name__}"
+                self._register(
+                    discovered, provider, f"{module.__name__}.{provider_class.__name__}"
                 )
 
-                existing = discovered.get(provider.name)
-                if existing is not None:
-                    msg = (
-                        f"duplicate provider name {provider.name!r}: "
-                        f"{type(existing).__module__}.{type(existing).__name__} "
-                        f"and {module.__name__}.{provider_class.__name__}. "
-                        "Provider names are the registry key and the --provider "
-                        "value, so they must be unique."
-                    )
-                    raise DuplicateProviderError(msg)
-
-                discovered[provider.name] = provider
+        # YAML specs are scanned after every `.py` module, so a plugin that
+        # migrates keeps the same discovery order it would have had as a
+        # module — `.py` and `.yml` providers interleave by name in the
+        # sorted result below, not by which format they happen to be.
+        for path in self._iter_spec_paths():
+            try:
+                provider = load_yaml_provider(path)
+            except ProbeSpecError as exc:
+                raise InvalidProviderError(str(exc)) from exc
+            self._register(discovered, provider, str(path))
 
         # Sort by an explicit key rather than trusting insertion order, which
         # depends on filesystem iteration.
         return tuple(sorted(discovered.values(), key=lambda p: p.name))
+
+    @staticmethod
+    def _register(
+        discovered: dict[str, Provider], provider: Provider, origin: str
+    ) -> None:
+        """Validate one discovered provider and add it, or raise on a name clash."""
+        validate_provider(provider, origin)
+
+        existing = discovered.get(provider.name)
+        if existing is not None:
+            msg = (
+                f"duplicate provider name {provider.name!r}: "
+                f"{type(existing).__module__}.{type(existing).__name__} "
+                f"and {origin}. Provider names are the registry key and the "
+                "--provider value, so they must be unique."
+            )
+            raise DuplicateProviderError(msg)
+
+        discovered[provider.name] = provider
 
     def _iter_modules(self) -> Iterator[ModuleType]:
         """Import each module in the providers package, in sorted name order."""
@@ -214,6 +241,26 @@ class ProviderRegistry:
         )
         for module_name in module_names:
             yield importlib.import_module(f"{self._package}.{module_name}")
+
+    def _iter_spec_paths(self) -> Iterator[Path]:
+        """Every declarative provider spec in the package, in sorted order.
+
+        Mirrors :meth:`_iter_modules`'s two rules: sorted so discovery order
+        cannot depend on filesystem iteration, and a leading underscore marks
+        a shared fragment rather than a plugin — `core/probes.py`'s module
+        docstring is where that convention is explained for `.py` modules,
+        and it applies identically here.
+        """
+        package = importlib.import_module(self._package)
+        paths = [
+            path
+            for root in package.__path__
+            for path in Path(root).iterdir()
+            if path.is_file()
+            and path.suffix in SPEC_SUFFIXES
+            and not path.name.startswith("_")
+        ]
+        yield from sorted(paths, key=lambda path: path.name)
 
     @staticmethod
     def _provider_classes(module: ModuleType) -> list[type[Provider]]:
