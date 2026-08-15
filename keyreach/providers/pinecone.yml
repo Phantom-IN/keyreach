@@ -1,0 +1,122 @@
+# Pinecone API keys (pcsk_...) — roadmap R2.5, migrated to the declarative
+# probe runner in roadmap R2.8.
+#
+# No prior art. Every path and header below comes from Pinecone's own API
+# reference and was verified against the live API, which answers 401 for a
+# path that exists and 404 for one that does not.
+#
+# This is one of the first two providers `core/probes.py` plays back rather
+# than a hand-written `enumerate`. Nothing about Pinecone's behaviour changed
+# in the move — this file is the same reasoning the old `pinecone.py` module
+# carried, expressed as data instead of code. See
+# `tests/test_provider_pinecone.py`, which still runs the same cassettes
+# through the same assertions.
+name: pinecone
+category: database
+docs_url: https://docs.pinecone.io/reference/api/authentication
+rotation_guide_url: https://docs.pinecone.io/guides/projects/manage-api-keys
+credit: null
+
+detectable: true
+detect:
+  # The prefix is published in exactly one place, and it is the CLI
+  # reference: `pc config set-api-key pcsk_abc123`. Pinecone's authentication
+  # page and its key-management guide both show only `YOUR_API_KEY`. Mirrors
+  # the `pinecone-api-key` rule in `keyreach/patterns/detection_rules.yml`;
+  # `tests/test_provider_pinecone.py` asserts the two agree.
+  # Source: https://docs.pinecone.io/reference/cli/command-reference
+  pattern: "^pcsk_[A-Za-z0-9_-]{20,}$"
+  confidence: 0.99
+
+description: |
+  Pinecone API keys (roadmap R2.5), migrated to the declarative probe runner
+  in roadmap R2.8. Every capability is READ. A key that can list indexes
+  can almost certainly write vectors into them — Pinecone documents no
+  read-only key type — but it documents no way to ask what this key may do
+  either, and keyreach does not upsert a vector to find out. So the access
+  level is what the probe proved, and the detail says which question was
+  left open.
+
+  What listing indexes actually discloses is not the vectors but the shape
+  of somebody's retrieval estate: how many indexes, their names, dimensions
+  and regions. The names alone usually say what the company embeds, which is
+  why the risk weight here is high while the capability stays a read.
+
+  Pinecone's error body is plain text, not JSON: a rejected key returns the
+  bytes "Invalid API key" with no envelope at all, so the message extraction
+  below falls back to the raw body rather than assuming a structured one.
+
+auth:
+  headers:
+    # Source: https://docs.pinecone.io/reference/api/authentication
+    Api-Key: "{key}"
+    # Pinecone asks for an explicit API version on every request. Pinning it
+    # means a future default cannot change what keyreach reads.
+    # Source: https://docs.pinecone.io/reference/api/versioning
+    X-Pinecone-Api-Version: "2025-10"
+
+error_fields: [error.message]
+plain_text_fallback: true
+
+scope_statement: >-
+  Pinecone publishes no way to ask what this key may write, and keyreach
+  does not upsert a vector to find out, so write access is undetermined and
+  none was attempted
+
+liveness:
+  # `/indexes` is the endpoint Pinecone's own authentication example calls,
+  # and the cheapest read that proves a key is live.
+  probe: Pinecone Indexes
+  unauthorized_statuses: [401, 403]
+  rate_limited_statuses: [429]
+  notes:
+    unauthorized: "Pinecone did not accept this key{message_suffix}"
+    rate_limited: >-
+      The key is live; Pinecone rate limited this request. Re-run with
+      --delay for a complete capability map
+    unparseable: >-
+      Pinecone's response could not be interpreted{message_suffix}, so this
+      key's validity was not established either way
+
+probes:
+  - service: Pinecone Assistants
+    url: https://api.pinecone.io/assistant/assistants
+    collection: assistants
+    noun: assistants
+    detail: >-
+      Can list the project's assistants, which are built over files the
+      account uploaded
+    access: read
+    risk_weight: 85
+    # An assistant is a named surface over somebody's uploaded documents.
+    data_sensitive: true
+    source: https://docs.pinecone.io/reference/api/introduction
+  - service: Pinecone Backups
+    url: https://api.pinecone.io/backups
+    collection: data
+    noun: backups
+    detail: Can list the project's index backups
+    access: read
+    risk_weight: 80
+    data_sensitive: false
+    source: https://docs.pinecone.io/reference/api/introduction
+  - service: Pinecone Collections
+    url: https://api.pinecone.io/collections
+    collection: collections
+    noun: collections
+    detail: Can list the project's collections, which are index snapshots
+    access: read
+    risk_weight: 80
+    data_sensitive: false
+    source: https://docs.pinecone.io/reference/api/introduction
+  - service: Pinecone Indexes
+    url: https://api.pinecone.io/indexes
+    collection: indexes
+    noun: indexes
+    detail: >-
+      Can list the project's indexes with their names, dimensions, metrics
+      and regions — the shape of what this account has embedded
+    access: read
+    risk_weight: 95
+    data_sensitive: true
+    source: https://docs.pinecone.io/reference/api/database/list-indexes

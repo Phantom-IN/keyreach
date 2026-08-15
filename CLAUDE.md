@@ -65,7 +65,7 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 - `keyreach/core/http.py` — the only place sockets are opened; rate-limit, record/replay, redaction, read-only guard, and a per-run cache so a repeated idempotent GET costs one request (R1.4). Never assume two identical probes reach the network twice.
 - `keyreach/core/scoring.py` — pure severity function + rationale.
 - `keyreach/core/probes.py` — runner for declarative YAML probes.
-- `keyreach/providers/*` — one file (or YAML) per provider. Thirty-two as of R2.7 (`generic` added): `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.py`, `dockerhub.py` (devtools); `mongodb.py`, `supabase.py`, `redis.py`, `pinecone.py` (database); `datadog.py`, `sentry.py`, `newrelic.py`, `grafana.py` (monitoring); `generic.py` (generic — the first provider built around no single vendor). Every one shares a probe-table shape and **none share code**. R1.4 asked whether that abstraction is real and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, R2.4 four, R2.5 four, R2.6 four and R2.7 one — seven consecutive items, none of which needed an interface change. The genuine shared abstraction is the declarative probe runner scheduled as **R2.8**.
+- `keyreach/providers/*` — one file per provider, `.py` or `.yml`. Thirty-two as of R2.7 (`generic` added), two of them (`npm`, `pinecone`) migrated to `.yml` in **R2.8**: `google.py`, `aws.py` (cloud); `openai.py`, `anthropic.py` (ai); `stripe.py`, `razorpay.py`, `paystack.py`, `paypal.py` (payment); `slack.py`, `twilio.py`, `telegram.py`, `discord.py`, `zoom.py` (comms); `sendgrid.py`, `mailgun.py`, `postmark.py`, `resend.py`, `mailchimp.py` (email); `github.py`, `gitlab.py`, `bitbucket.py`, `npm.yml`, `dockerhub.py` (devtools); `mongodb.py`, `supabase.py`, `redis.py`, `pinecone.yml` (database); `datadog.py`, `sentry.py`, `newrelic.py`, `grafana.py` (monitoring); `generic.py` (generic — the first provider built around no single vendor). Every provider shares a probe-table shape and **none share code between plugins** — R1.4 asked whether that meant a base class was missing and answered no; R1.6 added six more providers without touching `keyreach/core/`, R2.3 added five, R2.4 four, R2.5 four, R2.6 four and R2.7 one — seven consecutive items needing no interface change. **The genuine shared abstraction was the declarative probe runner R1.4 predicted, and R2.8 landed it** (`core/probes.py`, played back by `YamlProvider`) rather than a base class: a `.yml` file and a `.py` module both produce a `Provider`, `ProviderRegistry` discovers and sorts both together, and nothing downstream can tell which one it got.
   - **`pypi` is a detection rule with no plugin, on purpose.** PyPI's only token-accepting endpoint is a package upload, so no plugin can exist without performing a write. Do not add one. See `plan.md` §5.2 and `tests/test_detect.py::test_pypi_is_detected_and_deliberately_has_no_plugin`.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
@@ -77,8 +77,12 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 
 ## How to add a provider
 
-1. Create `keyreach/providers/<name>.py` (or `.yml` for simple cases).
-2. Implement:
+1. Create `keyreach/providers/<name>.py` (or `.yml` for simple cases — see
+   `keyreach/providers/npm.yml` and `pinecone.yml` for worked examples, and
+   `keyreach/core/probes.py`'s module docstring for exactly which providers
+   qualify: static header auth, no identity call, no chained request. A
+   provider needing any of those is a `.py` file, not a schema workaround).
+2. For a `.py` provider, implement:
    - `detect(key)` — pure, high-confidence structural match; add a pattern to `detection_rules.yml` if needed.
    - `validate(key, ctx)` — cheapest read-only liveness + identity call.
    - `enumerate(key, ctx)` — read-only probes; each match returns a `Capability` with `access`, `detail`, `evidence`, `risk_weight`, and the `data_sensitive`/`incurs_cost`/`restricted` flags set correctly (these drive severity — see `core/scoring.py` for the exact rules). Return a stably-sorted list.
@@ -92,6 +96,37 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Three things R2.8 found
+
+- **A predicted abstraction still has to be checked against real plugins
+  before it is built, not just cashed in on the strength of the prediction.**
+  R1.4 named "the declarative probe runner" as the shared abstraction, but
+  the actual shape of `_LivenessSpec` — a four-way
+  branch on status code, not a simple `success: {status: 200}` the
+  illustrative sketch in `implementation_plan.md` §8 showed — only became
+  clear by reading npm's and Pinecone's *hand-written* `enumerate` methods
+  side by side and noticing they already agreed on more than the sketch
+  claimed. Build the format from what plugins actually do, not from what an
+  early illustrative example showed.
+- **A format's boundary is what it structurally cannot express, and drawing
+  it required naming the providers on the other side of it.** `ProviderSpec`
+  has no field for identity extraction and no field for a second request —
+  not because of a rule written down somewhere, but because Telegram's
+  `getMe` parsing and PayPal's OAuth exchange have no home in the schema at
+  all. A format that *could* express those, gated only by a convention
+  saying "don't", would drift the first time a contributor needed one badly
+  enough.
+- **A shared Python class breaks any test written against `inspect.getmodule`
+  or `inspect.getfile` per-plugin, and the fix is a seam, not a special
+  case sprinkled through the test file.** Every `YamlProvider` instance
+  shares one class, so `type(provider).__module__` cannot distinguish npm's
+  reasoning from Pinecone's the way it distinguishes two `.py` modules. One
+  `_provenance()` helper in `tests/test_provider_contract.py` returns
+  `(spec.description, source_path)` for a YAML provider and
+  `(module.__doc__, Path(inspect.getfile(...)))` for a Python one, and every
+  test that used to call `inspect.getmodule` directly now goes through it —
+  the branch exists once, not at every call site that needed it.
 
 ### Three things R2.7 found
 

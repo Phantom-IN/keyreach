@@ -1,0 +1,34 @@
+# A declarative provider fixture (roadmap R2.8), for exercising
+# `ProviderRegistry`'s YAML discovery path alongside the `.py` fixtures
+# beside it in this package. Named `yankee` so it sorts between `november`
+# and `zebra` in `tests/test_registry.py::EXPECTED_NAMES` — proof that a
+# `.py` and a `.yml` provider interleave by name, not by which format
+# happens to load first.
+name: yankee
+category: generic
+docs_url: https://example.invalid/yankee
+rotation_guide_url: https://example.invalid/yankee/rotate
+detectable: true
+detect:
+  pattern: "^yankee_[A-Za-z0-9]{6,}$"
+  confidence: 0.9
+description: |
+  A fixture provider for roadmap R2.8's registry tests.
+auth:
+  headers:
+    Authorization: "Bearer {key}"
+liveness:
+  probe: Yankee Widgets
+  notes:
+    unauthorized: "rejected{message_suffix}"
+    rate_limited: "rate limited{message_suffix}"
+    unparseable: "unparseable{message_suffix}"
+probes:
+  - service: Yankee Widgets
+    url: https://api.example.invalid/yankee/widgets
+    collection: widgets
+    noun: widgets
+    detail: Can list the account's widgets
+    access: read
+    risk_weight: 40
+    source: https://example.invalid/yankee/docs

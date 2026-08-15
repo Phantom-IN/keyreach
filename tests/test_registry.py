@@ -19,6 +19,7 @@ import pytest
 
 from keyreach.core.http import ProbeClient, ProbeContext
 from keyreach.core.models import AccessLevel, ValidationResult
+from keyreach.core.probes import YamlProvider
 from keyreach.core.provider import Provider
 from keyreach.core.registry import (
     PROVIDERS_PACKAGE,
@@ -33,11 +34,15 @@ from keyreach.core.registry import (
 
 DUMMY_PACKAGE = "tests.dummy_providers"
 BROKEN_PACKAGE = "tests.broken_providers"
+BROKEN_YAML_PACKAGE = "tests.broken_yaml_providers"
 MISBEHAVING_PACKAGE = "tests.misbehaving_providers"
 
 #: Providers defined in tests/dummy_providers, in the order the registry must
-#: return them — by provider name, not by module name.
-EXPECTED_NAMES = ("alpha", "mike", "november", "zebra")
+#: return them — by provider name, not by module name. `yankee` (roadmap
+#: R2.8) is the one `.yml` fixture among four `.py` ones, placed between
+#: `november` and `zebra` deliberately: proof that discovery interleaves by
+#: provider name regardless of which format a plugin happens to be.
+EXPECTED_NAMES = ("alpha", "mike", "november", "yankee", "zebra")
 
 
 @pytest.fixture
@@ -121,6 +126,47 @@ def test_private_modules_are_not_scanned(registry: ProviderRegistry) -> None:
     assert "dummy" not in registry.names()
 
 
+def test_private_yaml_files_are_not_scanned(registry: ProviderRegistry) -> None:
+    """`_ignored.yml` (roadmap R2.8) mirrors `_shared.py`'s convention.
+
+    It is also missing every required field, so if it *were* scanned,
+    discovery would fail loudly rather than silently registering nonsense —
+    this test is about the convention, not a fallback safety net.
+    """
+    assert registry.names() == EXPECTED_NAMES
+
+
+# --------------------------------------------------------------------------
+# YAML discovery (roadmap R2.8)
+# --------------------------------------------------------------------------
+
+
+def test_registry_discovers_a_yaml_provider(registry: ProviderRegistry) -> None:
+    assert "yankee" in registry.names()
+    assert isinstance(registry.get("yankee"), YamlProvider)
+
+
+def test_yaml_and_python_providers_interleave_by_name(
+    registry: ProviderRegistry,
+) -> None:
+    """`yankee` is the package's only `.yml` fixture, sorted between two `.py`
+    ones — proof discovery order depends on provider name, not format."""
+    assert registry.names() == EXPECTED_NAMES
+
+
+def test_an_invalid_yaml_spec_is_rejected_with_its_own_name() -> None:
+    """A `.yml` file that fails `ProviderSpec` validation must say which file.
+
+    Mirrors what `DuplicateProviderError` already does for two clashing `.py`
+    plugins (`test_duplicate_provider_names_are_rejected`) — a registry load
+    failure should always be traceable to the file that caused it.
+    """
+    with pytest.raises(InvalidProviderError, match=r"invalid\.yml") as caught:
+        ProviderRegistry(BROKEN_YAML_PACKAGE).providers()
+
+    assert "does not satisfy the provider spec" in str(caught.value)
+
+
 def test_imported_provider_classes_are_not_double_registered(
     registry: ProviderRegistry,
 ) -> None:
@@ -161,7 +207,7 @@ def test_repr_reports_load_state(registry: ProviderRegistry) -> None:
 
     registry.providers()
 
-    assert "4" in repr(registry)
+    assert "5" in repr(registry)
 
 
 # --------------------------------------------------------------------------
@@ -202,7 +248,7 @@ def test_membership_and_length_and_iteration(registry: ProviderRegistry) -> None
     assert "ALPHA" in registry
     assert "nope" not in registry
     assert 123 not in registry
-    assert len(registry) == 4
+    assert len(registry) == 5
     assert [provider.name for provider in registry] == list(EXPECTED_NAMES)
 
 

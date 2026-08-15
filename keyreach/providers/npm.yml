@@ -1,0 +1,102 @@
+# npm registry access tokens — roadmap R2.4, migrated to the declarative
+# probe runner in roadmap R2.8.
+#
+# No prior art. Both endpoints below come from npm's own registry API
+# reference (api-docs.npmjs.com) and were verified against the live registry,
+# which answers 401 for a path that exists and 404 for one that does not.
+#
+# This is one of the first two providers `core/probes.py` plays back rather
+# than a hand-written `enumerate`. Nothing about npm's behaviour changed in
+# the move — this file is the same reasoning the old `npm.py` module carried,
+# expressed as data instead of code. See `tests/test_provider_npm.py`, which
+# still runs the same cassettes through the same assertions.
+name: npm
+category: devtools
+docs_url: https://api-docs.npmjs.com/
+rotation_guide_url: https://docs.npmjs.com/creating-and-viewing-access-tokens/
+credit: null
+
+# npm publishes no credential format. It did — and the page the withdrawn
+# rule cited (`detection_rules.yml`, "WITHDRAWN IN R2.4") documents none, so
+# npm is reached with `--provider npm` rather than by rule. See
+# `tests/test_provider_npm.py::test_the_withdrawn_rule_has_not_come_back`.
+detectable: false
+
+description: |
+  npm registry access tokens (roadmap R2.4), migrated to the declarative
+  probe runner in roadmap R2.8. Two probes, and that is all npm publishes that
+  a bare token can reach — its documented endpoints are otherwise scoped to
+  an organization or a package name keyreach does not have and will not
+  guess. npm publishes no "who am I" endpoint, so this report names the
+  account's tokens rather than the person.
+
+  Every capability is READ. npm documents granular tokens as read-only or
+  read-and-write, and `/-/npm/v1/tokens` returns `readonly`, `permissions`
+  and `scopes` per token in the account without marking which entry is the
+  one asking — the vocabulary exists, is not attributable to the calling
+  credential, and is not used.
+
+  What the token list is, though, is the finding: a leaked npm token that can
+  read it discloses every other token on the account, including which of
+  them can publish.
+
+auth:
+  headers:
+    # "Bearer token for authentication. Must be an npm access token."
+    # Source: https://api-docs.npmjs.com/
+    Authorization: "Bearer {key}"
+
+error_fields: [error, message]
+
+scope_statement: >-
+  npm documents granular tokens as read-only or read-and-write and returns
+  readonly, permissions and scopes per token in the account without marking
+  which entry is the calling one, so write access is undetermined and none
+  was attempted
+
+liveness:
+  # `/-/npm/v1/tokens` is the cheapest documented read that requires
+  # authentication, so it is both the liveness check and a capability.
+  probe: npm Tokens
+  unauthorized_statuses: [401]
+  live_but_refused_statuses: [403]
+  rate_limited_statuses: [429]
+  notes:
+    unauthorized: "npm did not accept this token{message_suffix}"
+    live_but_refused: >-
+      The token is live; npm refused this endpoint{message_suffix}. A
+      granular token restricted to specific packages is refused here
+      exactly like this, so the capabilities below are a lower bound
+    rate_limited: >-
+      The token is live; npm rate limited this request. Re-run with --delay
+      for a complete capability map
+    unparseable: >-
+      npm's response could not be interpreted{message_suffix}, so this
+      token's validity was not established either way
+
+probes:
+  - service: npm Staged Versions
+    url: https://registry.npmjs.org/-/stage
+    # `/-/stage` returns a bare JSON array, not an object with a named field.
+    collection: null
+    noun: staged versions
+    detail: >-
+      Can list package versions staged for publication, which are releases
+      the account has prepared and not yet made public
+    access: read
+    risk_weight: 75
+    data_sensitive: false
+    source: https://api-docs.npmjs.com/
+  - service: npm Tokens
+    url: https://registry.npmjs.org/-/npm/v1/tokens
+    collection: objects
+    noun: tokens
+    detail: >-
+      Can list every access token on the account, including whether each is
+      read-only, its permissions and its CIDR restrictions
+    access: read
+    risk_weight: 95
+    # An inventory of the account's other credentials, and which of them can
+    # publish.
+    data_sensitive: true
+    source: https://api-docs.npmjs.com/

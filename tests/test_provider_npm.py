@@ -1,4 +1,5 @@
-"""npm provider tests (roadmap R2.4).
+"""npm provider tests (roadmap R2.4; migrated to the declarative probe runner
+in roadmap R2.8).
 
 This is the **second detection rule keyreach has had to withdraw**, after
 Mailgun in R2.3, and ``test_the_withdrawn_rule_has_not_come_back`` is the test
@@ -24,6 +25,13 @@ rather than the person.
 verified against the live registry. The 401 body is empty because that is what
 the registry actually returns — with ``www-authenticate: Basic, Bearer`` and
 nothing else, which is why the rejection note does not quote a message.
+
+**On the migration.** R2.8 rewrote this plugin from a hand-written `enumerate`
+to `keyreach/providers/npm.yml`, played back by
+`keyreach.core.probes.YamlProvider`. Nothing here tests the runner's own
+parsing or matching logic in isolation — that lives in `tests/test_probes.py`
+— this module only proves npm's own spec produces the same behaviour the old
+Python module did, against the same committed cassettes.
 """
 
 from __future__ import annotations
@@ -38,23 +46,22 @@ from keyreach.core.detect import default_detector
 from keyreach.core.engine import Engine, EngineResult
 from keyreach.core.http import Cassette, ProbeResponse, RecordMode
 from keyreach.core.models import AccessLevel, Capability, ValidationResult
+from keyreach.core.probes import YamlProvider, _message_of, _summary
 from keyreach.core.registry import ProviderRegistry, validate_provider
-from keyreach.providers.npm import (
-    PROBES,
-    REGISTRY,
-    NpmProvider,
-    _summary,
-    message_of,
-    validation_probe,
-)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 RULES = Path(__file__).parent.parent / "keyreach" / "patterns" / "detection_rules.yml"
+SPEC_PATH = Path(__file__).parent.parent / "keyreach" / "providers" / "npm.yml"
+REGISTRY = "https://registry.npmjs.org"
 
 #: Composed from parts, never written as one literal
 #: (`tools/guardrails/no_secrets.py`). This is the *legacy* shape, used here
 #: precisely to show that keyreach no longer claims it by rule.
 KEY = "npm" + "_" + "kR7pQ2xLm9VtZ4bW8sJhD3nY6cFgA1eU5oPi"
+
+
+def provider() -> YamlProvider:
+    return ProviderRegistry("keyreach.providers").get("npm")  # type: ignore[return-value]
 
 
 def run(fixture: str, key: str = KEY) -> EngineResult:
@@ -94,21 +101,27 @@ def response(
 
 
 def test_metadata_satisfies_the_registry() -> None:
-    validate_provider(NpmProvider(), origin="keyreach.providers.npm")
+    validate_provider(provider(), origin="keyreach.providers.npm")
 
 
 def test_the_registry_discovers_it() -> None:
     registry = ProviderRegistry("keyreach.providers")
 
-    assert "npm" in [provider.name for provider in registry.providers()]
+    assert "npm" in [item.name for item in registry.providers()]
+
+
+def test_it_is_loaded_from_the_declarative_runner() -> None:
+    """R2.8: npm is one of the first two providers played back from YAML."""
+    assert isinstance(provider(), YamlProvider)
+    assert provider().source_path == SPEC_PATH
 
 
 def test_it_is_a_devtools_provider() -> None:
-    assert NpmProvider().category == "devtools"
+    assert provider().category == "devtools"
 
 
 def test_it_claims_no_prior_art() -> None:
-    assert NpmProvider().credit is None
+    assert provider().credit is None
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +147,7 @@ def test_the_withdrawn_rule_has_not_come_back() -> None:
 
 
 def test_it_is_not_a_detection_candidate() -> None:
-    assert NpmProvider().detectable is False
+    assert provider().detectable is False
 
 
 @pytest.mark.parametrize(
@@ -144,7 +157,7 @@ def test_it_is_not_a_detection_candidate() -> None:
 def test_detect_claims_nothing_at_all(sample: str) -> None:
     """`detectable = False` must mean it in both places, including for the
     exact shape the withdrawn rule used to match."""
-    assert NpmProvider().detect(sample) == 0.0
+    assert provider().detect(sample) == 0.0
 
 
 def test_nothing_routes_a_legacy_shaped_token_to_npm() -> None:
@@ -168,10 +181,6 @@ def test_the_residual_answer_is_not_guaranteed_and_that_is_worth_knowing() -> No
     one digit, which keeps it off `someVeryLongVariableNameHere`. An npm token
     that happens to be all letters therefore now matches *nothing at all*, where
     before the withdrawn rule named the vendor.
-
-    Stating that here keeps the withdrawal honest rather than free. It is also
-    the argument for **R2.7**, the generic bearer inspector: the residual answer
-    is where an unattributable secret should land, and it has gaps.
     """
     all_letters = "npm" + "_" + "abcdefghijklmnopqrstuvwxyzABCDEFGHIJ"
 
@@ -190,15 +199,19 @@ def test_only_documented_endpoints_are_probed() -> None:
     detection rule for resting on an unverifiable claim. Building a probe on one
     would be the same mistake pointed the other way.
     """
-    assert {probe.url for probe in PROBES} == {
+    assert {probe.url for probe in provider().spec.probes} == {
         f"{REGISTRY}/-/npm/v1/tokens",
         f"{REGISTRY}/-/stage",
     }
 
 
 def test_validation_reuses_a_probe_endpoint() -> None:
-    assert validation_probe() in PROBES
-    assert validation_probe().url == f"{REGISTRY}/-/npm/v1/tokens"
+    spec = provider().spec
+
+    assert spec.liveness.probe == "npm Tokens"
+    assert next(p for p in spec.probes if p.service == "npm Tokens").url == (
+        f"{REGISTRY}/-/npm/v1/tokens"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -290,7 +303,7 @@ def validate_against(status: int, body: str) -> ValidationResult:
             del url, params, headers
             return response(status, body)
 
-    return asyncio.run(NpmProvider().validate(KEY, _Stub()))  # type: ignore[arg-type]
+    return asyncio.run(provider().validate(KEY, _Stub()))  # type: ignore[arg-type]
 
 
 def test_a_forbidden_endpoint_might_be_a_package_scoped_token() -> None:
@@ -322,7 +335,7 @@ def test_an_uninterpretable_response_says_so_rather_than_guessing() -> None:
 
 def test_a_body_that_is_not_an_object_is_not_a_message() -> None:
     """Defensive parsing: an HTML error page must not read as a message."""
-    assert message_of(response(502, "<html>bad gateway</html>")) == ""
+    assert _message_of(provider().spec, response(502, "<html>bad gateway</html>")) == ""
 
 
 @pytest.mark.parametrize(
@@ -338,6 +351,6 @@ def test_a_body_that_is_not_an_object_is_not_a_message() -> None:
 def test_the_evidence_summary_carries_a_count_and_nothing_else(
     service: str, body: str, expected: str
 ) -> None:
-    probe = next(item for item in PROBES if item.service == service)
+    probe = next(item for item in provider().spec.probes if item.service == service)
 
     assert expected in _summary(probe, response(200, body))

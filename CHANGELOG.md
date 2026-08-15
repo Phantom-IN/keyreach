@@ -14,6 +14,18 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **The declarative probe runner (roadmap item **R2.8**)** —
+  `keyreach/core/probes.py` and `ProviderRegistry` discovery for `.yml`
+  provider spec files, alongside the existing `.py` module scan. A provider
+  with static-header auth, no identity call and no chained request can be a
+  `ProviderSpec` — metadata, a `detect` pattern, an `auth` header template, a
+  four-way liveness state machine (`_LivenessSpec`), and a probe table —
+  played back by `YamlProvider` through the same `Provider` contract every
+  hand-written plugin implements. This is the abstraction R1.4 predicted
+  after comparing the first four providers and named rather than built;
+  R2.1-R2.7 confirmed the prediction by needing nothing from
+  `keyreach/core/` across seven items, and this is the first `core/` change
+  since R1.3 that a provider did not force.
 - **A generic bearer/JWT inspector (roadmap item **R2.7**)** — `generic` —
   opening the `generic` category and taking keyreach to **thirty-two
   providers across nine categories**. The first provider built around no
@@ -199,6 +211,20 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Changed
 
+- **`npm` and `pinecone` now ship as `keyreach/providers/npm.yml` and
+  `pinecone.yml`** instead of hand-written `enumerate` methods, the first two
+  providers migrated to the declarative runner above. Chosen because both
+  already fit the format exactly: one static auth header, no identity
+  endpoint either vendor documents, and a liveness check that reuses one of
+  the capability probes. Behaviour is unchanged — the same committed
+  cassettes exercise the same assertions in `tests/test_provider_npm.py` and
+  `tests/test_provider_pinecone.py`.
+- **`tests/test_provider_contract.py` now reads a plugin's own reasoning
+  through one `_provenance()` seam** instead of calling
+  `inspect.getmodule`/`inspect.getfile` directly at each call site — needed
+  because every `YamlProvider` instance shares one Python class, so those
+  calls can no longer distinguish one provider's module docstring from
+  another's the way they could for `.py` plugins.
 - **No `firebase` provider ships, and that is a decision rather than a gap.**
   Google documents that "API keys for Firebase services do not need to be
   treated as secrets" and that "none of the Firebase-related APIs use an API key

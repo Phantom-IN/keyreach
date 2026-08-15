@@ -1,0 +1,6 @@
+# Underscore-prefixed spec files are shared fragments, not plugins, exactly as
+# `_shared.py` is beside it — `tests/test_registry.py`'s
+# `test_private_yaml_files_are_not_scanned` asserts this is never loaded. If
+# it were, registration would fail loudly anyway: it is missing every
+# required field on purpose.
+not_a_provider_spec: true
