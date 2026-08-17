@@ -97,6 +97,38 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
 
+### Three things R2.9 found
+
+- **`select_autoescape`'s `enabled_extensions` matches on a literal filename
+  suffix, and a compound extension has to be spelled to match.** The
+  autoescaping loader was configured back in R0.8 with `("html", "html.j2",
+  "xml")`, anticipating this item — but a file named merely
+  `report.html.j2` ends in `.j2`, not `.html`, so only the `"html.j2"` entry
+  actually matches it. Naming the template `report_html.j2`, or reaching
+  for `default_for_string`/a bare `.html` name that this codebase's own
+  template layout does not use, would have compiled and rendered with
+  autoescaping silently **off**, and nothing short of feeding it a hostile
+  evidence string would have shown it. `test_html_escapes_a_capability_that_looks_like_markup`
+  is the test that would have caught it, and does now.
+- **A batch format is not free just because concatenation looks like it
+  works.** JSON and Markdown batch by literal concatenation — an array, or
+  several sections back to back — because both remain a single walkable
+  document either way. Doing the same for HTML would produce several
+  `<html>`/`<head>`/`<body>` trees in one file, which a browser mis-parses
+  rather than rejects outright: the wrong-but-silent failure mode this
+  project's guardrails exist to catch everywhere else. `--report html`
+  refuses `--file`/stdin outright rather than inventing an unspecified
+  batch-index layout — see `implementation_plan.md` §12.1.
+- **`trim_blocks`/`lstrip_blocks` do the whitespace work; manual `{%-`/`-%}`
+  markers fight them.** The first draft of `report.html.j2` used `-`-trimmed
+  tags throughout, the way a template author reaches for by habit, and it
+  collapsed every section onto a handful of run-on lines — valid HTML, but
+  unreadable in a diff and on the page. `report.md.j2` already had the
+  answer: plain `{% %}` tags, with the environment's `trim_blocks`/
+  `lstrip_blocks` handling exactly the blank-line-after-a-block-tag problem
+  the `-` markers were reaching for. Match the sibling template's style
+  before inventing a new one.
+
 ### Three things R2.8 found
 
 - **A predicted abstraction still has to be checked against real plugins
@@ -328,6 +360,7 @@ python -m tests.regenerate_goldens         # tests/golden/*
 # run locally against a throwaway key
 keyreach <KEY>                       # terminal report; banner on stderr
 keyreach <KEY> --report md -o out.md
+keyreach <KEY> --report html -o out.html  # self-contained; --file/stdin refused
 keyreach <KEY> --json --quiet        # stdout is only the report
 keyreach -f keys.txt --fail-on high  # batch; exit 2 at or above the band
 ```

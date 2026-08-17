@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
+from html.parser import HTMLParser
 
 import pytest
 
@@ -26,6 +27,7 @@ from keyreach.report.render import (
     DEFAULT_WIDTH,
     ReportFormat,
     render,
+    render_html,
     render_json,
     render_markdown,
     render_terminal,
@@ -70,6 +72,15 @@ def report(**overrides: object) -> Report:
 
 
 ALL_FORMATS = [pytest.param(fmt, id=fmt.value) for fmt in ReportFormat]
+
+#: Every format meant for a person to read, as opposed to JSON. Used wherever
+#: a test asserts that a section of prose reaches the rendered output —
+#: HTML joined JSON's sibling formats in roadmap R2.9.
+HUMAN_FORMATS = [
+    ReportFormat.TERMINAL,
+    ReportFormat.MARKDOWN,
+    ReportFormat.HTML,
+]
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +132,7 @@ def test_status_distinguishes_rejected_from_never_asked() -> None:
     assert status_label(never_asked) == "not probed"
 
 
-@pytest.mark.parametrize("fmt", [ReportFormat.TERMINAL, ReportFormat.MARKDOWN])
+@pytest.mark.parametrize("fmt", HUMAN_FORMATS)
 def test_status_reaches_the_human_formats(fmt: ReportFormat) -> None:
     never_asked = report(
         provider=UNKNOWN_PROVIDER,
@@ -222,14 +233,14 @@ def test_a_long_title_is_not_truncated() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("fmt", [ReportFormat.TERMINAL, ReportFormat.MARKDOWN])
+@pytest.mark.parametrize("fmt", HUMAN_FORMATS)
 def test_a_report_with_no_capabilities_renders(fmt: ReportFormat) -> None:
     empty = report(capabilities=[], severity=Severity.INFO)
 
     assert render(empty, fmt)
 
 
-@pytest.mark.parametrize("fmt", [ReportFormat.TERMINAL, ReportFormat.MARKDOWN])
+@pytest.mark.parametrize("fmt", HUMAN_FORMATS)
 def test_notes_are_shown_as_gaps_not_as_results(fmt: ReportFormat) -> None:
     rendered = render(report(notes=["demo: enumerate failed: timeout"]), fmt)
 
@@ -237,7 +248,7 @@ def test_notes_are_shown_as_gaps_not_as_results(fmt: ReportFormat) -> None:
     assert "enumerate failed: timeout" in rendered
 
 
-@pytest.mark.parametrize("fmt", [ReportFormat.TERMINAL, ReportFormat.MARKDOWN])
+@pytest.mark.parametrize("fmt", HUMAN_FORMATS)
 def test_identity_is_rendered_when_present(fmt: ReportFormat) -> None:
     identified = report(
         validation=ValidationResult(
@@ -271,7 +282,7 @@ def test_identity_extras_render_in_sorted_order() -> None:
     assert rendered.index("alpha") < rendered.index("zulu")
 
 
-@pytest.mark.parametrize("fmt", [ReportFormat.TERMINAL, ReportFormat.MARKDOWN])
+@pytest.mark.parametrize("fmt", HUMAN_FORMATS)
 def test_provider_links_are_shown_when_known(fmt: ReportFormat) -> None:
     linked = report(
         rotation_guide_url="https://demo.invalid/rotate",
@@ -283,8 +294,8 @@ def test_provider_links_are_shown_when_known(fmt: ReportFormat) -> None:
     assert "https://demo.invalid/docs" in rendered
 
 
-def test_optional_capability_fields_render_when_set() -> None:
-    detailed = report(
+def _detailed_capability_report() -> Report:
+    return report(
         capabilities=[
             Capability(
                 service="Demo Files",
@@ -298,10 +309,26 @@ def test_optional_capability_fields_render_when_set() -> None:
             )
         ]
     )
-    rendered = render_markdown(detailed)
+
+
+def test_optional_capability_fields_render_when_set() -> None:
+    rendered = render_markdown(_detailed_capability_report())
 
     assert "project/demo" in rendered
     assert "curl 'https://demo.invalid/v1/files?key=<key>'" in rendered
+
+
+def test_optional_capability_fields_reach_html_escaped() -> None:
+    """The same fields as above, through HTML's autoescaping.
+
+    `poc`'s single quotes and angle brackets are legitimate characters in a
+    `curl` command, and autoescape turns them into entities rather than
+    dropping them — so this checks for the escaped form, not the raw one.
+    """
+    rendered = render_html(_detailed_capability_report())
+
+    assert "project/demo" in rendered
+    assert "curl &#39;https://demo.invalid/v1/files?key=&lt;key&gt;&#39;" in rendered
 
 
 def test_capability_flags_are_labelled_in_the_terminal_table() -> None:
@@ -328,6 +355,134 @@ def test_capability_flags_are_labelled_in_the_terminal_table() -> None:
 
 
 # ---------------------------------------------------------------------------
+# HTML (roadmap R2.9)
+# ---------------------------------------------------------------------------
+
+
+class _StrictHTMLParser(HTMLParser):
+    """Fails on the shape of error a hand-edited template tends to introduce.
+
+    ``html.parser`` does not itself validate nesting — it is a tokenizer, not
+    a DOM builder — so this keeps its own open-tag stack and raises the
+    moment a close tag does not match what is on top of it. That catches an
+    unclosed ``<div>`` or a swapped ``</ul></ol>`` the way a browser's
+    forgiving parser would silently paper over.
+    """
+
+    #: Void elements never appear in a close tag and are not pushed.
+    _VOID: frozenset[str] = frozenset(
+        {"meta", "link", "br", "hr", "img", "input", "source", "col"}
+    )
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.stack: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: object) -> None:
+        del attrs
+        if tag not in self._VOID:
+            self.stack.append(tag)
+
+    def handle_endtag(self, tag: str) -> None:
+        assert self.stack, f"</{tag}> with nothing open"
+        assert self.stack[-1] == tag, f"</{tag}> does not match <{self.stack[-1]}>"
+        self.stack.pop()
+
+
+def _assert_well_formed(document: str) -> None:
+    parser = _StrictHTMLParser()
+    parser.feed(document)
+    parser.close()
+    assert parser.stack == [], f"unclosed tag(s): {parser.stack}"
+
+
+def test_html_output_is_well_formed() -> None:
+    """Every tag opened by the template is closed, and closed in order.
+
+    Not a substitute for `tests/test_determinism.py`'s golden snapshots — this
+    catches a *structural* mistake (a missing `{% endif %}`'s HTML sibling,
+    say) that a byte-diff would also catch, but would not explain.
+    """
+    _assert_well_formed(render_html(report()))
+
+
+def test_html_starts_with_the_doctype_and_ends_with_the_closing_tag() -> None:
+    rendered = render_html(report())
+
+    assert rendered.startswith("<!doctype html>")
+    assert rendered.rstrip().endswith("</html>")
+
+
+def test_html_is_self_contained() -> None:
+    """No external stylesheet, font, script or image.
+
+    The point of a single HTML file as a disclosure artifact is that it opens
+    correctly from disk with no network fetch — the same read-only spirit
+    `plan.md` §11 asks of every probe, extended to the artifact itself. A
+    `<link>`, `<script src>` or `<img src>` would silently break offline or
+    phone home to whatever fills that URL.
+    """
+    rendered = render_html(report())
+
+    assert "<link" not in rendered
+    assert "<script" not in rendered
+    assert "<img" not in rendered
+    assert "<style" in rendered
+
+
+@pytest.mark.parametrize("band", list(Severity))
+def test_every_band_has_html_styling(band: Severity) -> None:
+    """No band is missing a `.severity-*` rule, which would render unstyled."""
+    rendered = render_html(report(severity=band))
+
+    assert f"severity-{band.value}" in rendered
+    assert f".severity-{band.value} {{" in rendered
+
+
+def test_html_escapes_a_capability_that_looks_like_markup() -> None:
+    """Autoescaping, proven rather than assumed.
+
+    Evidence is a vendor's own response text — masked, but not otherwise
+    sanitised — and a proxy's HTML error page or a field containing `<`/`&`
+    must not be interpreted as markup by whatever renders this file. A
+    forgotten `| safe` or a plain-string template would let this through.
+    """
+    hostile = report(
+        capabilities=[
+            Capability(
+                service="Demo Files",
+                access=AccessLevel.READ,
+                detail="Can list uploaded files",
+                evidence='<script>alert("x")</script> & "quoted"',
+                risk_weight=70,
+            )
+        ]
+    )
+    rendered = render_html(hostile)
+
+    assert "<script>alert" not in rendered
+    assert "&lt;script&gt;" in rendered
+    _assert_well_formed(rendered)
+
+
+def test_html_notes_and_empty_capabilities_render() -> None:
+    rendered = render_html(
+        report(capabilities=[], severity=Severity.INFO, notes=["demo: timeout"])
+    )
+
+    assert "No capability was confirmed." in rendered
+    assert "Not determined" in rendered
+    _assert_well_formed(rendered)
+
+
+def test_html_omits_the_remediation_links_block_when_both_urls_are_absent() -> None:
+    rendered = render_html(report(rotation_guide_url=None, docs_url=None))
+
+    assert "Rotation guide" not in rendered
+    assert "Provider documentation" not in rendered
+
+
+# ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
 
@@ -338,6 +493,7 @@ def test_render_dispatches_to_each_renderer() -> None:
     assert render(subject, ReportFormat.JSON) == render_json(subject)
     assert render(subject, ReportFormat.MARKDOWN) == render_markdown(subject)
     assert render(subject, ReportFormat.TERMINAL) == render_terminal(subject)
+    assert render(subject, ReportFormat.HTML) == render_html(subject)
 
 
 def test_terminal_is_the_default_format() -> None:
@@ -346,7 +502,7 @@ def test_terminal_is_the_default_format() -> None:
 
 def test_format_values_are_what_the_cli_will_accept() -> None:
     """`--report md` in `implementation_plan.md` §12, not `--report markdown`."""
-    assert {fmt.value for fmt in ReportFormat} == {"terminal", "json", "md"}
+    assert {fmt.value for fmt in ReportFormat} == {"terminal", "json", "md", "html"}
 
 
 def test_a_renamed_model_field_fails_loudly() -> None:

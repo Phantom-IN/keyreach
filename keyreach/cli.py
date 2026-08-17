@@ -320,7 +320,7 @@ def main(  # noqa: PLR0913, PLR0917 - the CLI surface is the specification
     report: str = typer.Option(
         ReportFormat.TERMINAL.value,
         "--report",
-        help="Output format: terminal, json, or md.",
+        help="Output format: terminal, json, md, or html.",
     ),
     json_output: bool = typer.Option(
         False, "--json", help="Shorthand for --report json."
@@ -438,6 +438,13 @@ def _run_scan(  # noqa: PLR0913 - mirrors `main`'s flags one for one
 ) -> int:
     """Everything between parsing and the exit code. Raises :class:`CliError`."""
     fmt = _resolve_format(report, json_output=json_output, explicit=explicit_format)
+    if fmt is ReportFormat.HTML and file is not None:
+        msg = (
+            "--report html renders one self-contained finding, not a batch. "
+            "Use --report md or --json with --file, or run keyreach once per "
+            "key for HTML output."
+        )
+        raise CliError(msg)
     threshold = parse_threshold(fail_on) if fail_on is not None else None
     paced = parse_delay(delay)
     keys = read_keys(file, key)
