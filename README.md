@@ -24,7 +24,7 @@
      would mean sending build data to another host for a number CI already
      gates on. -->
 
-> **v0.1.0 — the first release.**
+> **v0.2.0 — Phase 2 complete.**
 >
 > **Thirty-two providers across nine categories, usable from a terminal.**
 > The whole pipeline — detect → validate → enumerate → score → report — is built
@@ -37,12 +37,16 @@
 > **monitoring/observability** (`datadog`, `sentry`, `newrelic`, `grafana`),
 > and **generic** (`generic` — a JWT/bearer-token inspector built around no
 > single vendor). Each key is scored from the capabilities keyreach actually
-> confirmed, with the rationale attached.
+> confirmed, with the rationale attached. Reports render as terminal, JSON,
+> Markdown or a self-contained HTML file, and a scheduled drift canary
+> re-verifies detection rules and probe endpoints against the vendors they
+> came from.
 >
 > Code lands one roadmap item at a time, each on its own feature branch and
 > pull request, so the whole build is auditable in the open. Phase 0
-> (**R0.1**–**R0.9**) and Phase 1 (**R1.1**–**R1.6**) are done; Phase 2 is under
-> way. Follow along in [`ROADMAP.md`](ROADMAP.md).
+> (**R0.1**–**R0.9**), Phase 1 (**R1.1**–**R1.6**) and Phase 2
+> (**R2.1**–**R2.10**) are done; Phase 3 (ecosystem integration) is next.
+> Follow along in [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -166,7 +170,7 @@ $ keyreach AIza...
  / ,< /  __/ /_/ / /   /  __/ /_/ / /__/ / / /
 /_/|_|\___/\__, /_/    \___/\__,_/\___/_/ /_/
           /____/
-  v0.1.0  |  deterministic  |  read-only  |  no AI
+  v0.2.0  |  deterministic  |  read-only  |  no AI
   Use only against keys you own or are explicitly authorized to test.
 ```
 
