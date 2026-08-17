@@ -12,6 +12,13 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-18
+
+Closes Phase 2: thirty-two providers across nine categories, up from ten
+across five at `v0.1.0`. Everything below landed across roadmap items
+**R2.1**-**R2.10**, each in its own pull request. No breaking change to the
+CLI or the report schema.
+
 ### Added
 
 - **Drift-canary CI (roadmap item **R2.10**)** — `tools/drift_canary/` and
@@ -924,10 +931,13 @@ in its own pull request.
 
 ---
 
-`v0.1.0` is the first release, and closes Phase 1. Phase 2 widens provider
-coverage and adds the declarative probe format, HTML reports, and the drift
-canary that watches for vendors changing the endpoints these plugins depend on.
-See [`ROADMAP.md`](ROADMAP.md).
+`v0.1.0` is the first release, and closes Phase 1. `v0.2.0` closes Phase 2:
+wider and deeper provider coverage, the declarative probe format, HTML
+reports, and the drift canary that watches for vendors changing the
+endpoints these plugins depend on. Phase 3 is ecosystem integration — scanner
+ingestion, a GitHub Action, a provider registry site. See
+[`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/Phantom-IN/keyreach/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Phantom-IN/keyreach/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Phantom-IN/keyreach/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Phantom-IN/keyreach/releases/tag/v0.1.0
