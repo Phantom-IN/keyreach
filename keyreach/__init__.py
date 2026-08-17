@@ -26,12 +26,18 @@ __all__ = ["__version__"]
 # build time via hatchling (``[tool.hatch.version]``), so the CLI's ``--version``
 # and the installed distribution metadata cannot drift apart.
 #
-# ``0.1.0`` is the first real release (roadmap item R1.6): ten providers across
-# five categories, the full CLI, and the guarantees above enforced by CI rather
-# than asserted. It replaces the ``0.1.0.dev0`` placeholder that held the PyPI
-# name from R0.2 onwards and deliberately resolved to nothing.
+# ``0.1.0`` was the first real release (roadmap item R1.6): ten providers
+# across five categories, the full CLI, and the guarantees above enforced by
+# CI rather than asserted. It replaced the ``0.1.0.dev0`` placeholder that
+# held the PyPI name from R0.2 onwards and deliberately resolved to nothing.
+#
+# ``0.2.0`` closes Phase 2 (roadmap items R2.1-R2.10): thirty-two providers
+# across nine categories, up from ten across five; the declarative probe
+# runner (R2.8); HTML reports (R2.9); and the drift canary (R2.10). No
+# breaking change to the CLI or the report schema, hence a minor bump under
+# semantic versioning rather than a major one.
 #
 # Releasing is tag-driven: ``.github/workflows/publish.yml`` refuses to publish
 # when the git tag does not match this string, so a bump here and a tag are the
 # whole procedure.
-__version__ = "0.1.0"
+__version__ = "0.2.0"

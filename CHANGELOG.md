@@ -12,8 +12,29 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-18
+
+Closes Phase 2: thirty-two providers across nine categories, up from ten
+across five at `v0.1.0`. Everything below landed across roadmap items
+**R2.1**-**R2.10**, each in its own pull request. No breaking change to the
+CLI or the report schema.
+
 ### Added
 
+- **Drift-canary CI (roadmap item **R2.10**)** — `tools/drift_canary/` and
+  `.github/workflows/drift-canary.yml`, a scheduled check (not part of the
+  PR-gating `ci.yml`) that re-verifies two claims a provider plugin and a
+  detection rule make about a vendor keyreach does not control: that a
+  rule's cited `source` still documents the format it claims
+  (`sources.py`), and that a declarative (`.yml`) provider's probe
+  endpoints still exist rather than answering `404` or carrying an
+  RFC 8594 `Deprecation`/`Sunset` header (`endpoints.py`). No real
+  credential is ever used — the endpoint check sends a placeholder no real
+  key equals, and reads the response against the provider's own declared
+  liveness vocabulary. On drift, the workflow opens or comments on one
+  tracking issue rather than one per run. Provider count is unchanged at
+  thirty-two; this item builds the checker R2.3's Mailgun withdrawal and
+  R2.4's npm withdrawal argued for, not new coverage.
 - **HTML reports (roadmap item **R2.9**)** — `keyreach/report/templates/report.html.j2`
   and `render_html()`, the fourth `--report` format alongside terminal, JSON
   and Markdown. One self-contained document: every style rule is inlined in
@@ -910,10 +931,13 @@ in its own pull request.
 
 ---
 
-`v0.1.0` is the first release, and closes Phase 1. Phase 2 widens provider
-coverage and adds the declarative probe format, HTML reports, and the drift
-canary that watches for vendors changing the endpoints these plugins depend on.
-See [`ROADMAP.md`](ROADMAP.md).
+`v0.1.0` is the first release, and closes Phase 1. `v0.2.0` closes Phase 2:
+wider and deeper provider coverage, the declarative probe format, HTML
+reports, and the drift canary that watches for vendors changing the
+endpoints these plugins depend on. Phase 3 is ecosystem integration — scanner
+ingestion, a GitHub Action, a provider registry site. See
+[`ROADMAP.md`](ROADMAP.md).
 
-[Unreleased]: https://github.com/Phantom-IN/keyreach/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Phantom-IN/keyreach/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Phantom-IN/keyreach/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Phantom-IN/keyreach/releases/tag/v0.1.0

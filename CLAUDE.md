@@ -69,9 +69,10 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
   - **`pypi` is a detection rule with no plugin, on purpose.** PyPI's only token-accepting endpoint is a package upload, so no plugin can exist without performing a write. Do not add one. See `plan.md` §5.2 and `tests/test_detect.py::test_pypi_is_detected_and_deliberately_has_no_plugin`.
 - `keyreach/patterns/detection_rules.yml` — detection rules written from vendor docs (nothing copied; see `CREDITS.md`).
 - `keyreach/report/build.py` — `EngineResult` → `Report`. Pure; `generated_at` is a parameter, never read here.
-- `keyreach/report/render.py` — terminal / JSON / Markdown renderers; `templates/`; `report.schema.json`.
+- `keyreach/report/render.py` — terminal / JSON / Markdown / HTML renderers (HTML since **R2.9**); `templates/`; `report.schema.json`.
 - `tests/fixtures/` — recorded cassettes (no real keys); `tests/golden/` — snapshot reports, regenerated with `python -m tests.regenerate_goldens`.
 - `tools/guardrails/` — `workflows`, `ai_ban`, `network_isolation`, `read_only`, `no_secrets`. Dev tooling, not shipped. Run with `python -m tools.guardrails`.
+- `tools/drift_canary/` — the scheduled drift check (**R2.10**): `sources.py` re-verifies every active `detection_rules.yml` rule's cited vendor page, `endpoints.py` re-verifies every declarative (`.yml`) provider's probe endpoints. Dev tooling, not shipped, run by `.github/workflows/drift-canary.yml` rather than by `pytest` — it is the one place keyreach deliberately touches the live network, since checking whether a vendor page or endpoint still exists cannot be done against a cassette. Run locally with `python -m tools.drift_canary`.
 
 ---
 
@@ -96,6 +97,46 @@ Plugins **declare** probes; the **engine executes** them. All I/O and nondetermi
 5. If derived from prior art (e.g. the Google plugin from gmapsapiscanner), add an inline credit header and an entry in `CREDITS.md`.
 
 Aim: a new provider in ~30 minutes. Keep probes minimal (OpSec) and read-only.
+
+### Three things R2.10 found
+
+- **Ruff's `httpx` ban is repo-wide, not scoped to `providers/`, so the
+  canary needed the same named exemption `core/http.py` already has.**
+  `network_isolation` (`tools/guardrails/`) only walks
+  `keyreach/providers/*` and the fixture provider packages, so `tools/`
+  was already free of it — but `pyproject.toml`'s own
+  `[tool.ruff.lint.flake8-tidy-imports.banned-api]` entry for `httpx` has no
+  such scoping, and rejected `tools/drift_canary/base.py` at lint time
+  before either guardrail ever ran. It got the identical treatment
+  `keyreach/core/http.py` has carried since R0.6 — a named
+  `per-file-ignores` entry — for the reverse reason: that file is the one
+  place a real key is ever sent over the wire; this one is the one place
+  keyreach reaches the network with no key at all.
+- **A rule's fixed prefix is not always the text before the first
+  metacharacter — reading through a leading, mandatory alternation group
+  recovers Stripe's, Paystack's, Razorpay's and Docker Hub's real prefixes,
+  and a leading *optional* group has to be skipped rather than stopped at.**
+  A naive "literal run until the first regex metacharacter" reading of
+  `^sk_(live|test)_[0-9A-Za-z]{24,}$` stops at `sk_` — true, but not what
+  a reader of Stripe's own docs would recognise as *the* prefix. Composing a
+  literal run with one alternation group turns it into `sk_live_` /
+  `sk_test_`, and doing the same for Supabase's `^(?:[a-z]{20}:)?sb_secret_…`
+  means treating its *optional* leading group as contributing nothing that
+  MUST appear, rather than as a stop sign — both read from
+  `detection_rules.yml`'s actual patterns, not designed in the abstract and
+  hoped to fit.
+- **A negative lookahead in a sibling rule's exclusion list is not that
+  rule's own alternatives, and confusing the two would have made the check
+  fail for the wrong reason.** OpenAI's plain-key rule is
+  `^sk-(?!admin-|ant-|proj-|svcacct-)[A-Za-z0-9_-]{20,}$` — the parenthesised
+  group names formats *other* rules claim, precisely so this rule does not
+  also match them. Treating it as an alternation (the same shape a
+  mandatory group has) would extract `sk-admin-`, `sk-ant-` and so on as
+  literals this rule's own source page must document, and the check would
+  report drift the day any of *those* prefixes left the page — which says
+  nothing about whether OpenAI still documents its own. `leading_literals`
+  recognises `(?!` and `(?=` and falls back to the literal run before the
+  group instead.
 
 ### Three things R2.9 found
 
@@ -356,6 +397,10 @@ python -m tools.guardrails read_only       # or one by name
 # regenerate checked-in artifacts (CI fails on drift; --check is what it runs)
 python -m keyreach.report.schema --write   # report.schema.json
 python -m tests.regenerate_goldens         # tests/golden/*
+
+# the scheduled drift check (implementation_plan.md §10, §13.3) — touches the
+# live network on purpose; not part of the quality gates above
+python -m tools.drift_canary
 
 # run locally against a throwaway key
 keyreach <KEY>                       # terminal report; banner on stderr

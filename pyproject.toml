@@ -197,6 +197,18 @@ ignore = [
 # a direct HTTP dependency — the provider fixtures under tests/ are held to the
 # same rule as real plugins.
 "tests/test_http.py" = ["TID251"]
+# The drift canary (roadmap R2.10) is the second and only other place keyreach
+# reaches the network, and for the opposite reason core/http.py does: that
+# module is where a real key is sent; this one checks vendor documentation
+# pages and declarative probe endpoints with no key at all (a placeholder, for
+# the endpoint check) and is not a provider plugin, so ProbeContext's cassette
+# record/replay and key redaction do not describe what it does
+# (tools/drift_canary/base.py).
+"tools/drift_canary/base.py" = ["TID251"]
+# The canary's own tests inject a stub Fetch (tools/drift_canary/base.py) and
+# never call live_fetch, but still build a real httpx.Headers object to prove
+# case-insensitive header matching against the same type live_fetch produces.
+"tests/test_drift_canary.py" = ["TID251"]
 
 [tool.ruff.lint.isort]
 # `tools` is the dev-tooling package (guardrails); `tests` is importable because
