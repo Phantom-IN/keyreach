@@ -14,6 +14,16 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **HTML reports (roadmap item **R2.9**)** — `keyreach/report/templates/report.html.j2`
+  and `render_html()`, the fourth `--report` format alongside terminal, JSON
+  and Markdown. One self-contained document: every style rule is inlined in
+  a `<style>` block, with no external stylesheet, font, script or image, so
+  the file opens correctly straight from disk with no network available. It
+  carries the same ten sections `plan.md` §7 requires, in the same order as
+  `report.md.j2`. `--report html` refuses `--file`/stdin, since a single
+  HTML document cannot honestly represent several findings the way an array
+  or several concatenated Markdown sections can — use `--report md`/`--json`
+  for a batch, or run keyreach once per key.
 - **The declarative probe runner (roadmap item **R2.8**)** —
   `keyreach/core/probes.py` and `ProviderRegistry` discovery for `.yml`
   provider spec files, alongside the existing `.py` module scan. A provider
@@ -211,6 +221,13 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Changed
 
+- **`select_autoescape`'s HTML entry only matches the template's exact
+  filename suffix** (`report.html.j2`, not `report_html.j2` or any name
+  merely containing "html"), which is why the file is named precisely that
+  — get it wrong and every vendor-sourced capability detail would have
+  rendered as unescaped markup with no visible symptom until something
+  actually looked like a tag. `test_html_escapes_a_capability_that_looks_like_markup`
+  asserts autoescaping is genuinely on.
 - **`npm` and `pinecone` now ship as `keyreach/providers/npm.yml` and
   `pinecone.yml`** instead of hand-written `enumerate` methods, the first two
   providers migrated to the declarative runner above. Chosen because both

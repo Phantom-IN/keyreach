@@ -1,0 +1,321 @@
+{#-
+  HTML report — the disclosure artifact for a browser rather than a terminal
+  or a ticket body.
+
+  One finding, one self-contained file: every style rule is inlined in the
+  `<style>` block below and nothing here references an external stylesheet,
+  font, script or image. That is what lets this be attached to an email or a
+  bug-bounty submission and opened straight from disk — no network fetch, no
+  broken asset, matching the read-only spirit `CLAUDE.md` hard rule 3 states
+  for probes and extending it to the artifact itself.
+
+  Section order mirrors report.md.j2, which mirrors the nine required
+  contents in plan.md §7 — the two templates describe the same report, so a
+  reviewer reading them side by side should recognise every section.
+
+  Autoescaping is on for this template (`report/render.py` selects it by the
+  `.html.j2` filename), so nothing here needs `| e` — a capability's evidence
+  or detail can legitimately contain `<`/`&`/`"` (a vendor's raw JSON or an
+  HTML error page a proxy returned) and Jinja escapes it before it reaches the
+  page.
+
+  Determinism: no loop reads a set, nothing here reads the clock, and every
+  list arrives already sorted by the caller. `generated_at` is the only value
+  that legitimately varies between runs — see `test_the_timestamp_is_the_only_thing_that_varies`
+  in `tests/test_determinism.py`, which this template is held to exactly like
+  the other two.
+-#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{ report.title }}</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --fg: #1b1f24;
+    --bg: #ffffff;
+    --muted: #57606a;
+    --border: #d0d7de;
+    --panel: #f6f8fa;
+    --link: #0969da;
+    --band-fg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fg: #e6edf3;
+      --bg: #0d1117;
+      --muted: #8b949e;
+      --border: #30363d;
+      --panel: #161b22;
+      --link: #4493f8;
+    }
+  }
+  .severity-critical { --band-bg: #8e1519; }
+  .severity-high { --band-bg: #cf222e; }
+  .severity-medium { --band-bg: #9a6700; }
+  .severity-low { --band-bg: #0969da; }
+  .severity-info { --band-bg: #57606a; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2rem 1.25rem 4rem;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.5 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main {
+    max-width: 52rem;
+    margin: 0 auto;
+  }
+  h1, h2, h3 { line-height: 1.25; }
+  h2 {
+    margin-top: 2.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 1.15rem;
+  }
+  a { color: var(--link); }
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9em;
+  }
+  pre {
+    margin: 0.5rem 0 0;
+    padding: 0.75rem 1rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .banner {
+    padding: 1.25rem 1.5rem;
+    border-radius: 10px;
+    background: var(--band-bg);
+    color: var(--band-fg);
+  }
+  .band {
+    display: inline-block;
+    margin: 0 0 0.6rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .banner h1 {
+    margin: 0 0 0.5rem;
+    font-size: 1.4rem;
+  }
+  .banner p {
+    margin: 0;
+    opacity: 0.95;
+  }
+  dl.facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.35rem 1.25rem;
+    margin: 1.5rem 0 0;
+  }
+  dl.facts dt {
+    color: var(--muted);
+    font-weight: 600;
+  }
+  dl.facts dd {
+    margin: 0;
+    word-break: break-word;
+  }
+  blockquote {
+    margin: 1rem 0 0;
+    padding: 0.6rem 1rem;
+    border-left: 3px solid var(--border);
+    color: var(--muted);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.75rem;
+  }
+  caption { display: none; }
+  th, td {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: top;
+  }
+  th { color: var(--muted); font-weight: 600; }
+  td.center, th.center { text-align: center; }
+  ul.plain, ol.plain {
+    margin: 0.75rem 0 0;
+    padding-left: 1.4rem;
+  }
+  ul.plain li, ol.plain li { margin: 0.35rem 0; }
+  .evidence-item {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .evidence-item:first-of-type {
+    margin-top: 1rem;
+    padding-top: 0;
+    border-top: none;
+  }
+  .evidence-item h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+  }
+  .evidence-item .label {
+    margin: 0.75rem 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header class="banner severity-{{ report.severity.value }}">
+  <p class="band">{{ report.severity.value | upper }}</p>
+  <h1>{{ report.title }}</h1>
+  <p>{{ report.impact }}</p>
+</header>
+
+<dl class="facts">
+  <dt>Provider</dt>
+  <dd><code>{{ report.provider }}</code> ({{ report.provider_category }})</dd>
+  <dt>Key</dt>
+  <dd><code>{{ report.key_fingerprint }}</code></dd>
+  <dt>Status</dt>
+  <dd>{{ status }}</dd>
+  <dt>Generated</dt>
+  <dd><time datetime="{{ report.generated_at.isoformat() }}">{{ report.generated_at.isoformat() }}</time></dd>
+{% if report.validation.identity %}
+{% set identity = report.validation.identity %}
+{% if identity.account %}
+  <dt>Account</dt>
+  <dd>{{ identity.account }}</dd>
+{% endif %}
+{% if identity.owner %}
+  <dt>Owner</dt>
+  <dd>{{ identity.owner }}</dd>
+{% endif %}
+{% if identity.plan_or_tier %}
+  <dt>Plan or tier</dt>
+  <dd>{{ identity.plan_or_tier }}</dd>
+{% endif %}
+{% for name, value in identity.extra | dictsort %}
+  <dt>{{ name }}</dt>
+  <dd>{{ value }}</dd>
+{% endfor %}
+{% endif %}
+</dl>
+{% if report.validation.note %}
+<blockquote>{{ report.validation.note }}</blockquote>
+{% endif %}
+
+<h2>Why this severity</h2>
+<ul class="plain">
+{% for line in report.severity_rationale %}
+  <li>{{ line }}</li>
+{% endfor %}
+</ul>
+
+<h2>Capabilities</h2>
+{% if report.capabilities %}
+<table>
+  <caption>Capabilities</caption>
+  <thead>
+    <tr>
+      <th scope="col">Service</th>
+      <th scope="col">Access</th>
+      <th scope="col">Detail</th>
+      <th scope="col" class="center">Data</th>
+      <th scope="col" class="center">Cost</th>
+      <th scope="col" class="center">Restricted</th>
+    </tr>
+  </thead>
+  <tbody>
+{% for capability in report.capabilities %}
+    <tr>
+      <td>{{ capability.service }}</td>
+      <td>{{ capability.access.value }}</td>
+      <td>{{ capability.detail }}</td>
+      <td class="center">{{ "yes" if capability.data_sensitive else "no" }}</td>
+      <td class="center">{{ "yes" if capability.incurs_cost else "no" }}</td>
+      <td class="center">{{ "yes" if capability.restricted else "no" }}</td>
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+
+<h2>Evidence</h2>
+<p>Each entry is a read-only request and the response summary that proves the
+access. Keys are masked.</p>
+{% for capability in report.capabilities %}
+<div class="evidence-item">
+  <h3>{{ capability.service }} &mdash; {{ capability.access.value }}</h3>
+  <p>{{ capability.detail }}</p>
+  <pre>{{ capability.evidence }}</pre>
+{% if capability.resource_ref %}
+  <p class="label">Resource: <code>{{ capability.resource_ref }}</code></p>
+{% endif %}
+{% if capability.poc %}
+  <p class="label">Reproduce (read-only):</p>
+  <pre>{{ capability.poc }}</pre>
+{% endif %}
+</div>
+{% endfor %}
+{% else %}
+<p>No capability was confirmed.</p>
+{% endif %}
+{% if report.notes %}
+
+<h2>Not determined</h2>
+<p>These are gaps, not clean results &mdash; the capability map above may be
+incomplete.</p>
+<ul class="plain">
+{% for note in report.notes %}
+  <li>{{ note }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<h2>Remediation</h2>
+<ol class="plain">
+{% for step in report.remediation %}
+  <li>{{ step }}</li>
+{% endfor %}
+</ol>
+{% if report.rotation_guide_url or report.docs_url %}
+<ul class="plain">
+{% if report.rotation_guide_url %}
+  <li>Rotation guide: <a href="{{ report.rotation_guide_url }}">{{ report.rotation_guide_url }}</a></li>
+{% endif %}
+{% if report.docs_url %}
+  <li>Provider documentation: <a href="{{ report.docs_url }}">{{ report.docs_url }}</a></li>
+{% endif %}
+</ul>
+{% endif %}
+
+<footer>
+  Generated by <a href="https://github.com/Phantom-IN/keyreach">{{ report.tool }}</a>
+  {{ report.tool_version }} &mdash; deterministic, read-only, no AI.
+  Report schema {{ report.schema_version }}.
+</footer>
+
+</main>
+</body>
+</html>

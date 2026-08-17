@@ -1,8 +1,9 @@
-"""Render a :class:`Report` to terminal text, JSON, or Markdown.
+"""Render a :class:`Report` to terminal text, JSON, Markdown, or HTML.
 
-Three formats, one input, no shared mutable state (``implementation_plan.md``
-§9). HTML is roadmap R2.9 and is deliberately absent — the loader below is
-already configured to autoescape it when it arrives.
+Four formats, one input, no shared mutable state (``implementation_plan.md``
+§9). HTML landed in roadmap R2.9, through the same autoescaping loader that
+was configured to expect it from R0.8 onward — ``select_autoescape`` matches
+the ``report.html.j2`` template on its ``.html.j2`` suffix.
 
 **Determinism is the whole contract here.** ``plan.md`` §1 requires the same key
 against the same provider state to reproduce the same report byte for byte, and
@@ -64,6 +65,7 @@ class ReportFormat(StrEnum):
     TERMINAL = "terminal"
     JSON = "json"
     MARKDOWN = "md"
+    HTML = "html"
 
 
 def status_label(report: Report) -> str:
@@ -88,8 +90,10 @@ def _environment() -> Environment:
     ``StrictUndefined`` so a renamed model field fails loudly instead of
     rendering an empty cell into a disclosure report. Autoescaping is selected
     by extension rather than switched off wholesale: escaping Markdown would
-    corrupt it, but the HTML template arriving in R2.9 must be escaped, and
-    deciding that here means nobody has to remember to.
+    corrupt it, but ``report.html.j2`` must be escaped — a capability's
+    evidence or detail can legitimately contain a vendor's raw JSON or an
+    HTML error page a proxy returned, and this is what stops either from
+    being interpreted as markup.
     """
     return Environment(
         loader=PackageLoader("keyreach.report", _TEMPLATES),
@@ -119,6 +123,22 @@ def render_markdown(report: Report) -> str:
     return (
         _environment()
         .get_template("report.md.j2")
+        .render(report=report, status=status_label(report))
+    )
+
+
+def render_html(report: Report) -> str:
+    """A self-contained HTML document: one finding, opened straight from disk.
+
+    Every style rule is inlined in the template's ``<style>`` block — no
+    external stylesheet, font, script or image — so the file this produces
+    needs no network fetch to render correctly, matching the read-only spirit
+    of ``plan.md`` §11 for the artifact itself, not only for the probes that
+    fed it.
+    """
+    return (
+        _environment()
+        .get_template("report.html.j2")
         .render(report=report, status=status_label(report))
     )
 
@@ -310,4 +330,6 @@ def render(
         return render_json(report)
     if fmt is ReportFormat.MARKDOWN:
         return render_markdown(report)
+    if fmt is ReportFormat.HTML:
+        return render_html(report)
     return render_terminal(report, width=width, color=color)

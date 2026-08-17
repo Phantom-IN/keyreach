@@ -173,6 +173,7 @@ $ keyreach AIza...
 ```console
 keyreach KEY                      # detect → validate → enumerate → score → terminal report
 keyreach KEY --report md -o out.md
+keyreach KEY --report html -o out.html  # self-contained; open straight from disk
 keyreach KEY --json               # machine-readable, schema-validated
 keyreach -f keys.txt              # batch from a file, one key per line
 cat keys.txt | keyreach -f -      # batch from stdin (keeps keys out of shell history)
@@ -217,8 +218,12 @@ finding.
 `2` means a finding and nothing else. A malformed command line exits `1`, so a
 typo in a CI config can never be mistaken for a Critical key.
 
-HTML output (`--report html`) arrives in
-[R2.9](ROADMAP.md#phase-2--breadth--depth).
+**`--report html` is one self-contained file** — every style rule inlined, no
+external stylesheet, font, script or image, so it opens correctly straight
+from disk with no network available. It carries the same ten sections as
+`--report md`, in the same order. Because a single HTML document cannot
+honestly represent several findings at once, it refuses `--file`/stdin; use
+`--report md` or `--json` for a batch, or run keyreach once per key.
 
 ## What the output looks like
 

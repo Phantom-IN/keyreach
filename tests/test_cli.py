@@ -348,6 +348,37 @@ def test_markdown_output_is_the_disclosure_artifact(
     assert "## Capabilities" in out
 
 
+def test_html_output_is_a_self_contained_document(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    use_cassette: Callable[[str], None],
+) -> None:
+    use_cassette("google_valid")
+    _, out, _ = invoke(monkeypatch, capsys, GOOGLE_KEY, "--report", "html", "--quiet")
+
+    assert out.startswith("<!doctype html>")
+    assert out.rstrip().endswith("</html>")
+    assert "<h2>Capabilities</h2>" in out
+
+
+def test_html_output_can_be_written_to_a_file(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    use_cassette: Callable[[str], None],
+    tmp_path: Path,
+) -> None:
+    use_cassette("google_valid")
+    target = tmp_path / "finding.html"
+    code, out, err = invoke(
+        monkeypatch, capsys, GOOGLE_KEY, "--report", "html", "-o", str(target)
+    )
+
+    assert code == EXIT_OK
+    assert out == ""
+    assert target.read_text(encoding="utf-8").startswith("<!doctype html>")
+    assert str(target) in err
+
+
 def test_output_file_receives_the_report_and_stdout_stays_empty(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -488,6 +519,32 @@ def test_keys_can_be_piped_in(
 
     assert code == EXIT_OK
     assert json.loads(out)[0]["provider"] == "google"
+
+
+def test_html_refuses_a_batch_even_of_one_key(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    """One self-contained document, not several `<html>` trees concatenated.
+
+    Rejected on `--file` alone — whether the file holds one key or many —
+    because which shape you get follows the invocation, matching how
+    JSON's object-vs-array split already works
+    (`test_a_single_key_is_an_object_and_a_batch_is_an_array`). No cassette
+    is needed: the CLI must refuse this before a single probe runs.
+    """
+    keys = tmp_path / "one.txt"
+    keys.write_text(f"{GOOGLE_KEY}\n", encoding="utf-8")
+
+    code, out, err = invoke(
+        monkeypatch, capsys, "-f", str(keys), "--report", "html", "--quiet"
+    )
+
+    assert code == EXIT_ERROR
+    assert out == ""
+    assert "--report html" in err
+    assert "batch" in err
 
 
 def test_a_batch_of_terminal_reports_is_separated(
@@ -730,8 +787,8 @@ def test_delay_rejects_anything_it_cannot_read_exactly(raw: str) -> None:
 
 
 def test_format_parsing_lists_the_choices_when_it_fails() -> None:
-    with pytest.raises(CliError, match="terminal, json, md"):
-        parse_format("html")
+    with pytest.raises(CliError, match="terminal, json, md, html"):
+        parse_format("pdf")
 
 
 def test_every_report_format_is_accepted() -> None:

@@ -1,8 +1,8 @@
 """Golden-file scenarios, shared by the determinism test and the regenerator.
 
 Three end-to-end runs through the committed cassettes — a live key, a dead key,
-and a key no rule recognises — rendered in all three formats. Nine files under
-``tests/golden/``.
+and a key no rule recognises — rendered in all four formats. Twelve files under
+``tests/golden/`` since roadmap R2.9 added HTML to the three R0.8 shipped.
 
 The scenarios live here rather than inside ``test_determinism.py`` so that
 regenerating a snapshot is a deliberate act (``python -m tests.regenerate_goldens``)
@@ -54,6 +54,7 @@ SUFFIXES: Final[dict[ReportFormat, str]] = {
     ReportFormat.TERMINAL: "txt",
     ReportFormat.MARKDOWN: "md",
     ReportFormat.JSON: "json",
+    ReportFormat.HTML: "html",
 }
 
 
