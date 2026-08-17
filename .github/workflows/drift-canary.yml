@@ -1,0 +1,99 @@
+# keyreach drift canary (roadmap R2.10 — implementation_plan.md §10, §13.3).
+#
+# The rest of CI (ci.yml) proves keyreach's own behaviour is reproducible; it
+# cannot prove a vendor's documentation or API still says what a provider
+# plugin or detection rule claims it does. R2.3 (Mailgun) and R2.4 (npm,
+# GitLab) both found a rule had drifted only because someone happened to
+# re-read a vendor page by hand. This workflow is that re-read, scheduled,
+# so drift is found on a cadence rather than by chance the next time a human
+# is looking at the same file for an unrelated reason.
+#
+# `python -m tools.drift_canary` (tools/drift_canary/) does the checking and
+# prints a Markdown report; this workflow's only job is to decide what to do
+# with a nonzero exit — open or update one tracking issue, never one per run,
+# so a vendor page that stays broken for three weeks produces one issue with
+# three comments rather than three duplicate issues nobody triages.
+
+name: Drift canary
+
+on:
+  schedule:
+    # Once a week is enough for documentation and endpoint drift, which moves
+    # on the order of weeks, not hours — and it keeps the tracking issue's
+    # comment history readable. Off the hour, deliberately: GitHub warns that
+    # jobs scheduled for the top of the hour are delayed the most under load.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: drift-canary
+  cancel-in-progress: false
+
+env:
+  DEFAULT_PYTHON: '3.11'
+  #: One issue, reused across runs, identified by label rather than by title
+  #: (a vendor could change what the report's own wording says).
+  TRACKING_LABEL: drift-canary
+
+jobs:
+  canary:
+    name: Check for provider API drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+
+      - run: pip install -e '.[dev]'
+
+      # `if` around the canary, not `set -e`, because a nonzero exit here
+      # means "drift found", not "this step failed" — the workflow needs to
+      # see that result and act on it, not have the step die on it.
+      - name: Run the canary
+        id: canary
+        run: |
+          set -euo pipefail
+          if python -m tools.drift_canary > findings.md; then
+            echo "drifted=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "drifted=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Show the report
+        run: cat findings.md
+
+      - name: Ensure the tracking label exists
+        if: steps.canary.outputs.drifted == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create "$TRACKING_LABEL" \
+            --color B60205 \
+            --description "keyreach drift-canary findings (roadmap R2.10)" \
+            2>/dev/null || true
+
+      - name: Open or update the tracking issue
+        if: steps.canary.outputs.drifted == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          existing=$(gh issue list --label "$TRACKING_LABEL" --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file findings.md
+            echo "commented on existing issue #$existing"
+          else
+            gh issue create \
+              --title "drift-canary: provider API drift detected" \
+              --label "$TRACKING_LABEL" \
+              --body-file findings.md
+          fi

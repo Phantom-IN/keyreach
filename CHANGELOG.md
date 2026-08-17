@@ -14,6 +14,20 @@ under `Unreleased` in the same pull request as any user-visible change.
 
 ### Added
 
+- **Drift-canary CI (roadmap item **R2.10**)** — `tools/drift_canary/` and
+  `.github/workflows/drift-canary.yml`, a scheduled check (not part of the
+  PR-gating `ci.yml`) that re-verifies two claims a provider plugin and a
+  detection rule make about a vendor keyreach does not control: that a
+  rule's cited `source` still documents the format it claims
+  (`sources.py`), and that a declarative (`.yml`) provider's probe
+  endpoints still exist rather than answering `404` or carrying an
+  RFC 8594 `Deprecation`/`Sunset` header (`endpoints.py`). No real
+  credential is ever used — the endpoint check sends a placeholder no real
+  key equals, and reads the response against the provider's own declared
+  liveness vocabulary. On drift, the workflow opens or comments on one
+  tracking issue rather than one per run. Provider count is unchanged at
+  thirty-two; this item builds the checker R2.3's Mailgun withdrawal and
+  R2.4's npm withdrawal argued for, not new coverage.
 - **HTML reports (roadmap item **R2.9**)** — `keyreach/report/templates/report.html.j2`
   and `render_html()`, the fourth `--report` format alongside terminal, JSON
   and Markdown. One self-contained document: every style rule is inlined in

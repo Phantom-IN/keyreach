@@ -130,9 +130,11 @@ keyreach/
 │   ├── test_provider_*.py
 │   └── test_determinism.py
 ├── tools/                          # dev tooling; NOT shipped in the wheel
-│   └── guardrails/                 # workflows, ai_ban, network_isolation,
-│                                   # read_only, no_secrets (§11.1)
-│                                   # — run by CI, pre-commit and pytest
+│   ├── guardrails/                 # workflows, ai_ban, network_isolation,
+│   │                                #   read_only, no_secrets (§11.1) —
+│   │                                #   run by CI, pre-commit and pytest
+│   └── drift_canary/                # sources.py, endpoints.py (§10, §13.8)
+│                                    #   — run by drift-canary.yml, not pytest
 └── .github/workflows/
     ├── ci.yml                      # lint, types, tests, coverage, ai_ban check
     └── drift-canary.yml            # scheduled: detect provider API drift
@@ -476,7 +478,7 @@ The runner substitutes `{KEY}`, executes via the shared recordable client, and e
 - **Provider tests:** each provider validated against its cassette for both valid and invalid/expired key responses.
 - **Redaction tests:** assert keys never appear unmasked in output/evidence without `--unmask`.
 - **Determinism tests:** golden snapshots + double-run byte-equality.
-- **Drift-canary (`drift-canary.yml`, scheduled):** probe a small set of *maintainer-owned* canary/test endpoints per provider and open an issue automatically if response shape changes. This is the structural defense against the drift that erodes recipe-based tools.
+- **Drift-canary (`drift-canary.yml`, scheduled — landed in R2.10, §13.8):** re-verify, on a schedule, the two claims a provider plugin and a detection rule make about a vendor keyreach does not control — that a rule's cited `source` still documents the format it claims, and that a declarative provider's probe endpoints still exist and haven't been marked deprecated — and open (or comment on) one tracking issue when either has drifted. This is the structural defense against the drift that erodes recipe-based tools (R2.3's Mailgun withdrawal, R2.4's npm withdrawal). **Scope change from the original sketch above:** rather than *maintainer-owned* canary credentials probed per provider — real accounts someone has to create, fund and keep alive forever, one per vendor — the endpoint check sends a placeholder credential no real key ever equals and reads the response against the provider's own declared liveness vocabulary (`unauthorized`/`live_but_refused`/`rate_limited` status buckets); a `404` there means the endpoint is gone, exactly as it would with a real key, with none of the operational burden of one. See `tools/drift_canary/`.
 
 ---
 
@@ -944,11 +946,87 @@ scheduled in advance, sized and shaped by seven providers' worth of evidence
 about where hand-written plugins actually converge, rather than by any single
 provider's need.
 
+### 13.8 The canary, built against its own specification (roadmap R2.10)
+
+§13.3 wrote R2.10's specification in advance, from evidence rather than
+guesswork: three things to check (a rule's `source` still resolves and still
+documents its format; a probe endpoint still exists rather than answering
+`404`; nothing has quietly become deprecated), found by re-reading what R2.3
+and R2.4 had already discovered by hand. Building it found two things that
+specification, written before any code existed, could not have.
+
+**"Still documents the format" cannot mean re-running the rule's own regex
+against a vendor's prose — a page is not a test fixture — so it has to mean
+something narrower: does the format's fixed prefix still appear on the
+page.** `tools/drift_canary/sources.py`'s `leading_literals()` reads that
+prefix out of a pattern's *leading structure* rather than its full grammar: a
+literal run, one mandatory alternation group with an optional literal
+suffix (recovering Stripe's, Paystack's, Razorpay's and Docker Hub's real
+prefixes, not just the characters before the first metacharacter), and an
+optional group to skip over entirely. A negative lookahead
+(OpenAI's `(?!admin-|ant-|proj-|svcacct-)`, excluding its own siblings'
+prefixes) is recognised and excluded rather than misread as alternatives —
+those name a **different** rule's format. What it cannot read — a leading
+character class (GitHub's `gh[pousr]_`), a format sourced to a standard
+rather than a vendor (`generic-jwt`, RFC 7515) — it says so by returning no
+literal, and the resolves-at-all check still runs; nothing is silently
+skipped, and `tests/test_drift_canary.py` pins the exact literal (or absence
+of one) `leading_literals` produces for every currently active rule, so a
+future pattern change that silently breaks the reading fails there before
+the next scheduled run would ever see it.
+
+**Coverage of the endpoint check is scoped to declarative providers, and
+that scope is not a placeholder — it is what R2.8 made possible and what a
+hand-written plugin does not offer back out.** A `.yml` spec already states
+its probe URLs, each one's vendor `source`, and the status-code vocabulary
+that means "this endpoint exists but the credential didn't work"
+(`_LivenessSpec`), as data `tools/drift_canary/endpoints.py` reads directly.
+A `.py` plugin states the identical facts as Python inside `enumerate()`,
+with no structured way to recover them short of running the plugin against a
+real key — which the canary deliberately never has, using a placeholder
+credential no real key equals instead (`tools/drift_canary/base.py`). Two
+providers (npm, Pinecone) have that structure today; the twenty-nine that do
+not are still covered by the source check, which reads
+`detection_rules.yml` and does not depend on which format a provider is
+written in. As more providers migrate to `.yml`, they gain endpoint-drift
+coverage for free, with no change to this package.
+
+**Deprecation is read from the transport, not from a vendor's specification,
+because a specification is not something a generic tool can diff against
+every vendor's schema.** R2.4 found three of Bitbucket's endpoints marked
+deprecated in Atlassian's own OpenAPI document — a fact worth catching, but
+one no generic canary can check by fetching and parsing an arbitrary
+vendor's spec file in whatever format that vendor happens to publish it.
+RFC 8594's `Deprecation` and `Sunset` response headers are the
+vendor-agnostic version of the same fact, checked on every response
+regardless of status code — not a replacement for reading a specification by
+hand when one exists, but the one signal available uniformly across every
+declarative provider without teaching the canary each vendor's document
+format.
+
+**This package is not held to `CLAUDE.md`'s determinism or
+`ProbeContext` rules, and says why in its own module docstring rather than
+leaving a reader to wonder why `tools/drift_canary/base.py` imports `httpx`
+directly.** It does not analyse a key — there is no key at all, only a
+placeholder for the endpoint check — so `ProbeContext`'s cassette
+record/replay and key redaction describe a different problem than the one
+this package has. `pyproject.toml`'s `httpx` ban is repo-wide rather than
+scoped to `providers/`, unlike the `network_isolation` guardrail, so
+`base.py` needed the same named `per-file-ignores` exemption
+`keyreach/core/http.py` has — for the opposite reason: that module is where
+a real key is sent; this one is where no key ever is.
+
+**And the interface needed nothing** — not because a ninth item confirmed
+the same prediction R1.4 made about `keyreach/core/`, but because this item
+was never a provider plugin to begin with. It is `tools/` dev tooling,
+exactly like `tools/guardrails/`, run by a scheduled workflow rather than by
+`pytest`, and not shipped in the wheel a user installs.
+
 ### Phase 2 — Depth
-- HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating.
+- HTML reports; `--batch`; YAML declarative probes for simple providers; opt-in aggressive AWS-style enumeration (gated + warned); `--fail-on` CI gating; drift-canary CI.
 
 ### Phase 3 — Ecosystem
-- Consume TruffleHog/gitleaks/Nosey Parker output (they find, keyreach analyzes + reports); GitHub Action; curated provider registry; drift-canary reporting.
+- Consume TruffleHog/gitleaks/Nosey Parker output (they find, keyreach analyzes + reports); GitHub Action; curated provider registry.
 
 ---
 
